@@ -26,24 +26,43 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
     ]}>
       <Card 
         style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]} 
-        elevation={5}
+        elevation={3}
       >
         <Card.Title
           title="Level Completed!"
           titleVariant="headlineMedium"
-          titleStyle={[gameScreenStyles.cardTitle, { color: theme.text }]}
+          titleStyle={[gameScreenStyles.cardTitle, { color: theme.onSurface || '#000000DE' }]}
         />
         <Card.Content style={gameScreenStyles.cardContent}>
           <Surface 
             style={[
               gameScreenStyles.statsContainer, 
-              { backgroundColor: `${theme.primary}22` }
+              { 
+                backgroundColor: theme.primaryContainer || `${theme.primary}22`,
+                borderRadius: 12
+              }
             ]} 
-            elevation={3}
+            elevation={1}
           >
             <View style={gameScreenStyles.statsRow}>
-              <Text style={[gameScreenStyles.statLabel, { color: theme.text }]}>Time:</Text>
-              <Text style={[gameScreenStyles.statValue, { color: theme.primary }]}>{elapsedTime}</Text>
+              <Text style={[
+                gameScreenStyles.statLabel, 
+                { 
+                  color: theme.onPrimaryContainer || theme.onSurface || '#000000DE',
+                  fontWeight: '500'
+                }
+              ]}>
+                Time:
+              </Text>
+              <Text style={[
+                gameScreenStyles.statValue, 
+                { 
+                  color: theme.onPrimaryContainer || theme.primary,
+                  fontWeight: '500'
+                }
+              ]}>
+                {elapsedTime}
+              </Text>
             </View>
           </Surface>
         </Card.Content>
@@ -53,14 +72,14 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
             onPress={onNextLevel}
             style={[styles.button, { backgroundColor: theme.primary }]}
             contentStyle={styles.buttonContent}
-            labelStyle={{ color: 'white' }}
+            labelStyle={{ color: theme.onPrimary || '#FFFFFF' }}
           >
             Next Level
           </Button>
           <Button
             mode="outlined"
             onPress={onRestart}
-            style={[styles.button, { borderColor: theme.primary }]}
+            style={[styles.button, { borderColor: theme.outline || theme.primary }]}
             contentStyle={styles.buttonContent}
             labelStyle={{ color: theme.primary }}
           >
@@ -69,7 +88,7 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
           <Button
             mode="outlined"
             onPress={onExit}
-            style={[styles.button, { borderColor: theme.primary }]}
+            style={[styles.button, { borderColor: theme.outline || theme.primary }]}
             contentStyle={styles.buttonContent}
             labelStyle={{ color: theme.primary }}
           >
@@ -84,9 +103,10 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
 const styles = StyleSheet.create({
   button: {
     width: '100%',
-    borderRadius: 8,
+    borderRadius: 20,
+    height: 40,
   },
   buttonContent: {
-    height: 44,
+    height: 40,
   },
 });

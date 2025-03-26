@@ -24,12 +24,12 @@ export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
     ]}>
       <Card 
         style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]} 
-        elevation={5}
+        elevation={3}
       >
         <Card.Title
           title="Game Paused"
           titleVariant="titleLarge"
-          titleStyle={[gameScreenStyles.cardTitle, { color: theme.text }]}
+          titleStyle={[gameScreenStyles.cardTitle, { color: theme.onSurface || '#000000DE' }]}
         />
         <Card.Actions style={gameScreenStyles.cardActions}>
           <Button
@@ -37,14 +37,14 @@ export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
             onPress={onResume}
             style={[styles.button, { backgroundColor: theme.primary }]}
             contentStyle={styles.buttonContent}
-            labelStyle={{ color: 'white' }}
+            labelStyle={{ color: theme.onPrimary || '#FFFFFF' }}
           >
             Resume
           </Button>
           <Button
             mode="outlined"
             onPress={onRestart}
-            style={[styles.button, { borderColor: theme.primary }]}
+            style={[styles.button, { borderColor: theme.outline || theme.primary }]}
             contentStyle={styles.buttonContent}
             labelStyle={{ color: theme.primary }}
           >
@@ -53,7 +53,7 @@ export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
           <Button
             mode="outlined"
             onPress={onExit}
-            style={[styles.button, { borderColor: theme.primary }]}
+            style={[styles.button, { borderColor: theme.outline || theme.primary }]}
             contentStyle={styles.buttonContent}
             labelStyle={{ color: theme.primary }}
           >
@@ -68,9 +68,10 @@ export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
 const styles = StyleSheet.create({
   button: {
     width: '100%',
-    borderRadius: 8,
+    borderRadius: 20,
+    height: 40,
   },
   buttonContent: {
-    height: 44,
+    height: 40,
   },
 });

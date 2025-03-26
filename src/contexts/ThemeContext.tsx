@@ -11,42 +11,81 @@ interface ThemeContextType {
 }
 
 const lightTheme: ThemeColors = {
-  primary: '#6200EE',      
-  secondary: '#03DAC6',   
-  background: '#F5F5F5',   
-  surface: '#FFFFFF',      
-  text: '#000000DE',       
-  error: '#B00020',        
-  success: '#4CAF50',      
-  walls: '#333333',        
-  ball: '#FF4081',         
-  goal: '#4CAF50',         
+  primary: '#6200EE',            // Material purple 500
+  onPrimary: '#FFFFFF',          // White text on primary
+  primaryContainer: '#E9DDFF',   // Light purple for containers
+  onPrimaryContainer: '#21005E', // Dark text on light containers
+  secondary: '#03DAC6',          // Material teal A700
+  onSecondary: '#000000',        // Black text on secondary
+  secondaryContainer: '#CEFAF3', // Light teal for containers
+  onSecondaryContainer: '#002019',// Dark text on secondary containers
+  tertiary: '#9C4146',           // Tertiary accent color
+  onTertiary: '#FFFFFF',         // White text on tertiary
+  background: '#F5F5F5',         // Material grey 100
+  onBackground: '#000000DE',     // Black text with 87% opacity
+  surface: '#FFFFFF',            // White surface
+  onSurface: '#000000DE',        // Black text with 87% opacity
+  surfaceVariant: '#E7E0EB',     // Light variant surface
+  onSurfaceVariant: '#49454E',   // Dark text on surface variant
+  outline: '#79747E',            // Outline color
+  error: '#B00020',              // Material error color
+  onError: '#FFFFFF',            // White text on error
+  success: '#4CAF50',            // Material green 500
+  walls: '#333333',              // Dark grey for walls
+  ball: '#FF4081',               // Material pink A200
+  goal: '#4CAF50',               // Material green 500
 };
 
 const darkTheme: ThemeColors = {
-  primary: '#BB86FC',      
-  secondary: '#03DAC6',    
-  background: '#121212',   
-  surface: '#1E1E1E',      
-  text: '#FFFFFFDE',       
-  error: '#CF6679',        
-  success: '#4CAF50',      
-  walls: '#BBBBBB',        
-  ball: '#03DAC6',         
-  goal: '#BB86FC',         
+  primary: '#BB86FC',            // Material purple A200
+  onPrimary: '#000000',          // Black text on primary
+  primaryContainer: '#4F378A',   // Medium purple container
+  onPrimaryContainer: '#EADDFF', // Light text on dark containers
+  secondary: '#03DAC6',          // Material teal A700
+  onSecondary: '#000000',        // Black text on secondary
+  secondaryContainer: '#00413B', // Dark teal container
+  onSecondaryContainer: '#70F7EE',// Light text on dark container
+  tertiary: '#F2B8BB',          // Light tertiary for dark theme
+  onTertiary: '#5E1114',         // Dark text on light tertiary
+  background: '#121212',         // Material dark background
+  onBackground: '#FFFFFFDE',     // White text with 87% opacity
+  surface: '#1E1E1E',            // Material dark surface
+  onSurface: '#FFFFFFDE',        // White text with 87% opacity
+  surfaceVariant: '#49454E',     // Dark variant surface
+  onSurfaceVariant: '#CAC4CF',   // Light text on dark surface variant
+  outline: '#948F99',            // Light outline for dark theme
+  error: '#CF6679',              // Material error color for dark theme
+  onError: '#000000',            // Black text on error
+  success: '#4CAF50',            // Material green 500
+  walls: '#BBBBBB',              // Light grey for walls
+  ball: '#03DAC6',               // Material teal A700
+  goal: '#BB86FC',               // Material purple A200
 };
 
 const blueTheme: ThemeColors = {
-  primary: '#2196F3',      
-  secondary: '#FFC107',    
-  background: '#E3F2FD',   
-  surface: '#FFFFFF',      
-  text: '#212121DE',       
-  error: '#F44336',        
-  success: '#4CAF50',      
-  walls: '#1976D2',        
-  ball: '#F44336',         
-  goal: '#4CAF50',         
+  primary: '#2196F3',            // Material blue 500
+  onPrimary: '#FFFFFF',          // White text on primary
+  primaryContainer: '#CCE5FF',   // Light blue container
+  onPrimaryContainer: '#00397E', // Dark text on light containers
+  secondary: '#FFC107',          // Material amber 500
+  onSecondary: '#000000',        // Black text on secondary
+  secondaryContainer: '#FFECB3', // Light amber container
+  onSecondaryContainer: '#553500',// Dark text on light container
+  tertiary: '#039BE5',           // Light blue accent
+  onTertiary: '#FFFFFF',         // White text on tertiary
+  background: '#E3F2FD',         // Material blue 50
+  onBackground: '#212121DE',     // Dark grey with 87% opacity
+  surface: '#FFFFFF',            // White surface
+  onSurface: '#212121DE',        // Dark grey with 87% opacity
+  surfaceVariant: '#DFE4EB',     // Light blue variant surface
+  onSurfaceVariant: '#41474D',   // Dark text on surface variant
+  outline: '#72777F',            // Outline color for blue theme
+  error: '#F44336',              // Material red 500
+  onError: '#FFFFFF',            // White text on error
+  success: '#4CAF50',            // Material green 500
+  walls: '#1976D2',              // Material blue 700
+  ball: '#F44336',               // Material red 500
+  goal: '#4CAF50',               // Material green 500
 };
 
 export const themes: Record<ThemeName, ThemeColors> = {

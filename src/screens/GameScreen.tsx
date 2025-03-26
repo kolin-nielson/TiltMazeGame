@@ -163,9 +163,21 @@ const GameScreen: React.FC = () => {
         {gameState === 'playing' && (
           <Button 
             mode="contained" 
-            style={[gameScreenStyles.pauseButton, { backgroundColor: theme.primary }]} 
-            labelStyle={{ color: '#fff' }}
+            style={[
+              gameScreenStyles.pauseButton, 
+              { 
+                backgroundColor: theme.primary,
+                borderRadius: 20,
+              }
+            ]} 
+            labelStyle={{ 
+              color: theme.onPrimary || '#FFFFFF',
+              fontWeight: '500',
+              letterSpacing: 1.25,
+              textTransform: 'uppercase'
+            }}
             onPress={handlePause}
+            contentStyle={{ height: 40 }}
           >
             Pause
           </Button>

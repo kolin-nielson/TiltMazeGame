@@ -48,14 +48,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               ? {
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.18,
-                  shadowRadius: 1.0,
+                  shadowOpacity: 0.2,
+                  shadowRadius: 2,
                 }
               : { elevation: 1 }
             )
           }
         ]}>
-          <Text style={[styles.statLabel, { color: theme.text, opacity: 0.6 }]}>Levels Completed</Text>
+          <Text style={[styles.statLabel, { color: theme.onSurface || theme.onBackground, opacity: 0.6 }]}>Levels Completed</Text>
           <Text style={[styles.statNumber, { color: theme.primary }]}>
             {userProgress.totalCompleted}
           </Text>
@@ -72,9 +72,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               ...(Platform.OS === 'ios' 
                 ? {
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 3.84,
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4.65,
                   }
                 : { elevation: 3 }
               )
@@ -82,8 +82,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           ]}
           onPress={() => navigation.navigate('LevelSelect')}
         >
-          <MaterialIcons name="play-arrow" size={24} color="#fff" />
-          <Text style={styles.menuButtonText}>Play</Text>
+          <MaterialIcons name="play-arrow" size={24} color={theme.onPrimary} />
+          <Text style={[styles.menuButtonText, { color: theme.onPrimary }]}>Play</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -91,16 +91,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             styles.menuButton, 
             styles.secondaryButton,
             { 
-              backgroundColor: theme.surface,
-              borderColor: theme.primary,
+              backgroundColor: 'transparent',
+              borderColor: theme.outline || theme.primary,
               ...(Platform.OS === 'ios' 
                 ? {
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 1.0,
+                    shadowColor: 'transparent',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0,
+                    shadowRadius: 0,
                   }
-                : { elevation: 1 }
+                : { elevation: 0 }
               )
             }
           ]}
@@ -112,7 +112,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: theme.text, opacity: 0.6 }]}>
+        <Text style={[styles.footerText, { color: theme.onBackground || theme.onSurface, opacity: 0.6 }]}>
           Tilt your device to navigate the ball through mazes!
         </Text>
       </View>
@@ -140,13 +140,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    borderRadius: 8,
+    borderRadius: 12,
     width: '100%',
   },
   statNumber: {
     fontSize: 32,
     fontWeight: '500',
-    lineHeight: 38,
+    lineHeight: 40,
   },
   statLabel: {
     fontSize: 14,
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     marginVertical: 8,
-    borderRadius: 4,
+    borderRadius: 20,
     height: 56,
   },
   primaryButton: {

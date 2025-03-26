@@ -24,15 +24,15 @@ export const GameReadyOverlay: React.FC<GameReadyOverlayProps> = ({
     ]}>
       <Card 
         style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]} 
-        elevation={5}
+        elevation={3}
       >
         <Card.Title
           title={mazeName}
           titleVariant="titleLarge"
-          titleStyle={[gameScreenStyles.cardTitle, { color: theme.text }]}
+          titleStyle={[gameScreenStyles.cardTitle, { color: theme.onSurface || '#000000DE' }]}
         />
         <Card.Content style={gameScreenStyles.cardContent}>
-          <Text style={[gameScreenStyles.instructions, { color: theme.text }]}>
+          <Text style={[gameScreenStyles.instructions, { color: theme.onSurface || '#000000DE', opacity: 0.87 }]}>
             Tilt your device to move the ball to the goal!
           </Text>
         </Card.Content>
@@ -42,14 +42,14 @@ export const GameReadyOverlay: React.FC<GameReadyOverlayProps> = ({
             onPress={onStart}
             style={[styles.button, { backgroundColor: theme.primary }]}
             contentStyle={styles.buttonContent}
-            labelStyle={{ color: 'white' }}
+            labelStyle={{ color: theme.onPrimary || '#FFFFFF' }}
           >
             Start
           </Button>
           <Button
             mode="outlined"
             onPress={onBack}
-            style={[styles.button, { borderColor: theme.primary }]}
+            style={[styles.button, { borderColor: theme.outline || theme.primary }]}
             contentStyle={styles.buttonContent}
             labelStyle={{ color: theme.primary }}
           >
@@ -64,9 +64,10 @@ export const GameReadyOverlay: React.FC<GameReadyOverlayProps> = ({
 const styles = StyleSheet.create({
   button: {
     width: '100%',
-    borderRadius: 8,
+    borderRadius: 20,
+    height: 40,
   },
   buttonContent: {
-    height: 44,
+    height: 40,
   },
 });

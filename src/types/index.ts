@@ -27,13 +27,29 @@ export interface Ball {
 }
 
 export interface ThemeColors {
+  // Material Design 3 Color System
   primary: string;
+  onPrimary: string;
+  primaryContainer?: string;
+  onPrimaryContainer?: string;
   secondary: string;
+  onSecondary?: string;
+  secondaryContainer?: string;
+  onSecondaryContainer?: string;
+  tertiary?: string;
+  onTertiary?: string;
   background: string;
+  onBackground?: string;
   surface: string;
-  text: string;
+  onSurface?: string;
+  surfaceVariant?: string;
+  onSurfaceVariant?: string;
+  outline?: string;
   error: string;
+  onError?: string;
   success: string;
+  
+  // Game-specific colors
   walls: string;
   ball: string;
   goal: string;

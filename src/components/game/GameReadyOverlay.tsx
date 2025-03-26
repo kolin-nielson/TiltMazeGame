@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Button, Card } from 'react-native-paper';
 import { gameScreenStyles } from '../../styles/GameScreenStyles';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface GameReadyOverlayProps {
   mazeName: string;
@@ -14,16 +15,24 @@ export const GameReadyOverlay: React.FC<GameReadyOverlayProps> = ({
   onStart,
   onBack,
 }) => {
+  const { theme } = useTheme();
+  
   return (
-    <View style={gameScreenStyles.overlay}>
-      <Card style={gameScreenStyles.messageCard} elevation={5}>
+    <View style={[
+      gameScreenStyles.overlay, 
+      { backgroundColor: `${theme.background}CC` }
+    ]}>
+      <Card 
+        style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]} 
+        elevation={5}
+      >
         <Card.Title
           title={mazeName}
           titleVariant="titleLarge"
-          titleStyle={gameScreenStyles.cardTitle}
+          titleStyle={[gameScreenStyles.cardTitle, { color: theme.text }]}
         />
         <Card.Content style={gameScreenStyles.cardContent}>
-          <Text style={gameScreenStyles.instructions}>
+          <Text style={[gameScreenStyles.instructions, { color: theme.text }]}>
             Tilt your device to move the ball to the goal!
           </Text>
         </Card.Content>
@@ -31,16 +40,18 @@ export const GameReadyOverlay: React.FC<GameReadyOverlayProps> = ({
           <Button
             mode="contained"
             onPress={onStart}
-            style={styles.button}
+            style={[styles.button, { backgroundColor: theme.primary }]}
             contentStyle={styles.buttonContent}
+            labelStyle={{ color: 'white' }}
           >
             Start
           </Button>
           <Button
             mode="outlined"
             onPress={onBack}
-            style={styles.button}
+            style={[styles.button, { borderColor: theme.primary }]}
             contentStyle={styles.buttonContent}
+            labelStyle={{ color: theme.primary }}
           >
             Back
           </Button>

@@ -19,7 +19,6 @@ import { GameTimer } from '../components/game/GameTimer';
 import { GameReadyOverlay } from '../components/game/GameReadyOverlay';
 import { GamePausedOverlay } from '../components/game/GamePausedOverlay';
 import { GameCompletedOverlay } from '../components/game/GameCompletedOverlay';
-import { GameDebugInfo } from '../components/game/GameDebugInfo';
 
 type GameScreenRouteProp = RouteProp<RootStackParamList, 'Game'>;
 type GameScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -145,7 +144,13 @@ const GameScreen: React.FC = () => {
       <View style={gameScreenStyles.gameContainer}>
         <GameTimer formattedTime={formatTime(elapsed)} />
 
-        <Surface style={gameScreenStyles.mazeSurface} elevation={4}>
+        <Surface 
+          style={[
+            gameScreenStyles.mazeSurface, 
+            { backgroundColor: theme.surface }
+          ]} 
+          elevation={4}
+        >
           <MazeRenderer
             maze={maze}
             ballPosition={ballPosition}
@@ -156,17 +161,14 @@ const GameScreen: React.FC = () => {
         </Surface>
 
         {gameState === 'playing' && (
-          <Button mode="contained" style={gameScreenStyles.pauseButton} onPress={handlePause}>
+          <Button 
+            mode="contained" 
+            style={[gameScreenStyles.pauseButton, { backgroundColor: theme.primary }]} 
+            labelStyle={{ color: '#fff' }}
+            onPress={handlePause}
+          >
             Pause
           </Button>
-        )}
-
-        {settings.vibrationEnabled && (
-          <GameDebugInfo
-            position={ballPosition}
-            gyroscopeAvailable={gyroscopeAvailable}
-            hapticEnabled={settings.vibrationEnabled}
-          />
         )}
       </View>
 

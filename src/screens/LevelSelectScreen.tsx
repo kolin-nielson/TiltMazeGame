@@ -30,7 +30,7 @@ interface MazeItemProps {
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = width * 0.42;
 const ITEM_HEIGHT = ITEM_WIDTH * 1.2;
-const SCALE = ITEM_WIDTH / 300; // Scale mazes to fit in the grid
+const SCALE = ITEM_WIDTH / 300;
 
 const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -38,7 +38,7 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'custom' | 'default'>('all');
 
-  // Group mazes by difficulty
+
   const [easyMazes, setEasyMazes] = useState<Maze[]>([]);
   const [mediumMazes, setMediumMazes] = useState<Maze[]>([]);
   const [hardMazes, setHardMazes] = useState<Maze[]>([]);

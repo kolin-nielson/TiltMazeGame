@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Button, Card, Surface } from 'react-native-paper';
 import { gameScreenStyles } from '../../styles/GameScreenStyles';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface GameCompletedOverlayProps {
   elapsedTime: string;
@@ -16,19 +17,33 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
   onRestart,
   onExit,
 }) => {
+  const { theme } = useTheme();
+  
   return (
-    <View style={gameScreenStyles.overlay}>
-      <Card style={gameScreenStyles.messageCard} elevation={5}>
+    <View style={[
+      gameScreenStyles.overlay, 
+      { backgroundColor: `${theme.background}CC` } 
+    ]}>
+      <Card 
+        style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]} 
+        elevation={5}
+      >
         <Card.Title
           title="Level Completed!"
           titleVariant="headlineMedium"
-          titleStyle={gameScreenStyles.cardTitle}
+          titleStyle={[gameScreenStyles.cardTitle, { color: theme.text }]}
         />
         <Card.Content style={gameScreenStyles.cardContent}>
-          <Surface style={gameScreenStyles.statsContainer} elevation={3}>
+          <Surface 
+            style={[
+              gameScreenStyles.statsContainer, 
+              { backgroundColor: `${theme.primary}22` }
+            ]} 
+            elevation={3}
+          >
             <View style={gameScreenStyles.statsRow}>
-              <Text style={gameScreenStyles.statLabel}>Time:</Text>
-              <Text style={gameScreenStyles.statValue}>{elapsedTime}</Text>
+              <Text style={[gameScreenStyles.statLabel, { color: theme.text }]}>Time:</Text>
+              <Text style={[gameScreenStyles.statValue, { color: theme.primary }]}>{elapsedTime}</Text>
             </View>
           </Surface>
         </Card.Content>
@@ -36,24 +51,27 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
           <Button
             mode="contained"
             onPress={onNextLevel}
-            style={styles.button}
+            style={[styles.button, { backgroundColor: theme.primary }]}
             contentStyle={styles.buttonContent}
+            labelStyle={{ color: 'white' }}
           >
             Next Level
           </Button>
           <Button
             mode="outlined"
             onPress={onRestart}
-            style={styles.button}
+            style={[styles.button, { borderColor: theme.primary }]}
             contentStyle={styles.buttonContent}
+            labelStyle={{ color: theme.primary }}
           >
             Try Again
           </Button>
           <Button
             mode="outlined"
             onPress={onExit}
-            style={styles.button}
+            style={[styles.button, { borderColor: theme.primary }]}
             contentStyle={styles.buttonContent}
+            labelStyle={{ color: theme.primary }}
           >
             Exit
           </Button>

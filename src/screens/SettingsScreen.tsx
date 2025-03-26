@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -52,13 +52,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View 
+      style={[
+        styles.container, 
+        { 
+          paddingBottom: insets.bottom,
+          backgroundColor: theme.background 
+        }
+      ]}
+    >
       <View style={styles.settingsGroup}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Game Settings</Text>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Game Settings</Text>
 
-        <View style={styles.settingRow}>
+        <View style={[styles.settingRow, { backgroundColor: theme.surface }]}>
           <View style={styles.settingLabelContainer}>
-            <MaterialIcons name="speed" size={24} color={theme.text} style={styles.icon} />
+            <MaterialIcons name="speed" size={24} color={theme.primary} style={styles.icon} />
             <Text style={[styles.settingLabel, { color: theme.text }]}>Sensitivity</Text>
           </View>
           <View style={styles.sliderContainer}>
@@ -79,9 +87,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={styles.settingRow}>
+        <View style={[styles.settingRow, { backgroundColor: theme.surface }]}>
           <View style={styles.settingLabelContainer}>
-            <MaterialIcons name="volume-up" size={24} color={theme.text} style={styles.icon} />
+            <MaterialIcons name="volume-up" size={24} color={theme.primary} style={styles.icon} />
             <Text style={[styles.settingLabel, { color: theme.text }]}>Sound</Text>
           </View>
           <Switch
@@ -93,9 +101,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           />
         </View>
 
-        <View style={styles.settingRow}>
+        <View style={[styles.settingRow, { backgroundColor: theme.surface }]}>
           <View style={styles.settingLabelContainer}>
-            <MaterialIcons name="vibration" size={24} color={theme.text} style={styles.icon} />
+            <MaterialIcons name="vibration" size={24} color={theme.primary} style={styles.icon} />
             <Text style={[styles.settingLabel, { color: theme.text }]}>Vibration</Text>
           </View>
           <Switch
@@ -109,11 +117,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.settingsGroup}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Appearance</Text>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Appearance</Text>
 
-        <TouchableOpacity style={styles.settingRow} onPress={() => navigation.navigate('Theme')}>
+        <TouchableOpacity 
+          style={[styles.settingRow, { backgroundColor: theme.surface }]} 
+          onPress={() => navigation.navigate('Theme')}
+        >
           <View style={styles.settingLabelContainer}>
-            <MaterialIcons name="palette" size={24} color={theme.text} style={styles.icon} />
+            <MaterialIcons name="palette" size={24} color={theme.primary} style={styles.icon} />
             <Text style={[styles.settingLabel, { color: theme.text }]}>Theme</Text>
           </View>
           <View style={styles.valueContainer}>
@@ -131,9 +142,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.settingsGroup}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Data</Text>
+        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Data</Text>
 
-        <TouchableOpacity style={styles.settingRow} onPress={handleResetProgress}>
+        <TouchableOpacity 
+          style={[styles.settingRow, { backgroundColor: theme.surface }]} 
+          onPress={handleResetProgress}
+        >
           <View style={styles.settingLabelContainer}>
             <MaterialIcons
               name="delete-forever"
@@ -162,19 +176,30 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '500',
     marginBottom: 12,
     marginLeft: 8,
+    letterSpacing: 0.1,
+    textTransform: 'uppercase',
   },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 4,
     marginBottom: 8,
+    ...(Platform.OS === 'ios' 
+      ? {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.08,
+          shadowRadius: 2,
+        }
+      : { elevation: 1 }
+    )
   },
   settingLabelContainer: {
     flexDirection: 'row',
@@ -182,9 +207,10 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 16,
+    letterSpacing: 0.15,
   },
   icon: {
-    marginRight: 12,
+    marginRight: 16,
   },
   valueContainer: {
     flexDirection: 'row',
@@ -219,6 +245,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
+    letterSpacing: 0.25,
   },
 });
 

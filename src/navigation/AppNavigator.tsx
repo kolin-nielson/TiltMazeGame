@@ -34,26 +34,53 @@ const AppNavigator: React.FC = () => {
           },
           headerTintColor: '#fff',
           headerTitleStyle: {
-            fontWeight: 'bold',
+            fontWeight: '500',
+            fontSize: 20,
           },
+          headerShadowVisible: false,
           contentStyle: {
             backgroundColor: theme.background,
           },
+          animation: 'slide_from_right',
         }}
       >
-        <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Tilt Maze' }} />
+        <Stack.Screen name="Home" component={HomeScreen} options={{ 
+          title: 'Tilt Maze',
+          headerShown: false, 
+        }} />
         <Stack.Screen
           name="LevelSelect"
           component={LevelSelectScreen}
-          options={{ title: 'Select Level' }}
+          options={{ 
+            title: 'Select Level',
+            headerBackTitle: 'Home',
+          }}
         />
         <Stack.Screen
           name="Game"
           component={GameScreen}
-          options={{ title: 'Playing', headerBackVisible: false }}
+          options={{ 
+            title: 'Playing',
+            headerBackVisible: false,
+            animation: 'fade_from_bottom',
+          }}
         />
-        <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
-        <Stack.Screen name="Theme" component={ThemeScreen} options={{ title: 'Theme Settings' }} />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen} 
+          options={{ 
+            title: 'Settings',
+            headerBackTitle: 'Home',
+          }} 
+        />
+        <Stack.Screen 
+          name="Theme" 
+          component={ThemeScreen} 
+          options={{ 
+            title: 'Theme Settings',
+            headerBackTitle: 'Settings',
+          }} 
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

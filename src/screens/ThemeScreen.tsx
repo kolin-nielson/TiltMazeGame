@@ -6,6 +6,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 import { ThemeColors, ThemeName } from '../types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ThemeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Theme'>;
 
@@ -19,6 +20,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
   const [customColors, setCustomColors] = useState<ThemeColors>({ ...themes.custom });
   const [editingColor, setEditingColor] = useState<keyof ThemeColors | null>(null);
   const [currentColor, setCurrentColor] = useState<string>('');
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     setSelectedTheme(themeName);
@@ -129,8 +131,17 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Choose Theme</Text>
+      <ScrollView 
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingBottom: insets.bottom + 24,
+            paddingHorizontal: 16
+          }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={[styles.sectionTitle, { color: theme.primary, marginTop: 16 }]}>Choose Theme</Text>
 
         <View style={styles.themeOptions}>
           {renderThemeOption('light', 'Light')}
@@ -141,7 +152,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
 
         {selectedTheme === 'custom' && (
           <View style={styles.customizeSection}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Customize Colors</Text>
+            <Text style={[styles.sectionTitle, { color: theme.primary }]}>Customize Colors</Text>
 
             <View style={styles.colorSwatches}>
               {renderColorSwatch('primary', 'Primary')}
@@ -210,36 +221,41 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '500',
     marginBottom: 16,
-    marginTop: 16,
+    letterSpacing: 0.15,
+    textTransform: 'uppercase',
   },
   themeOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
   themeOption: {
     width: '48%',
     marginBottom: 16,
-    borderRadius: 8,
+    borderRadius: 4,
     padding: 8,
     alignItems: 'center',
   },
   themePreview: {
     width: '100%',
     height: 100,
-    borderRadius: 8,
+    borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 8,
   },
   themeLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
+    letterSpacing: 0.1,
   },
   previewHeader: {
     height: 30,
@@ -269,7 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   customizeSection: {
-    marginTop: 16,
+    marginTop: 24,
   },
   colorSwatches: {
     flexDirection: 'row',
@@ -279,17 +295,18 @@ const styles = StyleSheet.create({
   colorSwatch: {
     width: '30%',
     aspectRatio: 1.5,
-    borderRadius: 8,
-    marginBottom: 12,
+    borderRadius: 4,
+    marginBottom: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   swatchLabel: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '500',
+    letterSpacing: 0.4,
   },
   selectedSwatch: {
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -298,22 +315,23 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   colorPickerContainer: {
-    padding: 16,
-    marginTop: 20,
+    padding: 24,
+    marginTop: 24,
     marginBottom: 40,
-    borderRadius: 12,
-    elevation: 5,
+    borderRadius: 8,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: 3,
     minHeight: 400,
   },
   colorTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 16,
     textAlign: 'center',
+    letterSpacing: 0.15,
   },
   colorButtonsContainer: {
     flexDirection: 'row',
@@ -323,13 +341,16 @@ const styles = StyleSheet.create({
   colorButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 20,
+    borderRadius: 4,
     width: '48%',
     alignItems: 'center',
+    elevation: 1,
   },
   colorButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '500',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 });
 

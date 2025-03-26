@@ -27,10 +27,13 @@ export const gameScreenStyles = StyleSheet.create({
     marginBottom: 15,
     alignSelf: 'center',
     padding: 10,
+    borderRadius: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   timerText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -91,16 +94,5 @@ export const gameScreenStyles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-  },
-  debugSurface: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-  },
-  debugText: {
-    fontSize: 12,
   },
 });

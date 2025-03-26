@@ -50,7 +50,6 @@ export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld =>
 
     const world = engine.world;
 
-    // Create ball
     const ball = Matter.Bodies.circle(maze.startPosition.x, maze.startPosition.y, ballRadius, {
       label: 'ball',
       restitution: 0.4,

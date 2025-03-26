@@ -7,6 +7,7 @@ import {
   ViewStyle,
   TextStyle,
   TouchableOpacityProps,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -63,6 +64,7 @@ const Button: React.FC<ButtonProps> = ({
           backgroundColor: theme.primary,
           borderColor: theme.primary,
           borderWidth: 1,
+          ...getShadowStyle(3),
         };
       case 'secondary':
         return {
@@ -70,6 +72,7 @@ const Button: React.FC<ButtonProps> = ({
           backgroundColor: theme.secondary,
           borderColor: theme.secondary,
           borderWidth: 1,
+          ...getShadowStyle(2),
         };
       case 'outline':
         return {
@@ -77,6 +80,7 @@ const Button: React.FC<ButtonProps> = ({
           backgroundColor: 'transparent',
           borderColor: theme.primary,
           borderWidth: 1,
+          ...getShadowStyle(1),
         };
       case 'text':
         return {
@@ -86,6 +90,21 @@ const Button: React.FC<ButtonProps> = ({
         };
       default:
         return baseStyle;
+    }
+  };
+
+  const getShadowStyle = (elevation: number): ViewStyle => {
+    if (Platform.OS === 'ios') {
+      return {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: elevation },
+        shadowOpacity: 0.1 + elevation * 0.03,
+        shadowRadius: elevation,
+      };
+    } else {
+      return {
+        elevation,
+      };
     }
   };
 
@@ -137,7 +156,7 @@ const Button: React.FC<ButtonProps> = ({
       style={[styles.button, getButtonStyle(), getSizeStyle(), containerStyle]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={variant === 'text' ? 0.5 : 0.8}
       {...rest}
     >
       {loading ? (
@@ -156,6 +175,7 @@ const Button: React.FC<ButtonProps> = ({
                 fontSize: getTextSize(),
                 marginLeft: leftIcon ? 8 : 0,
                 marginRight: rightIcon ? 8 : 0,
+                letterSpacing: 0.25,
               },
               textStyle,
             ]}
@@ -174,11 +194,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 4,
   },
   text: {
-    fontWeight: '600',
+    fontWeight: '500',
     textAlign: 'center',
+    textTransform: 'uppercase',
   },
 });
 

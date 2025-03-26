@@ -81,7 +81,6 @@ export const defaultMazes: Maze[] = [
     name: 'Three Barriers',
     difficulty: 'medium',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 0, y: 290, width: 300, height: 10 },

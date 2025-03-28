@@ -7,7 +7,7 @@ interface ThemeContextType {
   theme: ThemeColors;
   themeName: ThemeName;
   setTheme: (name: ThemeName) => void;
-  setCustomTheme: (colors: ThemeColors) => void;
+  setCustomTheme: (colors: Partial<ThemeColors>) => void;
 }
 
 const lightTheme: ThemeColors = {
@@ -115,8 +115,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         if (savedCustomTheme) {
-          setCustomTheme(JSON.parse(savedCustomTheme));
-          themes.custom = JSON.parse(savedCustomTheme);
+          const loadedCustomTheme = JSON.parse(savedCustomTheme);
+          setCustomTheme(loadedCustomTheme);
         }
       } catch (error) {
         console.error('Failed to load theme:', error);
@@ -135,27 +135,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const handleSetCustomTheme = async (colors: ThemeColors) => {
+  const handleSetCustomTheme = async (colors: Partial<ThemeColors>) => {
     const updatedCustomTheme = {
-      ...lightTheme,
+      ...customTheme,
       ...colors,
     };
 
     setCustomTheme(updatedCustomTheme);
-    themes.custom = updatedCustomTheme;
 
-    if (themeName === 'custom') {
-      setThemeName('custom');
-    }
-
-    try {
-      await AsyncStorage.setItem('customTheme', JSON.stringify(updatedCustomTheme));
-    } catch (error) {
-      console.error('Failed to save custom theme:', error);
+    if (themeName !== 'custom') {
+      handleSetTheme('custom');
+    } else {
+      try {
+        await AsyncStorage.setItem('customTheme', JSON.stringify(updatedCustomTheme));
+      } catch (error) {
+        console.error('Failed to save custom theme:', error);
+      }
     }
   };
 
-  const currentTheme = themeName === 'custom' ? customTheme : themes[themeName];
+  const currentTheme = themeName === 'custom' ? customTheme : (themes[themeName] || lightTheme);
 
   return (
     <ThemeContext.Provider

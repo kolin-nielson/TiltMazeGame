@@ -43,9 +43,9 @@ export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld =>
     const engine = Matter.Engine.create({
       gravity: { x: 0, y: 0, scale: 1 },
       enableSleeping: false,
-      constraintIterations: 10,
-      positionIterations: 12,
-      velocityIterations: 12,
+      constraintIterations: 6,
+      positionIterations: 8,
+      velocityIterations: 8,
     });
 
     const world = engine.world;

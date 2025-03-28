@@ -26,7 +26,7 @@ export const useGyroscope = (enabled = true) => {
       setAvailable(isGyroAvailable);
 
       if (isGyroAvailable && enabled) {
-        Gyroscope.setUpdateInterval(16);
+        Gyroscope.setUpdateInterval(32);
 
         let prevData = { x: 0, y: 0, z: 0 };
 

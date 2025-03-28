@@ -121,6 +121,9 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
   };
 
   const isLightColor = (color: string): boolean => {
+    if (typeof color !== 'string' || !color.startsWith('#') || color.length !== 7) {
+      return false;
+    }
     const hex = color.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -38,23 +38,19 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'custom' | 'default'>('all');
 
-
-  const [easyMazes, setEasyMazes] = useState<Maze[]>([]);
-  const [mediumMazes, setMediumMazes] = useState<Maze[]>([]);
-  const [hardMazes, setHardMazes] = useState<Maze[]>([]);
-  const [customMazes, setCustomMazes] = useState<Maze[]>([]);
-
-  useEffect(() => {
-    const filteredMazes = mazes.filter(maze => {
+  const filteredMazeData = useMemo(() => {
+    const filtered = mazes.filter(maze => {
       if (filter === 'custom') return !maze.id.includes('-');
       if (filter === 'default') return maze.id.includes('-');
       return true;
     });
 
-    setEasyMazes(filteredMazes.filter(maze => maze.difficulty === 'easy'));
-    setMediumMazes(filteredMazes.filter(maze => maze.difficulty === 'medium'));
-    setHardMazes(filteredMazes.filter(maze => maze.difficulty === 'hard'));
-    setCustomMazes(filteredMazes.filter(maze => !maze.id.includes('-')));
+    return {
+      easy: filtered.filter(maze => maze.difficulty === 'easy'),
+      medium: filtered.filter(maze => maze.difficulty === 'medium'),
+      hard: filtered.filter(maze => maze.difficulty === 'hard'),
+      custom: filtered.filter(maze => !maze.id.includes('-')),
+    };
   }, [mazes, filter]);
 
   const renderMazeItem = ({ item }: MazeItemProps) => {
@@ -101,48 +97,38 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
     </View>
   );
 
+  const filterOptions: { value: 'all' | 'custom' | 'default'; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'default', label: 'Default' },
+    { value: 'custom', label: 'Custom' },
+  ];
+
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterButton, filter === 'all' && { backgroundColor: theme.primary }]}
-          onPress={() => setFilter('all')}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              filter === 'all' ? { color: '#fff' } : { color: theme.text },
-            ]}
-          >
-            All
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, filter === 'default' && { backgroundColor: theme.primary }]}
-          onPress={() => setFilter('default')}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              filter === 'default' ? { color: '#fff' } : { color: theme.text },
-            ]}
-          >
-            Default
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterButton, filter === 'custom' && { backgroundColor: theme.primary }]}
-          onPress={() => setFilter('custom')}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              filter === 'custom' ? { color: '#fff' } : { color: theme.text },
-            ]}
-          >
-            Custom
-          </Text>
-        </TouchableOpacity>
+        {filterOptions.map(option => {
+          const isActive = filter === option.value;
+          return (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.filterButton,
+                { borderColor: isActive ? theme.primary : theme.text },
+                isActive && { backgroundColor: theme.primary },
+              ]}
+              onPress={() => setFilter(option.value)}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  isActive ? { color: '#fff' } : { color: theme.text },
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <FlatList
@@ -154,13 +140,13 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
           <>
             {(filter === 'all' || filter === 'default') && (
               <>
-                {easyMazes.length > 0 && (
+                {filteredMazeData.easy.length > 0 && (
                   <>
-                    {renderSectionHeader('Easy', easyMazes.length)}
+                    {renderSectionHeader('Easy', filteredMazeData.easy.length)}
                     <FlatList
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      data={easyMazes}
+                      data={filteredMazeData.easy}
                       keyExtractor={(item: Maze) => item.id}
                       renderItem={renderMazeItem}
                       contentContainerStyle={styles.horizontalList}
@@ -168,13 +154,13 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
                   </>
                 )}
 
-                {mediumMazes.length > 0 && (
+                {filteredMazeData.medium.length > 0 && (
                   <>
-                    {renderSectionHeader('Medium', mediumMazes.length)}
+                    {renderSectionHeader('Medium', filteredMazeData.medium.length)}
                     <FlatList
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      data={mediumMazes}
+                      data={filteredMazeData.medium}
                       keyExtractor={(item: Maze) => item.id}
                       renderItem={renderMazeItem}
                       contentContainerStyle={styles.horizontalList}
@@ -182,13 +168,13 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
                   </>
                 )}
 
-                {hardMazes.length > 0 && (
+                {filteredMazeData.hard.length > 0 && (
                   <>
-                    {renderSectionHeader('Hard', hardMazes.length)}
+                    {renderSectionHeader('Hard', filteredMazeData.hard.length)}
                     <FlatList
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      data={hardMazes}
+                      data={filteredMazeData.hard}
                       keyExtractor={(item: Maze) => item.id}
                       renderItem={renderMazeItem}
                       contentContainerStyle={styles.horizontalList}
@@ -198,11 +184,11 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
               </>
             )}
 
-            {(filter === 'all' || filter === 'custom') && customMazes.length > 0 && (
+            {(filter === 'all' || filter === 'custom') && filteredMazeData.custom.length > 0 && (
               <>
-                {renderSectionHeader('Custom', customMazes.length)}
+                {renderSectionHeader('Custom', filteredMazeData.custom.length)}
                 <View style={styles.customMazeGrid}>
-                  {customMazes.map(maze => (
+                  {filteredMazeData.custom.map(maze => (
                     <View key={maze.id} style={styles.gridItem}>
                       {renderMazeItem({ item: maze })}
                     </View>
@@ -211,7 +197,7 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
               </>
             )}
 
-            {filter === 'custom' && customMazes.length === 0 && (
+            {filter === 'custom' && filteredMazeData.custom.length === 0 && (
               <View style={styles.emptyState}>
                 <MaterialIcons
                   name="grid-off"
@@ -245,6 +231,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 16,
     marginHorizontal: 4,
+    borderWidth: 1,
   },
   filterText: {
     fontWeight: '500',
@@ -298,7 +285,6 @@ const styles = StyleSheet.create({
   },
   bestTimeText: {
     fontSize: 12,
-    color: '#888',
     marginLeft: 4,
   },
   customMazeGrid: {

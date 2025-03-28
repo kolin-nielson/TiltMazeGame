@@ -9,6 +9,46 @@ import { useMazes } from '../contexts/MazeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
+// Define types for SettingItem props
+type SettingItemProps = {
+  label: string;
+  iconName: keyof typeof MaterialIcons.glyphMap;
+  iconColor?: string;
+  labelColor?: string;
+  onPress?: () => void;
+  children?: React.ReactNode;
+};
+
+// Define SettingItem component
+const SettingItem: React.FC<SettingItemProps> = ({
+  label,
+  iconName,
+  iconColor,
+  labelColor,
+  onPress,
+  children,
+}) => {
+  const { theme } = useTheme();
+  const itemIconColor = iconColor || theme.primary;
+  const itemLabelColor = labelColor || theme.text;
+
+  const Content = (
+    <View style={[styles.settingRow, { backgroundColor: theme.surface }]}>
+      <View style={styles.settingLabelContainer}>
+        <MaterialIcons name={iconName} size={24} color={itemIconColor} style={styles.icon} />
+        <Text style={[styles.settingLabel, { color: itemLabelColor }]}>{label}</Text>
+      </View>
+      {children}
+    </View>
+  );
+
+  if (onPress) {
+    return <TouchableOpacity onPress={onPress}>{Content}</TouchableOpacity>;
+  }
+
+  return Content;
+};
+
 type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
 interface SettingsScreenProps {
@@ -64,11 +104,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       <View style={styles.settingsGroup}>
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>Game Settings</Text>
 
-        <View style={[styles.settingRow, { backgroundColor: theme.surface }]}>
-          <View style={styles.settingLabelContainer}>
-            <MaterialIcons name="speed" size={24} color={theme.primary} style={styles.icon} />
-            <Text style={[styles.settingLabel, { color: theme.text }]}>Sensitivity</Text>
-          </View>
+        {/* Use SettingItem for Sensitivity */}
+        <SettingItem label="Sensitivity" iconName="speed">
           <View style={styles.sliderContainer}>
             <Slider
               style={styles.slider}
@@ -85,13 +122,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               {settings.sensitivity.toFixed(1)}x
             </Text>
           </View>
-        </View>
+        </SettingItem>
 
-        <View style={[styles.settingRow, { backgroundColor: theme.surface }]}>
-          <View style={styles.settingLabelContainer}>
-            <MaterialIcons name="volume-up" size={24} color={theme.primary} style={styles.icon} />
-            <Text style={[styles.settingLabel, { color: theme.text }]}>Sound</Text>
-          </View>
+        {/* Use SettingItem for Sound */}
+        <SettingItem label="Sound" iconName="volume-up">
           <Switch
             trackColor={{ false: '#767577', true: theme.primary + '80' }}
             thumbColor={settings.soundEnabled ? theme.primary : '#f4f3f4'}
@@ -99,13 +133,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onValueChange={handleSoundToggle}
             value={settings.soundEnabled}
           />
-        </View>
+        </SettingItem>
 
-        <View style={[styles.settingRow, { backgroundColor: theme.surface }]}>
-          <View style={styles.settingLabelContainer}>
-            <MaterialIcons name="vibration" size={24} color={theme.primary} style={styles.icon} />
-            <Text style={[styles.settingLabel, { color: theme.text }]}>Vibration</Text>
-          </View>
+        {/* Use SettingItem for Vibration */}
+        <SettingItem label="Vibration" iconName="vibration">
           <Switch
             trackColor={{ false: '#767577', true: theme.primary + '80' }}
             thumbColor={settings.vibrationEnabled ? theme.primary : '#f4f3f4'}
@@ -113,20 +144,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             onValueChange={handleVibrationToggle}
             value={settings.vibrationEnabled}
           />
-        </View>
+        </SettingItem>
       </View>
 
       <View style={styles.settingsGroup}>
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>Appearance</Text>
 
-        <TouchableOpacity 
-          style={[styles.settingRow, { backgroundColor: theme.surface }]} 
+        {/* Use SettingItem for Theme */}
+        <SettingItem 
+          label="Theme" 
+          iconName="palette"
           onPress={() => navigation.navigate('Theme')}
         >
-          <View style={styles.settingLabelContainer}>
-            <MaterialIcons name="palette" size={24} color={theme.primary} style={styles.icon} />
-            <Text style={[styles.settingLabel, { color: theme.text }]}>Theme</Text>
-          </View>
           <View style={styles.valueContainer}>
             <Text style={[styles.settingValue, { color: theme.text }]}>
               {themeName.charAt(0).toUpperCase() + themeName.slice(1)}
@@ -138,26 +167,22 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               style={styles.chevron}
             />
           </View>
-        </TouchableOpacity>
+        </SettingItem>
       </View>
 
       <View style={styles.settingsGroup}>
         <Text style={[styles.sectionTitle, { color: theme.primary }]}>Data</Text>
 
-        <TouchableOpacity 
-          style={[styles.settingRow, { backgroundColor: theme.surface }]} 
+        {/* Use SettingItem for Reset Progress */}
+        <SettingItem 
+          label="Reset Progress"
+          iconName="delete-forever"
+          iconColor={theme.error}
+          labelColor={theme.error}
           onPress={handleResetProgress}
         >
-          <View style={styles.settingLabelContainer}>
-            <MaterialIcons
-              name="delete-forever"
-              size={24}
-              color={theme.error}
-              style={styles.icon}
-            />
-            <Text style={[styles.settingLabel, { color: theme.error }]}>Reset Progress</Text>
-          </View>
-        </TouchableOpacity>
+          {/* No control element needed here */}
+        </SettingItem>
       </View>
 
       <View style={styles.footer}>

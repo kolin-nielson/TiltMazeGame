@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 interface UseGameTimerReturn {
   elapsed: number;
@@ -10,27 +10,36 @@ interface UseGameTimerReturn {
 
 export const useGameTimer = (): UseGameTimerReturn => {
   const [elapsed, setElapsed] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const requestRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const isRunningRef = useRef<boolean>(false);
+
+  const tick = useCallback(() => {
+    if (!isRunningRef.current || !startTimeRef.current) {
+      return;
+    }
+    setElapsed(performance.now() - startTimeRef.current);
+    requestRef.current = requestAnimationFrame(tick);
+  }, []);
 
   const startTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+    if (isRunningRef.current) {
+      return;
     }
 
-    startTimeRef.current = Date.now() - elapsed;
-
-    timerRef.current = setInterval(() => {
-      if (startTimeRef.current) {
-        setElapsed(Date.now() - startTimeRef.current);
-      }
-    }, 100);
-  }, [elapsed]);
+    startTimeRef.current = performance.now() - elapsed;
+    isRunningRef.current = true;
+    requestRef.current = requestAnimationFrame(tick);
+  }, [elapsed, tick]);
 
   const stopTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+    if (requestRef.current) {
+      cancelAnimationFrame(requestRef.current);
+      requestRef.current = null;
+    }
+    isRunningRef.current = false;
+    if (startTimeRef.current) {
+      setElapsed(performance.now() - startTimeRef.current);
     }
   }, []);
 

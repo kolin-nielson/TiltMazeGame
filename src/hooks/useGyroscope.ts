@@ -3,9 +3,9 @@ import { Platform } from 'react-native';
 import { Gyroscope } from 'expo-sensors';
 import { useSettings } from '../contexts/SettingsContext';
 
-const SMOOTHING_FACTOR = 0.8;
-const BASE_SENSITIVITY = 4.0;
-const HORIZONTAL_BOOST = 1.2;
+const SMOOTHING_FACTOR = 0.9;
+const BASE_SENSITIVITY = 2.5;
+const HORIZONTAL_BOOST = 1.0;
 
 interface GyroscopeData {
   x: number;
@@ -26,7 +26,7 @@ export const useGyroscope = (enabled = true) => {
       setAvailable(isGyroAvailable);
 
       if (isGyroAvailable && enabled) {
-        Gyroscope.setUpdateInterval(32);
+        Gyroscope.setUpdateInterval(60);
 
         let prevData = { x: 0, y: 0, z: 0 };
 
@@ -40,6 +40,18 @@ export const useGyroscope = (enabled = true) => {
               z: gyroData.z,
             };
           }
+
+          const deadZone = 0.02;
+          if (Math.abs(adjustedData.x) < deadZone) adjustedData.x = 0;
+          if (Math.abs(adjustedData.y) < deadZone) adjustedData.y = 0;
+
+          const applyResponseCurve = (value: number) => {
+            const sign = Math.sign(value);
+            return sign * Math.pow(Math.abs(value), 1.5);
+          };
+          
+          adjustedData.x = applyResponseCurve(adjustedData.x);
+          adjustedData.y = applyResponseCurve(adjustedData.y);
 
           const smoothedData = {
             x: prevData.x * SMOOTHING_FACTOR + adjustedData.x * (1 - SMOOTHING_FACTOR),

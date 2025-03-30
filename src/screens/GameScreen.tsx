@@ -49,8 +49,8 @@ const GameScreen: React.FC = () => {
   const physicsOptions = {
     width,
     height,
-    gravityScale: 0.012,
-    ballRadius: 15,
+    gravityScale: 0.015,
+    ballRadius: 7,
   };
 
   const {
@@ -154,7 +154,7 @@ const GameScreen: React.FC = () => {
           <MazeRenderer
             maze={maze}
             ballPosition={ballPosition}
-            ballRadius={15}
+            ballRadius={7}
             paused={gameState !== 'playing'}
             scale={Math.min(width, height) / 440}
           />
@@ -171,7 +171,7 @@ const GameScreen: React.FC = () => {
               }
             ]} 
             labelStyle={{ 
-              color: theme.onPrimary || '#FFFFFF',
+              color: theme.onPrimary,
               fontWeight: '500',
               letterSpacing: 1.25,
               textTransform: 'uppercase'

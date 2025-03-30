@@ -18,7 +18,7 @@ export const GameTimer: React.FC<GameTimerProps> = ({ formattedTime }) => {
         { 
           backgroundColor: theme.surface,
           elevation: 1,
-          shadowColor: '#000',
+          shadowColor: theme.onBackground,
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.18,
           shadowRadius: 1.0,

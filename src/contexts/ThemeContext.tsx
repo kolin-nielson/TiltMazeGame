@@ -37,29 +37,29 @@ const lightTheme: ThemeColors = {
 };
 
 const darkTheme: ThemeColors = {
-  primary: '#BB86FC',            // Material purple A200
-  onPrimary: '#000000',          // Black text on primary
-  primaryContainer: '#4F378A',   // Medium purple container
-  onPrimaryContainer: '#EADDFF', // Light text on dark containers
-  secondary: '#03DAC6',          // Material teal A700
-  onSecondary: '#000000',        // Black text on secondary
-  secondaryContainer: '#00413B', // Dark teal container
-  onSecondaryContainer: '#70F7EE',// Light text on dark container
-  tertiary: '#F2B8BB',          // Light tertiary for dark theme
-  onTertiary: '#5E1114',         // Dark text on light tertiary
-  background: '#121212',         // Material dark background
-  onBackground: '#FFFFFFDE',     // White text with 87% opacity
-  surface: '#1E1E1E',            // Material dark surface
-  onSurface: '#FFFFFFDE',        // White text with 87% opacity
-  surfaceVariant: '#49454E',     // Dark variant surface
-  onSurfaceVariant: '#CAC4CF',   // Light text on dark surface variant
-  outline: '#948F99',            // Light outline for dark theme
-  error: '#CF6679',              // Material error color for dark theme
-  onError: '#000000',            // Black text on error
-  success: '#4CAF50',            // Material green 500
-  walls: '#BBBBBB',              // Light grey for walls
-  ball: '#03DAC6',               // Material teal A700
-  goal: '#BB86FC',               // Material purple A200
+  primary: '#BB86FC',
+  onPrimary: '#FFFFFF',
+  primaryContainer: '#4F378A',
+  onPrimaryContainer: '#EADDFF',
+  secondary: '#03DAC6',
+  onSecondary: '#FFFFFF',
+  secondaryContainer: '#00413B',
+  onSecondaryContainer: '#70F7EE',
+  tertiary: '#F2B8BB',
+  onTertiary: '#FFFFFF',
+  background: '#121212',
+  onBackground: '#FFFFFFDE',
+  surface: '#1E1E1E',
+  onSurface: '#FFFFFFDE',
+  surfaceVariant: '#49454E',
+  onSurfaceVariant: '#CAC4CF',
+  outline: '#948F99',
+  error: '#CF6679',
+  onError: '#FFFFFF',
+  success: '#4CAF50',
+  walls: '#BBBBBB',
+  ball: '#03DAC6',
+  goal: '#BB86FC',
 };
 
 const blueTheme: ThemeColors = {

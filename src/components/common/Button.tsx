@@ -96,7 +96,7 @@ const Button: React.FC<ButtonProps> = ({
   const getShadowStyle = (elevation: number): ViewStyle => {
     if (Platform.OS === 'ios') {
       return {
-        shadowColor: '#000',
+        shadowColor: theme.onBackground,
         shadowOffset: { width: 0, height: elevation },
         shadowOpacity: 0.1 + elevation * 0.03,
         shadowRadius: elevation,
@@ -135,7 +135,7 @@ const Button: React.FC<ButtonProps> = ({
       case 'text':
         return theme.primary;
       default:
-        return '#ffffff';
+        return theme.onPrimary;
     }
   };
 
@@ -161,7 +161,7 @@ const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={loadingColor || (variant === 'outline' ? theme.primary : '#ffffff')}
+          color={loadingColor || (variant === 'outline' ? theme.primary : theme.onPrimary)}
           size="small"
         />
       ) : (

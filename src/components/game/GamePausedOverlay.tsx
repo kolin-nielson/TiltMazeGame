@@ -29,7 +29,7 @@ export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
         <Card.Title
           title="Game Paused"
           titleVariant="titleLarge"
-          titleStyle={[gameScreenStyles.cardTitle, { color: theme.onSurface || '#000000DE' }]}
+          titleStyle={[gameScreenStyles.cardTitle, { color: theme.onSurface }]}
         />
         <Card.Actions style={gameScreenStyles.cardActions}>
           <Button
@@ -37,7 +37,7 @@ export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
             onPress={onResume}
             style={[styles.button, { backgroundColor: theme.primary }]}
             contentStyle={styles.buttonContent}
-            labelStyle={{ color: theme.onPrimary || '#FFFFFF' }}
+            labelStyle={{ color: theme.onPrimary }}
           >
             Resume
           </Button>

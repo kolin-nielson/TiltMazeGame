@@ -29,10 +29,10 @@ export const GameReadyOverlay: React.FC<GameReadyOverlayProps> = ({
         <Card.Title
           title={mazeName}
           titleVariant="titleLarge"
-          titleStyle={[gameScreenStyles.cardTitle, { color: theme.onSurface || '#000000DE' }]}
+          titleStyle={[gameScreenStyles.cardTitle, { color: theme.onSurface }]}
         />
         <Card.Content style={gameScreenStyles.cardContent}>
-          <Text style={[gameScreenStyles.instructions, { color: theme.onSurface || '#000000DE', opacity: 0.87 }]}>
+          <Text style={[gameScreenStyles.instructions, { color: theme.onSurface, opacity: 0.87 }]}>
             Tilt your device to move the ball to the goal!
           </Text>
         </Card.Content>
@@ -42,7 +42,7 @@ export const GameReadyOverlay: React.FC<GameReadyOverlayProps> = ({
             onPress={onStart}
             style={[styles.button, { backgroundColor: theme.primary }]}
             contentStyle={styles.buttonContent}
-            labelStyle={{ color: theme.onPrimary || '#FFFFFF' }}
+            labelStyle={{ color: theme.onPrimary }}
           >
             Start
           </Button>

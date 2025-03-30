@@ -46,7 +46,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             backgroundColor: theme.surface,
             ...(Platform.OS === 'ios' 
               ? {
-                  shadowColor: '#000',
+                  shadowColor: theme.onBackground,
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.2,
                   shadowRadius: 2,
@@ -71,11 +71,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               backgroundColor: theme.primary,
               ...(Platform.OS === 'ios' 
                 ? {
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 4.65,
-                  }
+                  shadowColor: theme.onBackground,
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4.65,
+                }
                 : { elevation: 3 }
               )
             }
@@ -95,11 +95,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               borderColor: theme.outline || theme.primary,
               ...(Platform.OS === 'ios' 
                 ? {
-                    shadowColor: 'transparent',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0,
-                    shadowRadius: 0,
-                  }
+                  shadowColor: theme.onBackground,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0,
+                  shadowRadius: 0,
+                }
                 : { elevation: 0 }
               )
             }

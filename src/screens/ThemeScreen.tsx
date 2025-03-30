@@ -60,7 +60,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
 
   const startEditingColor = (colorKey: keyof ThemeColors) => {
     setEditingColor(colorKey);
-    setCurrentColor(customColors[colorKey]);
+    setCurrentColor(customColors[colorKey] || '');
   };
 
   const cancelColorEditing = () => {
@@ -93,17 +93,18 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
             <View style={[styles.previewAccent, { backgroundColor: themeColors.secondary }]} />
           </View>
         </View>
-        <Text style={[styles.themeLabel, { color: theme.text }]}>{label}</Text>
+        <Text style={[styles.themeLabel, { color: theme.onSurface }]}>{label}</Text>
       </TouchableOpacity>
     );
   };
 
   const renderColorSwatch = (colorKey: keyof ThemeColors, label: string) => {
+    const color = customColors[colorKey] || '';
     return (
       <TouchableOpacity
         style={[
           styles.colorSwatch,
-          { backgroundColor: customColors[colorKey] },
+          { backgroundColor: color },
           editingColor === colorKey && styles.selectedSwatch,
         ]}
         onPress={() => startEditingColor(colorKey)}
@@ -111,7 +112,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
         <Text
           style={[
             styles.swatchLabel,
-            { color: isLightColor(customColors[colorKey]) ? '#000' : '#fff' },
+            { color: isLightColor(color) ? theme.onBackground : theme.onPrimary },
           ]}
         >
           {label}
@@ -162,7 +163,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
               {renderColorSwatch('secondary', 'Secondary')}
               {renderColorSwatch('background', 'Background')}
               {renderColorSwatch('surface', 'Surface')}
-              {renderColorSwatch('text', 'Text')}
+              {renderColorSwatch('onSurface', 'Text')}
               {renderColorSwatch('error', 'Error')}
               {renderColorSwatch('success', 'Success')}
               {renderColorSwatch('walls', 'Walls')}
@@ -171,24 +172,30 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
             </View>
 
             {editingColor && (
-              <View style={[styles.colorPickerContainer, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.colorTitle, { color: theme.text }]}>
+              <View style={[
+                styles.colorPickerContainer, 
+                { 
+                  backgroundColor: theme.surface,
+                  shadowColor: theme.onBackground 
+                }
+              ]}>
+                <Text style={[styles.colorTitle, { color: theme.onSurface }]}>
                   {editingColor.charAt(0).toUpperCase() + editingColor.slice(1)}:{' '}
-                  {currentColor || customColors[editingColor]}
+                  {currentColor || customColors[editingColor] || ''}
                 </Text>
                 <View
                   style={{
                     height: 300,
                     width: '100%',
                     borderWidth: 1,
-                    borderColor: 'rgba(0,0,0,0.1)',
+                    borderColor: theme.outline || 'rgba(0,0,0,0.1)',
                     borderRadius: 8,
                     overflow: 'hidden',
                     padding: 5,
                   }}
                 >
                   <ColorPicker
-                    color={currentColor || customColors[editingColor]}
+                    color={currentColor || customColors[editingColor] || ''}
                     onColorChange={handleColorChange}
                     thumbSize={40}
                     sliderSize={40}
@@ -203,13 +210,13 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
                     style={[styles.colorButton, { backgroundColor: theme.error }]}
                     onPress={cancelColorEditing}
                   >
-                    <Text style={styles.colorButtonText}>Cancel</Text>
+                    <Text style={[styles.colorButtonText, { color: theme.onError }]}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.colorButton, { backgroundColor: theme.primary }]}
                     onPress={applyColorChange}
                   >
-                    <Text style={styles.colorButtonText}>Apply</Text>
+                    <Text style={[styles.colorButtonText, { color: theme.onPrimary }]}>Apply</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -310,11 +317,7 @@ const styles = StyleSheet.create({
   },
   selectedSwatch: {
     borderWidth: 2,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
     elevation: 5,
   },
   colorPickerContainer: {
@@ -323,7 +326,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     borderRadius: 8,
     elevation: 2,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
@@ -350,7 +352,6 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   colorButtonText: {
-    color: '#fff',
     fontWeight: '500',
     letterSpacing: 0.5,
     textTransform: 'uppercase',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -32,35 +33,34 @@ const ITEM_WIDTH = width * 0.42;
 const ITEM_HEIGHT = ITEM_WIDTH * 1.2;
 const SCALE = ITEM_WIDTH / 300;
 
+const isAndroid = Platform.OS === 'android';
+const INITIAL_NUM_TO_RENDER = isAndroid ? 3 : 5;
+const WINDOW_SIZE = isAndroid ? 3 : 5;
+
 const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
   const { mazes, userProgress } = useMazes();
   const insets = useSafeAreaInsets();
-  const [filter, setFilter] = useState<'all' | 'custom' | 'default'>('all');
 
-  const filteredMazeData = useMemo(() => {
-    const filtered = mazes.filter(maze => {
-      if (filter === 'custom') return !maze.id.includes('-');
-      if (filter === 'default') return maze.id.includes('-');
-      return true;
-    });
-
+  const mazeData = useMemo(() => {
     return {
-      easy: filtered.filter(maze => maze.difficulty === 'easy'),
-      medium: filtered.filter(maze => maze.difficulty === 'medium'),
-      hard: filtered.filter(maze => maze.difficulty === 'hard'),
-      custom: filtered.filter(maze => !maze.id.includes('-')),
+      easy: mazes.filter(maze => maze.difficulty === 'easy'),
+      medium: mazes.filter(maze => maze.difficulty === 'medium'),
+      hard: mazes.filter(maze => maze.difficulty === 'hard'),
     };
-  }, [mazes, filter]);
+  }, [mazes]);
 
-  const renderMazeItem = ({ item }: MazeItemProps) => {
+  const renderMazeItem = useCallback(({ item }: MazeItemProps) => {
     const progress = userProgress.levels[item.id];
     const isCompleted = progress && progress.completedCount > 0;
     const bestTime = progress?.bestTime;
 
     return (
       <TouchableOpacity
-        style={[styles.mazeItem, { backgroundColor: theme.surface }]}
+        style={[styles.mazeItem, { 
+          backgroundColor: theme.surface,
+          shadowColor: theme.onBackground,
+        }]}
         onPress={() => navigation.navigate('Game', { mazeId: item.id })}
       >
         <View style={styles.mazePreview}>
@@ -74,141 +74,109 @@ const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({ navigation }) => 
         </View>
 
         <View style={styles.mazeInfo}>
-          <Text style={[styles.mazeName, { color: theme.text }]} numberOfLines={1}>
+          <Text style={[styles.mazeName, { color: theme.onSurface }]} numberOfLines={1}>
             {item.name}
           </Text>
 
           {isCompleted && (
             <View style={styles.completedBadge}>
-              <MaterialIcons name="star" size={16} color="#FFD700" />
-              {bestTime && <Text style={styles.bestTimeText}>{(bestTime / 1000).toFixed(1)}s</Text>}
+              <MaterialIcons name="star" size={16} color={theme.secondary} />
+              {bestTime && <Text style={[styles.bestTimeText, { color: theme.onSurface }]}>{(bestTime / 1000).toFixed(1)}s</Text>}
             </View>
           )}
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [navigation, theme.surface, theme.onSurface, theme.onBackground, theme.secondary, userProgress.levels]);
 
-  const renderSectionHeader = (title: string, count: number) => (
+  const renderSectionHeader = useCallback((title: string, count: number) => (
     <View style={styles.sectionHeader}>
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>
+      <Text style={[styles.sectionTitle, { color: theme.onSurface }]}>
         {title} ({count})
       </Text>
     </View>
-  );
+  ), [theme.onSurface]);
 
-  const filterOptions: { value: 'all' | 'custom' | 'default'; label: string }[] = [
-    { value: 'all', label: 'All' },
-    { value: 'default', label: 'Default' },
-    { value: 'custom', label: 'Custom' },
-  ];
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: ITEM_WIDTH + 12,
+    offset: (ITEM_WIDTH + 12) * index,
+    index,
+  }), []);
+
+  const containerStyle = useMemo(() => [
+    styles.container, 
+    { 
+      paddingBottom: insets.bottom,
+      backgroundColor: theme.background
+    }
+  ], [insets.bottom, theme.background]);
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <View style={styles.filterContainer}>
-        {filterOptions.map(option => {
-          const isActive = filter === option.value;
-          return (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.filterButton,
-                { borderColor: isActive ? theme.primary : theme.text },
-                isActive && { backgroundColor: theme.primary },
-              ]}
-              onPress={() => setFilter(option.value)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  isActive ? { color: '#fff' } : { color: theme.text },
-                ]}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
+    <View style={containerStyle}>
       <FlatList
         showsVerticalScrollIndicator={false}
         style={styles.list}
         data={[]}
         renderItem={null}
+        initialNumToRender={1} 
+        removeClippedSubviews={isAndroid}
         ListHeaderComponent={() => (
           <>
-            {(filter === 'all' || filter === 'default') && (
+            {mazeData.easy.length > 0 && (
               <>
-                {filteredMazeData.easy.length > 0 && (
-                  <>
-                    {renderSectionHeader('Easy', filteredMazeData.easy.length)}
-                    <FlatList
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      data={filteredMazeData.easy}
-                      keyExtractor={(item: Maze) => item.id}
-                      renderItem={renderMazeItem}
-                      contentContainerStyle={styles.horizontalList}
-                    />
-                  </>
-                )}
-
-                {filteredMazeData.medium.length > 0 && (
-                  <>
-                    {renderSectionHeader('Medium', filteredMazeData.medium.length)}
-                    <FlatList
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      data={filteredMazeData.medium}
-                      keyExtractor={(item: Maze) => item.id}
-                      renderItem={renderMazeItem}
-                      contentContainerStyle={styles.horizontalList}
-                    />
-                  </>
-                )}
-
-                {filteredMazeData.hard.length > 0 && (
-                  <>
-                    {renderSectionHeader('Hard', filteredMazeData.hard.length)}
-                    <FlatList
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      data={filteredMazeData.hard}
-                      keyExtractor={(item: Maze) => item.id}
-                      renderItem={renderMazeItem}
-                      contentContainerStyle={styles.horizontalList}
-                    />
-                  </>
-                )}
-              </>
-            )}
-
-            {(filter === 'all' || filter === 'custom') && filteredMazeData.custom.length > 0 && (
-              <>
-                {renderSectionHeader('Custom', filteredMazeData.custom.length)}
-                <View style={styles.customMazeGrid}>
-                  {filteredMazeData.custom.map(maze => (
-                    <View key={maze.id} style={styles.gridItem}>
-                      {renderMazeItem({ item: maze })}
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-
-            {filter === 'custom' && filteredMazeData.custom.length === 0 && (
-              <View style={styles.emptyState}>
-                <MaterialIcons
-                  name="grid-off"
-                  size={50}
-                  color={theme.text}
-                  style={{ opacity: 0.5 }}
+                {renderSectionHeader('Easy', mazeData.easy.length)}
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={mazeData.easy}
+                  keyExtractor={(item: Maze) => item.id}
+                  renderItem={renderMazeItem}
+                  contentContainerStyle={styles.horizontalList}
+                  initialNumToRender={INITIAL_NUM_TO_RENDER}
+                  maxToRenderPerBatch={INITIAL_NUM_TO_RENDER}
+                  windowSize={WINDOW_SIZE}
+                  removeClippedSubviews={isAndroid}
+                  getItemLayout={getItemLayout}
                 />
-                <Text style={[styles.emptyStateText, { color: theme.text }]}>
-                  No custom mazes yet
-                </Text>
-              </View>
+              </>
+            )}
+
+            {mazeData.medium.length > 0 && (
+              <>
+                {renderSectionHeader('Medium', mazeData.medium.length)}
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={mazeData.medium}
+                  keyExtractor={(item: Maze) => item.id}
+                  renderItem={renderMazeItem}
+                  contentContainerStyle={styles.horizontalList}
+                  initialNumToRender={INITIAL_NUM_TO_RENDER}
+                  maxToRenderPerBatch={INITIAL_NUM_TO_RENDER}
+                  windowSize={WINDOW_SIZE}
+                  removeClippedSubviews={isAndroid}
+                  getItemLayout={getItemLayout}
+                />
+              </>
+            )}
+
+            {mazeData.hard.length > 0 && (
+              <>
+                {renderSectionHeader('Hard', mazeData.hard.length)}
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={mazeData.hard}
+                  keyExtractor={(item: Maze) => item.id}
+                  renderItem={renderMazeItem}
+                  contentContainerStyle={styles.horizontalList}
+                  initialNumToRender={INITIAL_NUM_TO_RENDER}
+                  maxToRenderPerBatch={INITIAL_NUM_TO_RENDER}
+                  windowSize={WINDOW_SIZE}
+                  removeClippedSubviews={isAndroid}
+                  getItemLayout={getItemLayout}
+                />
+              </>
             )}
           </>
         )}
@@ -221,23 +189,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  filterContainer: {
-    flexDirection: 'row',
-    padding: 16,
-    justifyContent: 'center',
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    marginHorizontal: 4,
-    borderWidth: 1,
-  },
-  filterText: {
-    fontWeight: '500',
-  },
   list: {
     flex: 1,
+    paddingTop: 16,
   },
   sectionHeader: {
     paddingHorizontal: 16,
@@ -259,7 +213,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     elevation: 2,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
@@ -286,26 +239,6 @@ const styles = StyleSheet.create({
   bestTimeText: {
     fontSize: 12,
     marginLeft: 4,
-  },
-  customMazeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    justifyContent: 'space-between',
-  },
-  gridItem: {
-    width: '48%',
-    marginBottom: 16,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    marginTop: 10,
-    marginBottom: 20,
   },
 });
 

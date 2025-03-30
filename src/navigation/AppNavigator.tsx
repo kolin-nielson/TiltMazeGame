@@ -22,17 +22,22 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator: React.FC = () => {
   const { theme } = useTheme();
+  
+  // Determine if the current theme is dark based on background color
+  const isDarkTheme = theme.background === '#121212' || 
+                      theme.background.toLowerCase() === '#000000' || 
+                      theme.background.toLowerCase() === '#000';
 
   return (
     <NavigationContainer>
-      <StatusBar style={theme.background === '#121212' ? 'light' : 'dark'} />
+      <StatusBar style={isDarkTheme ? 'light' : 'dark'} />
       <Stack.Navigator
         initialRouteName="Home"
         screenOptions={{
           headerStyle: {
             backgroundColor: theme.primary,
           },
-          headerTintColor: '#fff',
+          headerTintColor: theme.onPrimary,
           headerTitleStyle: {
             fontWeight: '500',
             fontSize: 20,

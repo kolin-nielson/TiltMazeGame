@@ -18,6 +18,9 @@ interface LogoGradientsProps {
 }
 
 const LogoGradients: React.FC<LogoGradientsProps> = ({ theme, size }) => {
+  // Get shadow color based on theme
+  const shadowColor = theme.onBackground || '#000000';
+  
   return (
     <>
       <LinearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -42,9 +45,9 @@ const LogoGradients: React.FC<LogoGradientsProps> = ({ theme, size }) => {
       </LinearGradient>
 
       <RadialGradient id="shadowGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-        <Stop offset="0%" stopColor="#000000" stopOpacity="0.4" />
-        <Stop offset="70%" stopColor="#000000" stopOpacity="0.1" />
-        <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
+        <Stop offset="0%" stopColor={shadowColor} stopOpacity="0.4" />
+        <Stop offset="70%" stopColor={shadowColor} stopOpacity="0.1" />
+        <Stop offset="100%" stopColor={shadowColor} stopOpacity="0" />
       </RadialGradient>
 
       <LinearGradient id="wallGradient" x1="0%" y1="0%" x2="0%" y2="100%">

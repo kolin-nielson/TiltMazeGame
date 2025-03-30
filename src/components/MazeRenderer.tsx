@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { View } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { Maze, Position } from '../types';
@@ -24,24 +24,25 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
 }) => {
   const { theme } = useTheme();
   const mazeSize = 300;
-  const scaledSize = mazeSize * scale;
-  const containerOffset = {
+  
+  const scaledSize = useMemo(() => mazeSize * scale, [mazeSize, scale]);
+  const containerOffset = useMemo(() => ({
     x: (300 - scaledSize) / 2,
     y: (300 - scaledSize) / 2,
-  };
+  }), [scaledSize]);
+
+  const containerStyles = useMemo(() => [
+    mazeRendererStyles.container,
+    containerStyle,
+    {
+      backgroundColor: theme.surface,
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+  ], [containerStyle, theme.surface]);
 
   return (
-    <View
-      style={[
-        mazeRendererStyles.container,
-        containerStyle,
-        {
-          backgroundColor: theme.surface,
-          borderRadius: 12,
-          overflow: 'hidden',
-        },
-      ]}
-    >
+    <View style={containerStyles}>
       <MazeElements
         maze={maze}
         ballPosition={ballPosition}
@@ -55,4 +56,15 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
   );
 };
 
-export default MazeRenderer;
+export default memo(MazeRenderer, (prevProps, nextProps) => {
+  const positionChanged = 
+    prevProps.ballPosition.x !== nextProps.ballPosition.x || 
+    prevProps.ballPosition.y !== nextProps.ballPosition.y;
+  
+  const mazeChanged = prevProps.maze.id !== nextProps.maze.id;
+  const pausedChanged = prevProps.paused !== nextProps.paused;
+  const scaleChanged = prevProps.scale !== nextProps.scale;
+  const radiusChanged = prevProps.ballRadius !== nextProps.ballRadius;
+  
+  return !(positionChanged || mazeChanged || pausedChanged || scaleChanged || radiusChanged);
+});

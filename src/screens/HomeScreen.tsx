@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, SafeAreaView, Platform } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import GameLogo from '../components/GameLogo';
 import { StatusBar } from 'expo-status-bar';
+import { Button, Text } from 'react-native-paper';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -16,105 +17,71 @@ interface HomeScreenProps {
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { theme, themeName } = useTheme();
+  const { theme, colors, isDark } = useTheme();
   const { userProgress } = useMazes();
   const insets = useSafeAreaInsets();
-  const isDark = themeName === 'dark' || theme.background.toLowerCase().startsWith('#0');
 
   return (
     <SafeAreaView 
       style={[
         styles.container, 
         { 
-          backgroundColor: theme.background,
+          backgroundColor: theme?.colors?.background ?? '#ffffff',
           paddingTop: insets.top,
-          paddingBottom: insets.bottom + 16,
-          paddingHorizontal: 16
+          paddingBottom: insets.bottom + 20,
+          paddingHorizontal: 20
         }
       ]}
     >
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style={isDark ?? false ? 'light' : 'dark'} />
 
-      <View style={styles.logoContainer}>
-        <GameLogo size={150} showText={true} />
-      </View>
+      <View style={styles.mainContent}>
+        <View style={styles.logoContainer}>
+          <GameLogo size={150} showText={true} />
+        </View>
 
-      <View style={styles.statsContainer}>
-        <View style={[
-          styles.statBox, 
-          { 
-            backgroundColor: theme.surface,
-            ...(Platform.OS === 'ios' 
-              ? {
-                  shadowColor: theme.onBackground,
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 2,
-                }
-              : { elevation: 1 }
-            )
-          }
-        ]}>
-          <Text style={[styles.statLabel, { color: theme.onSurface || theme.onBackground, opacity: 0.6 }]}>Levels Completed</Text>
-          <Text style={[styles.statNumber, { color: theme.primary }]}>
-            {userProgress.totalCompleted}
+        <View style={styles.statsContainer}>
+          <Text 
+             variant="headlineSmall"
+             style={[styles.statLabel, { color: colors?.onSurfaceVariant ?? '#444444' }]}
+          >
+             Best Score
+          </Text>
+          <Text 
+             variant="displayMedium"
+             style={[styles.statNumber, { color: colors?.primary ?? '#6200ee' }]}
+          >
+            {userProgress.highestScore ?? 0} 
           </Text>
         </View>
-      </View>
 
-      <View style={styles.menuContainer}>
-        <TouchableOpacity
-          style={[
-            styles.menuButton, 
-            styles.primaryButton,
-            { 
-              backgroundColor: theme.primary,
-              ...(Platform.OS === 'ios' 
-                ? {
-                  shadowColor: theme.onBackground,
-                  shadowOffset: { width: 0, height: 3 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4.65,
-                }
-                : { elevation: 3 }
-              )
-            }
-          ]}
-          onPress={() => navigation.navigate('LevelSelect')}
-        >
-          <MaterialIcons name="play-arrow" size={24} color={theme.onPrimary} />
-          <Text style={[styles.menuButtonText, { color: theme.onPrimary }]}>Play</Text>
-        </TouchableOpacity>
+        <View style={styles.menuContainer}>
+          <Button
+            mode="contained" 
+            icon={({ size, color }) => (
+              <MaterialIcons name="play-arrow" size={size} color={color} />
+            )}
+            onPress={() => navigation.navigate('Game')}
+            style={styles.menuButton}
+            contentStyle={styles.buttonContent}
+            labelStyle={styles.buttonLabel}
+          >
+            Play 
+          </Button>
 
-        <TouchableOpacity
-          style={[
-            styles.menuButton, 
-            styles.secondaryButton,
-            { 
-              backgroundColor: 'transparent',
-              borderColor: theme.outline || theme.primary,
-              ...(Platform.OS === 'ios' 
-                ? {
-                  shadowColor: theme.onBackground,
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0,
-                  shadowRadius: 0,
-                }
-                : { elevation: 0 }
-              )
-            }
-          ]}
-          onPress={() => navigation.navigate('Settings')}
-        >
-          <MaterialIcons name="settings" size={20} color={theme.primary} />
-          <Text style={[styles.menuButtonText, { color: theme.primary }]}>Settings</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: theme.onBackground || theme.onSurface, opacity: 0.6 }]}>
-          Tilt your device to navigate the ball through mazes!
-        </Text>
+          <Button
+            mode="outlined"
+            icon={({ size, color }) => (
+              <MaterialIcons name="settings" size={size} color={color} />
+            )}
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.menuButton}
+            contentStyle={styles.buttonContent}
+            labelStyle={styles.buttonLabel}
+          >
+            Settings
+          </Button>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -123,75 +90,43 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  mainContent: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    width: '100%',
   },
   logoContainer: {
-    marginTop: 16,
-    marginBottom: 16,
+    marginBottom: 40,
     alignItems: 'center',
   },
   statsContainer: {
-    width: '100%',
-    paddingHorizontal: 8,
-    marginBottom: 32,
-  },
-  statBox: {
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    borderRadius: 12,
-    width: '100%',
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: '500',
-    lineHeight: 40,
+    marginBottom: 50,
   },
   statLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    letterSpacing: 0.1,
-    marginBottom: 8,
-    textTransform: 'uppercase',
+    marginBottom: 4,
+    opacity: 0.8,
+  },
+  statNumber: {
   },
   menuContainer: {
-    width: '100%',
-    paddingHorizontal: 8,
-    marginBottom: 24,
+    width: '85%',
+    alignItems: 'center',
   },
   menuButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: '100%',
+    marginVertical: 10,
+    borderRadius: 30,
+  },
+  buttonContent: {
+    height: 48,
     justifyContent: 'center',
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 20,
-    height: 56,
   },
-  primaryButton: {
-    marginBottom: 16,
-  },
-  secondaryButton: {
-    borderWidth: 1,
-  },
-  menuButtonText: {
-    fontSize: 14,
+  buttonLabel: {
+    fontSize: 16,
     fontWeight: '500',
-    marginLeft: 12,
-    letterSpacing: 1.25,
-    textTransform: 'uppercase',
-  },
-  footer: {
-    marginTop: 16,
-    alignItems: 'center',
-    width: '70%',
-  },
-  footerText: {
-    fontSize: 14,
-    textAlign: 'center',
-    letterSpacing: 0.25,
-    lineHeight: 20,
   },
 });
 

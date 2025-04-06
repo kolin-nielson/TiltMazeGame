@@ -24,6 +24,7 @@ interface PhysicsWorld {
   update: (tiltX: number, tiltY: number) => void;
   getBallPosition: () => Position;
   isGoalReached: () => boolean;
+  isGameOver: () => boolean;
   setQualityLevel: (level: 'low' | 'medium' | 'high') => void;
 }
 
@@ -47,7 +48,8 @@ const isLowEndDevice = () => {
   return false;
 };
 
-export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld => {
+// Accept Maze or null
+export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsWorld => {
   const { 
     width, 
     height, 
@@ -68,6 +70,7 @@ export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld =>
   const goalReachedRef = useRef<boolean>(false);
   const lastTimeRef = useRef<number>(0);
   const accumulatorRef = useRef<number>(0);
+  const gameOverRef = useRef<boolean>(false);
 
   // Configure physics quality parameters based on device capability
   const getPhysicsQualitySettings = useCallback(() => {
@@ -104,6 +107,15 @@ export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld =>
   }, [qualityLevel]);
 
   useEffect(() => {
+    // --- Guard: Don't initialize if maze is null ---
+    if (!maze) {
+      // Optional: Clean up existing engine if maze becomes null after being valid?
+      // This depends on whether we expect the maze prop to transition from valid to null.
+      // For now, we assume it starts null and then becomes valid.
+      return; 
+    }
+    // --- End Guard ---
+
     const qualitySettings = getPhysicsQualitySettings();
     
     const engine = Matter.Engine.create({
@@ -268,11 +280,21 @@ export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld =>
         cancelAnimationFrame(tickerRef.current);
         tickerRef.current = null;
       }
-
-      Matter.World.clear(world, false);
-      Matter.Engine.clear(engine);
+      if (engineRef.current) {
+        Matter.Events.off(engineRef.current);
+        Matter.Engine.clear(engineRef.current);
+        if (worldRef.current) {
+          Matter.Composite.clear(worldRef.current, false);
+        }
+      }
+      engineRef.current = undefined;
+      worldRef.current = undefined;
+      ballRef.current = undefined;
+      wallsRef.current = [];
+      goalRef.current = undefined;
+      goalReachedRef.current = false;
     };
-  }, [maze, ballRadius, gravityScale, width, height, qualityLevel, getPhysicsQualitySettings]);
+  }, [maze, width, height, ballRadius, gravityScale, wallThickness, qualityLevel, getPhysicsQualitySettings]);
 
   const reset = () => {
     if (ballRef.current && engineRef.current) {
@@ -295,6 +317,11 @@ export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld =>
 
       lastTimeRef.current = performance.now();
       accumulatorRef.current = 0;
+
+      // Optional: Wake up the ball if it was sleeping
+      if (ballRef.current.isSleeping) {
+        Matter.Sleeping.set(ballRef.current, false);
+      }
     }
   };
 
@@ -441,16 +468,22 @@ export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld =>
     return closest;
   };
 
-  const getBallPosition = (): Position => {
-    if (!ballRef.current) return { x: 0, y: 0 };
+  const getBallPosition = useCallback((): Position => {
+    if (!ballRef.current) {
+      return maze?.startPosition ?? { x: 0, y: 0 };
+    }
     return { x: ballRef.current.position.x, y: ballRef.current.position.y };
-  };
+  }, [maze]);
 
-  const isGoalReached = (): boolean => {
+  const isGoalReached = useCallback((): boolean => {
+    if (!engineRef.current) return false;
     return goalReachedRef.current;
-  };
+  }, []);
 
-  // Add a function to change quality level dynamically
+  const isGameOver = useCallback((): boolean => {
+    return gameOverRef.current;
+  }, []);
+
   const changeQualityLevel = (level: 'low' | 'medium' | 'high') => {
     setQualityLevel(level);
   };
@@ -465,6 +498,7 @@ export const usePhysics = (maze: Maze, options: PhysicsOptions): PhysicsWorld =>
     update,
     getBallPosition,
     isGoalReached,
+    isGameOver,
     setQualityLevel: changeQualityLevel,
   };
 };

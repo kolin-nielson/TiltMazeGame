@@ -15,6 +15,7 @@ interface GameLogoProps {
 
 const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true, animated = false }) => {
   const { theme } = useTheme();
+  const colors = theme.colors;
   const ballSize = size * 0.1;
   const wallThickness = size * 0.045;
   const fontSize = size * 0.16;
@@ -28,14 +29,14 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true, animat
         viewBox={`0 0 ${size} ${showText ? size * 1.3 : size}`}
       >
         <Defs>
-          <LogoGradients theme={theme} size={size} />
+          <LogoGradients colors={colors} size={size} />
         </Defs>
 
         <LogoBackground size={size} shadowOffset={shadowOffset} />
 
         <MazeElements size={size} ballSize={ballSize} wallThickness={wallThickness} />
 
-        {showText && <LogoText size={size} fontSize={fontSize} theme={theme} />}
+        {showText && <LogoText size={size} fontSize={fontSize} colors={colors} />}
       </Svg>
     </View>
   );

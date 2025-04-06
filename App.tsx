@@ -20,18 +20,30 @@ const SplashScreen = () => {
   );
 };
 
+// Wrapper component to access theme context for PaperProvider
+const AppContent: React.FC = () => {
+  // Get the theme from your custom ThemeProvider
+  const { theme } = useTheme(); 
+
+  return (
+    <PaperProvider theme={theme}> 
+      <SettingsProvider>
+        <MazeProvider>
+          <AppNavigator />
+        </MazeProvider>
+      </SettingsProvider>
+    </PaperProvider>
+  );
+};
+
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
+        {/* Your ThemeProvider provides the context */}
         <ThemeProvider>
-          <PaperProvider>
-            <SettingsProvider>
-              <MazeProvider>
-                <AppNavigator />
-              </MazeProvider>
-            </SettingsProvider>
-          </PaperProvider>
+          {/* AppContent consumes the context and passes theme to PaperProvider */}
+          <AppContent /> 
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

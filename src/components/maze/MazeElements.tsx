@@ -13,7 +13,7 @@ interface MazeElementsProps {
   ballRadius: number;
   scale: number;
   paused: boolean;
-  theme: ThemeColors;
+  colors: ThemeColors;
   centerOffset?: { x: number; y: number };
 }
 
@@ -44,7 +44,7 @@ export const MazeElements: React.FC<MazeElementsProps> = memo(({
   ballRadius,
   scale,
   paused,
-  theme,
+  colors,
   centerOffset = { x: 0, y: 0 },
 }) => {
   // Memoize the offset calculation
@@ -62,17 +62,17 @@ export const MazeElements: React.FC<MazeElementsProps> = memo(({
           position={maze.endPosition}
           scale={scale}
           ballRadius={ballRadius}
-          color={theme.goal}
+          color={colors?.goal ?? '#4CAF50'}
         />
 
         <MemoizedWalls 
           walls={maze.walls}
           scale={scale}
-          color={theme.walls}
+          color={colors?.walls ?? '#333333'}
         />
 
         {!paused && (
-          <MazeBall position={ballPosition} radius={ballRadius} scale={scale} color={theme.ball} />
+          <MazeBall position={ballPosition} radius={ballRadius} scale={scale} color={colors?.ball ?? '#FF4081'} />
         )}
       </View>
     </View>
@@ -84,12 +84,15 @@ export const MazeElements: React.FC<MazeElementsProps> = memo(({
     prevProps.ballPosition.y !== nextProps.ballPosition.y;
   
   const mazeChanged = prevProps.maze.id !== nextProps.maze.id;
-  const themeChanged = prevProps.theme !== nextProps.theme;
+  const colorsChanged = 
+    prevProps.colors?.goal !== nextProps.colors?.goal ||
+    prevProps.colors?.walls !== nextProps.colors?.walls ||
+    prevProps.colors?.ball !== nextProps.colors?.ball;
   const pausedChanged = prevProps.paused !== nextProps.paused;
   const scaleChanged = prevProps.scale !== nextProps.scale;
   
   // Return true if nothing changed (skip re-render)
-  return !(ballChanged || mazeChanged || themeChanged || pausedChanged || scaleChanged);
+  return !(ballChanged || mazeChanged || colorsChanged || pausedChanged || scaleChanged);
 });
 
 const styles = StyleSheet.create({

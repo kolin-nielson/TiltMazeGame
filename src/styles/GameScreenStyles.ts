@@ -7,21 +7,35 @@ export const gameScreenStyles = StyleSheet.create({
   },
   gameContainer: {
     flex: 1,
-    padding: 10,
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 40,
+    paddingHorizontal: 10,
+  },
+  topBarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    zIndex: 10,
+  },
+  scoreText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    flex: 1,
+    marginHorizontal: 10,
   },
   mazeSurface: {
-    width: '85%',
-    maxWidth: 380,
-    aspectRatio: 1,
-    borderRadius: 12,
-    alignSelf: 'center',
-    overflow: 'visible',
-    justifyContent: 'center',
+    width: 320,
+    height: 320,
     alignItems: 'center',
-    margin: 20,
-    marginTop: 30,
+    justifyContent: 'center',
+    borderRadius: 8,
+    marginBottom: 20,
   },
   timerContainer: {
     marginBottom: 15,
@@ -72,8 +86,48 @@ export const gameScreenStyles = StyleSheet.create({
   },
   pauseButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 30,
     alignSelf: 'center',
+  },
+  resetTiltButton: {
+    minWidth: 'auto',
+    paddingHorizontal: 4,
+    marginLeft: 'auto',
+  },
+  resetTiltButtonLabel: {
+    fontSize: 12,
+    marginVertical: 0,
+    marginHorizontal: 4,
+  },
+  overlayBase: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  overlayContent: {
+    alignItems: 'center',
+    padding: 30,
+    borderRadius: 10,
+    minWidth: 250,
+  },
+  overlayTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  overlayText: {
+    fontSize: 18,
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  overlayButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  overlayButton: {
+    marginHorizontal: 10,
   },
   statsContainer: {
     width: '100%',
@@ -94,5 +148,18 @@ export const gameScreenStyles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  quitButton: {
+    minWidth: 'auto',
+    paddingHorizontal: 4,
+    marginRight: 10,
+  },
+  quitButtonLabel: {
+    fontSize: 12,
+    marginVertical: 0,
+    marginHorizontal: 4,
+  },
+  iconButton: {
+    margin: 0,
   },
 });

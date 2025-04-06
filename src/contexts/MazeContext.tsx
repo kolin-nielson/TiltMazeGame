@@ -11,12 +11,14 @@ interface MazeContextType {
   getMaze: (id: string) => Maze | undefined;
   updateProgress: (mazeId: string, time?: number) => Promise<void>;
   resetProgress: () => Promise<void>;
+  updateHighestEndlessLevel: (level: number) => Promise<void>;
 }
 
 const defaultUserProgress: UserProgress = {
   levels: {},
   totalCompleted: 0,
   customLevelsCreated: 0,
+  highestEndlessLevel: 0,
 };
 
 const MazeContext = createContext<MazeContextType | undefined>(undefined);
@@ -38,10 +40,14 @@ export const MazeProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setMazes([...defaultMazes, ...customMazes]);
 
+        let loadedProgress: UserProgress = defaultUserProgress;
         if (storedProgressStr) {
-          setUserProgress(JSON.parse(storedProgressStr));
+          loadedProgress = JSON.parse(storedProgressStr);
+          if (loadedProgress.highestEndlessLevel === undefined) {
+            loadedProgress.highestEndlessLevel = 0;
+          }
         } else {
-          const initialProgress: UserProgress = {
+          loadedProgress = {
             ...defaultUserProgress,
             levels: defaultMazes.reduce((acc: Record<string, LevelStats>, maze: Maze) => {
               acc[maze.id] = {
@@ -53,11 +59,13 @@ export const MazeProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return acc;
             }, {} as Record<string, LevelStats>),
           };
-          setUserProgress(initialProgress);
-          await AsyncStorage.setItem('userProgress', JSON.stringify(initialProgress));
+          await AsyncStorage.setItem('userProgress', JSON.stringify(loadedProgress));
         }
+        setUserProgress(loadedProgress);
+
       } catch (error) {
         console.error('Error loading maze data:', error);
+        setUserProgress(defaultUserProgress);
       }
     };
 
@@ -145,6 +153,17 @@ export const MazeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await saveUserProgress(updatedProgress);
   };
 
+  const updateHighestEndlessLevel = async (level: number): Promise<void> => {
+    if (level > (userProgress.highestEndlessLevel ?? 0)) {
+      const updatedProgress = {
+        ...userProgress,
+        highestEndlessLevel: level,
+      };
+      setUserProgress(updatedProgress);
+      await saveUserProgress(updatedProgress);
+    }
+  };
+
   const resetProgress = async (): Promise<void> => {
     const initialProgress: UserProgress = {
       ...defaultUserProgress,
@@ -172,6 +191,7 @@ export const MazeProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getMaze,
         updateProgress,
         resetProgress,
+        updateHighestEndlessLevel,
       }}
     >
       {children}

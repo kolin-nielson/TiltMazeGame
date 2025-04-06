@@ -74,4 +74,5 @@ export interface UserProgress {
   levels: Record<string, LevelStats>;
   totalCompleted: number;
   customLevelsCreated: number;
+  highestEndlessLevel?: number;
 }

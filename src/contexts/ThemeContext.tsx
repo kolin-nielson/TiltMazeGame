@@ -2,12 +2,21 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors, ThemeName } from '../types';
+// Import Paper theme types and default themes
+import { 
+    MD3LightTheme, 
+    MD3DarkTheme, 
+    MD3Theme, // Or use Theme for older versions
+    adaptNavigationTheme 
+} from 'react-native-paper'; 
 
 interface ThemeContextType {
-  theme: ThemeColors;
+  theme: MD3Theme;
   themeName: ThemeName;
+  isDark: boolean;
   setTheme: (name: ThemeName) => void;
   setCustomTheme: (colors: Partial<ThemeColors>) => void;
+  colors: ThemeColors;
 }
 
 const lightTheme: ThemeColors = {
@@ -92,15 +101,15 @@ export const themes: Record<ThemeName, ThemeColors> = {
   light: lightTheme,
   dark: darkTheme,
   blue: blueTheme,
-  custom: lightTheme,
+  custom: lightTheme, // Default custom theme base
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const colorScheme = useColorScheme();
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }: { children: React.ReactNode }) => {
+  const systemColorScheme = useColorScheme();
   const [themeName, setThemeName] = useState<ThemeName>('light');
-  const [customTheme, setCustomTheme] = useState<ThemeColors>(lightTheme);
+  const [customThemeColors, setCustomThemeColors] = useState<ThemeColors>(lightTheme);
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -108,61 +117,95 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const savedThemeName = await AsyncStorage.getItem('themeName');
         const savedCustomTheme = await AsyncStorage.getItem('customTheme');
 
+        let initialThemeName: ThemeName = systemColorScheme === 'dark' ? 'dark' : 'light';
         if (savedThemeName) {
-          setThemeName(savedThemeName as ThemeName);
-        } else if (colorScheme) {
-          setThemeName(colorScheme === 'dark' ? 'dark' : 'light');
+          initialThemeName = savedThemeName as ThemeName;
         }
+        setThemeName(initialThemeName);
 
         if (savedCustomTheme) {
           const loadedCustomTheme = JSON.parse(savedCustomTheme);
-          setCustomTheme(loadedCustomTheme);
+          // Ensure loaded custom theme has all required fields from ThemeColors
+          // You might want to merge with a default base here
+          setCustomThemeColors({...lightTheme, ...loadedCustomTheme}); 
         }
       } catch (error) {
         console.error('Failed to load theme:', error);
+        // Fallback to system scheme on error
+        setThemeName(systemColorScheme === 'dark' ? 'dark' : 'light');
       }
     };
 
     loadTheme();
-  }, [colorScheme]);
+  }, [systemColorScheme]);
 
   const handleSetTheme = async (name: ThemeName) => {
     setThemeName(name);
     try {
       await AsyncStorage.setItem('themeName', name);
     } catch (error) {
-      console.error('Failed to save theme:', error);
+      console.error('Failed to save theme name:', error);
     }
   };
 
   const handleSetCustomTheme = async (colors: Partial<ThemeColors>) => {
-    const updatedCustomTheme = {
-      ...customTheme,
+    const updatedCustomThemeColors = {
+      ...customThemeColors, // Ensure merging with existing custom colors
       ...colors,
     };
 
-    setCustomTheme(updatedCustomTheme);
-
-    if (themeName !== 'custom') {
-      handleSetTheme('custom');
-    } else {
-      try {
-        await AsyncStorage.setItem('customTheme', JSON.stringify(updatedCustomTheme));
-      } catch (error) {
+    setCustomThemeColors(updatedCustomThemeColors);
+    // Always save the full custom theme colors object
+    try {
+        await AsyncStorage.setItem('customTheme', JSON.stringify(updatedCustomThemeColors));
+        // If the current theme wasn't custom, switch to it
+        if (themeName !== 'custom') {
+           await handleSetTheme('custom');
+        }
+    } catch (error) {
         console.error('Failed to save custom theme:', error);
-      }
     }
   };
 
-  const currentTheme = themeName === 'custom' ? customTheme : (themes[themeName] || lightTheme);
+  const isDark = themeName === 'dark';
+  const basePaperTheme = isDark ? MD3DarkTheme : MD3LightTheme;
+
+  const currentColors: ThemeColors = themeName === 'custom' 
+     ? customThemeColors 
+     : (themes[themeName] || lightTheme);
+
+  // Construct the final theme object 
+  const finalTheme: MD3Theme = {
+    ...basePaperTheme,
+    colors: { 
+      // Merge base colors and current (custom) colors
+      ...basePaperTheme.colors,
+      ...currentColors, 
+    },
+  };
+
+  // Ensure the colors object provided in the context value matches ThemeColors type
+  const contextColors: ThemeColors = {
+      ...basePaperTheme.colors,
+      ...currentColors,
+      // Explicitly list potentially missing required ThemeColors properties if necessary,
+      // but the spread should cover them if currentColors is correctly typed.
+      // Ensure currentColors *always* includes success, walls, ball, goal.
+      success: currentColors.success, 
+      walls: currentColors.walls,
+      ball: currentColors.ball,
+      goal: currentColors.goal,
+  };
 
   return (
     <ThemeContext.Provider
       value={{
-        theme: currentTheme,
+        theme: finalTheme, 
         themeName,
+        isDark: finalTheme.dark,
         setTheme: handleSetTheme,
         setCustomTheme: handleSetCustomTheme,
+        colors: contextColors, // Provide the correctly typed colors object
       }}
     >
       {children}
@@ -170,10 +213,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
+// Update useTheme hook return type and provide convenient accessors
 export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
   if (!context) {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
-  return context;
+  // Return the full context value, which now includes the Paper theme, colors, isDark etc.
+  return context; 
 };

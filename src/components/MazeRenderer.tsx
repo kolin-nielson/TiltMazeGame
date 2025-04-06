@@ -22,7 +22,7 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
   paused = false,
   scale = 1,
 }) => {
-  const { theme } = useTheme();
+  const { theme, colors } = useTheme();
   const mazeSize = 300;
   
   const scaledSize = useMemo(() => mazeSize * scale, [mazeSize, scale]);
@@ -35,11 +35,11 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
     mazeRendererStyles.container,
     containerStyle,
     {
-      backgroundColor: theme.surface,
+      backgroundColor: colors?.surface ?? '#ffffff',
       borderRadius: 12,
       overflow: 'hidden',
     },
-  ], [containerStyle, theme.surface]);
+  ], [containerStyle, colors?.surface]);
 
   return (
     <View style={containerStyles}>
@@ -49,7 +49,7 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
         ballRadius={ballRadius}
         scale={scale}
         paused={paused}
-        theme={theme}
+        colors={colors}
         centerOffset={containerOffset}
       />
     </View>
@@ -65,6 +65,7 @@ export default memo(MazeRenderer, (prevProps, nextProps) => {
   const pausedChanged = prevProps.paused !== nextProps.paused;
   const scaleChanged = prevProps.scale !== nextProps.scale;
   const radiusChanged = prevProps.ballRadius !== nextProps.ballRadius;
+  const themeChanged = prevProps.theme?.colors?.surface !== nextProps.theme?.colors?.surface;
   
-  return !(positionChanged || mazeChanged || pausedChanged || scaleChanged || radiusChanged);
+  return !(positionChanged || mazeChanged || pausedChanged || scaleChanged || radiusChanged || themeChanged);
 });

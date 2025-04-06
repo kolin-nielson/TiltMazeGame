@@ -1,50 +1,45 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Dimensions, BackHandler } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Button, Surface } from 'react-native-paper';
+import { Button, Surface, Text, Portal, Dialog, IconButton } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useSettings } from '../contexts/SettingsContext';
-import { useMazes } from '../contexts/MazeContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useMazes } from '../contexts/MazeContext';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { usePhysics } from '../hooks/usePhysics';
 import { useGyroscope } from '../hooks/useGyroscope';
-import { useGameTimer } from '../hooks/useGameTimer';
 import { gameScreenStyles } from '../styles/GameScreenStyles';
+import { generateMaze } from '../utils/mazeGenerator';
+import { Maze } from '../types';
 
 import MazeRenderer from '../components/MazeRenderer';
-import { GameTimer } from '../components/game/GameTimer';
-import { GameReadyOverlay } from '../components/game/GameReadyOverlay';
-import { GamePausedOverlay } from '../components/game/GamePausedOverlay';
-import { GameCompletedOverlay } from '../components/game/GameCompletedOverlay';
+import { GameOverOverlay } from '../components/game/GameOverOverlay';
 
-type GameScreenRouteProp = RouteProp<RootStackParamList, 'Game'>;
 type GameScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type GameState = 'ready' | 'playing' | 'paused' | 'completed';
+type GameState = 'loading' | 'playing' | 'game_over';
 
 const GameScreen: React.FC = () => {
   const { width, height } = Dimensions.get('window');
   const navigation = useNavigation<GameScreenNavigationProp>();
-  const route = useRoute<GameScreenRouteProp>();
-  const { mazeId } = route.params;
-  const { theme } = useTheme();
+  const { theme, colors } = useTheme();
   const { settings } = useSettings();
-  const { mazes, getMaze, updateProgress } = useMazes();
+  const { updateHighestEndlessLevel } = useMazes();
 
-  const [gameState, setGameState] = useState<GameState>('ready');
+  const [gameState, setGameState] = useState<GameState>('loading');
+  const [currentMaze, setCurrentMaze] = useState<Maze | null>(null);
+  const [difficulty, setDifficulty] = useState<number>(1);
+  const [levelsCompleted, setLevelsCompleted] = useState<number>(0);
+  const [isQuitConfirmVisible, setIsQuitConfirmVisible] = useState(false);
 
-  const maze = getMaze(mazeId);
-
-  if (!maze) {
-    return (
-      <View style={gameScreenStyles.screen}>
-        <StatusBar style="auto" />
-        <Button onPress={() => navigation.goBack()}>Maze Not Found. Go Back</Button>
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (difficulty === 1) {
+       const initialMaze = generateMaze(difficulty);
+       setCurrentMaze(initialMaze);
+    }
+  }, [difficulty]);
 
   const physicsOptions = {
     width,
@@ -53,14 +48,9 @@ const GameScreen: React.FC = () => {
     ballRadius: 7,
   };
 
-  const {
-    getBallPosition,
-    reset: resetPhysics,
-    isGoalReached,
-    update: updatePhysics,
-  } = usePhysics(maze, physicsOptions);
+  const physics = usePhysics(currentMaze, physicsOptions);
 
-  const ballPosition = getBallPosition();
+  const ballPosition = physics.getBallPosition();
 
   const {
     data: gyroData,
@@ -68,146 +58,189 @@ const GameScreen: React.FC = () => {
     reset: resetGyroscope,
   } = useGyroscope(gameState === 'playing');
 
-  const { elapsed, startTimer, stopTimer, resetTimer, formatTime } = useGameTimer();
+  useEffect(() => {
+    if (gameState === 'loading') {
+       handlePlayAgain();
+    }
+  }, [gameState, handlePlayAgain]);
 
-  const handleStart = useCallback(() => {
-    resetPhysics();
-    resetTimer();
+  const handlePlayAgain = useCallback(() => {
+    physics.reset();
     resetGyroscope();
     setGameState('playing');
-    startTimer();
-  }, [resetPhysics, resetTimer, resetGyroscope, startTimer]);
+  }, [physics, resetGyroscope]);
 
-  const handlePause = useCallback(() => {
-    stopTimer();
-    setGameState('paused');
-  }, [stopTimer]);
-
-  const handleResume = useCallback(() => {
-    setGameState('playing');
-    startTimer();
-  }, [startTimer]);
-
-  const handleRestart = useCallback(() => {
-    resetPhysics();
-    resetTimer();
-    setGameState('ready');
-  }, [resetPhysics, resetTimer]);
-
-  const handleGoalReached = useCallback(() => {
+  const handleGoalReachedAndNextLevel = useCallback(() => {
     if (gameState === 'playing') {
-      stopTimer();
-      setGameState('completed');
-      updateProgress(mazeId, elapsed);
+      const completedLevelNumber = difficulty;
+      setLevelsCompleted(prev => prev + 1);
+      updateHighestEndlessLevel(completedLevelNumber);
+
+      const nextDifficulty = difficulty + 1;
+      const nextMaze = generateMaze(nextDifficulty);
+      
+      setDifficulty(nextDifficulty);
+      setCurrentMaze(nextMaze);
+      physics.reset();
+
+      setGameState('playing'); 
     }
-  }, [gameState, stopTimer, updateProgress, mazeId, elapsed]);
+  }, [
+    gameState, 
+    difficulty, 
+    physics,
+    updateHighestEndlessLevel
+  ]);
 
   useEffect(() => {
-    if (gameState === 'playing' && gyroscopeAvailable) {
-      updatePhysics(gyroData.x, gyroData.y);
+    if (gameState === 'playing' && gyroscopeAvailable && physics?.update && !physics.isGameOver()) {
+      physics.update(gyroData.x, gyroData.y);
     }
-  }, [gameState, gyroscopeAvailable, gyroData, updatePhysics]);
+  }, [gameState, gyroscopeAvailable, gyroData, physics]);
 
   useEffect(() => {
-    if (gameState === 'playing' && isGoalReached()) {
-      handleGoalReached();
+    if (gameState === 'playing') {
+      if (physics?.isGameOver && physics.isGameOver()) {
+        handleGameOver();
+      } else if (physics?.isGoalReached && physics.isGoalReached()) {
+        handleGoalReachedAndNextLevel();
+      }
     }
-  }, [gameState, isGoalReached, handleGoalReached]);
+  }, [gameState, physics, handleGameOver, handleGoalReachedAndNextLevel]);
 
   useEffect(() => {
     const handleBackPress = () => {
       if (gameState === 'playing') {
-        handlePause();
-        return true;
+        // Do nothing and prevent default back action while playing
+        return true; 
       }
-      return false;
+      // Allow back navigation only if game is over or still loading
+      // If loading, back might go to home. If game over, back goes to home.
+      // Returning false allows the default system behavior (usually exit screen)
+      return false; 
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
-    return () => subscription.remove();
-  }, [gameState, handlePause]);
 
-  const handleNextLevel = () => {
-    const currentIndex = mazes.findIndex(m => m.id === mazeId);
-    if (currentIndex >= 0 && currentIndex < mazes.length - 1) {
-      const nextMaze = mazes[currentIndex + 1];
-      navigation.replace('Game', { mazeId: nextMaze.id });
-    } else {
-      navigation.navigate('LevelSelect');
-    }
+    return () => subscription.remove();
+    // Dependencies: only gameState affects the logic now
+  }, [gameState]);
+
+  const handleGameOver = useCallback(() => {
+    setGameState('game_over');
+  }, []);
+
+  const handleExit = () => {
+    navigation.goBack();
   };
+
+  const showQuitConfirm = () => setIsQuitConfirmVisible(true);
+  const hideQuitConfirm = () => setIsQuitConfirmVisible(false);
+
+  const handleQuitConfirm = () => {
+    hideQuitConfirm();
+    handleGameOver();
+    navigation.goBack();
+  };
+
+  // Log theme colors for debugging
+  useEffect(() => {
+    console.log('GameScreen Theme Colors:', JSON.stringify(colors, null, 2));
+  }, [colors]);
+
+  if (gameState === 'loading' || !currentMaze || !physics) {
+    return (
+      <View style={gameScreenStyles.screen}>
+        <StatusBar style="auto" />
+      </View>
+    );
+  }
 
   return (
     <View style={gameScreenStyles.screen}>
       <StatusBar style="auto" />
 
       <View style={gameScreenStyles.gameContainer}>
-        <GameTimer formattedTime={formatTime(elapsed)} />
+        <View style={gameScreenStyles.topBarContainer}>
+           <IconButton
+             icon="close"
+             mode='outlined'
+             size={24}
+             onPress={showQuitConfirm}
+             style={gameScreenStyles.iconButton}
+             iconColor={colors?.primary ?? '#6200ee'}
+           />
 
-        <Surface 
-          style={[
-            gameScreenStyles.mazeSurface, 
-            { backgroundColor: theme.surface }
-          ]} 
+           <Text style={[gameScreenStyles.scoreText, { color: colors?.onSurface ?? '#000000' }]}>
+             Score: {levelsCompleted}
+           </Text>
+
+           <IconButton
+             icon="sync"
+             mode='outlined'
+             size={24}
+             onPress={resetGyroscope}
+             style={gameScreenStyles.iconButton}
+             iconColor={colors?.primary ?? '#6200ee'}
+           />
+        </View>
+
+        <Surface
+          style={[ gameScreenStyles.mazeSurface, { backgroundColor: theme.surface } ]}
           elevation={4}
         >
           <MazeRenderer
-            maze={maze}
+            maze={currentMaze}
             ballPosition={ballPosition}
             ballRadius={7}
-            paused={gameState !== 'playing'}
             scale={Math.min(width, height) / 440}
           />
         </Surface>
-
-        {gameState === 'playing' && (
-          <Button 
-            mode="contained" 
-            style={[
-              gameScreenStyles.pauseButton, 
-              { 
-                backgroundColor: theme.primary,
-                borderRadius: 20,
-              }
-            ]} 
-            labelStyle={{ 
-              color: theme.onPrimary,
-              fontWeight: '500',
-              letterSpacing: 1.25,
-              textTransform: 'uppercase'
-            }}
-            onPress={handlePause}
-            contentStyle={{ height: 40 }}
-          >
-            Pause
-          </Button>
-        )}
       </View>
 
-      {gameState === 'ready' && (
-        <GameReadyOverlay
-          mazeName={maze.name}
-          onStart={handleStart}
-          onBack={() => navigation.goBack()}
+      {gameState === 'game_over' && (
+        <GameOverOverlay
+          score={levelsCompleted}
+          bestScore={settings.highestScore ?? 0}
+          onPlayAgain={handlePlayAgain}
+          onContinueWithAd={() => {
+             console.log("Continue with Ad - Not implemented");
+             handlePlayAgain();
+          }}
         />
       )}
 
-      {gameState === 'paused' && (
-        <GamePausedOverlay
-          onResume={handleResume}
-          onRestart={handleRestart}
-          onExit={() => navigation.goBack()}
-        />
-      )}
-
-      {gameState === 'completed' && (
-        <GameCompletedOverlay
-          elapsedTime={formatTime(elapsed)}
-          onNextLevel={handleNextLevel}
-          onRestart={handleRestart}
-          onExit={() => navigation.goBack()}
-        />
-      )}
+      <Portal>
+        <Dialog visible={isQuitConfirmVisible} onDismiss={hideQuitConfirm}>
+          <Dialog.Title
+             style={{ color: colors?.onSurface ?? '#000' }}
+          >
+             Quit Game?
+          </Dialog.Title>
+          <Dialog.Content>
+            <Text 
+              variant="bodyMedium" 
+              style={{ color: colors?.onSurfaceVariant ?? '#444' }}
+            >
+              Are you sure you want to quit? Your current score will be lost if it's not your best.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button 
+              onPress={hideQuitConfirm}
+              textColor={colors?.primary ?? '#6200ee'}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onPress={handleQuitConfirm}
+              textColor={colors?.error ?? '#B00020'}
+            >
+              Quit
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 };

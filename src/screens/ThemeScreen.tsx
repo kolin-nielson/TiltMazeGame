@@ -15,9 +15,9 @@ interface ThemeScreenProps {
 }
 
 const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
-  const { theme, themeName, setTheme, setCustomTheme } = useTheme();
+  const { theme, themeName, setTheme, setCustomTheme, colors, isDark } = useTheme();
   const [selectedTheme, setSelectedTheme] = useState<ThemeName>(themeName);
-  const [customColors, setCustomColors] = useState<ThemeColors>({ ...themes.custom });
+  const [customColors, setCustomColors] = useState<ThemeColors>({ ...colors });
   const [editingColor, setEditingColor] = useState<keyof ThemeColors | null>(null);
   const [currentColor, setCurrentColor] = useState<string>('');
   const insets = useSafeAreaInsets();
@@ -25,19 +25,16 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
   useEffect(() => {
     setSelectedTheme(themeName);
     if (themeName === 'custom') {
-      setCustomColors({ ...theme });
+      setCustomColors({ ...colors });
     }
-  }, []);
-
-  useEffect(() => {
-    setTheme(selectedTheme);
-  }, [selectedTheme]);
+  }, [themeName, colors]);
 
   const handleSelectTheme = (name: ThemeName) => {
     setSelectedTheme(name);
+    setTheme(name);
 
-    if (name === 'custom' && Object.keys(customColors).length === 0) {
-      setCustomColors({ ...themes.custom });
+    if (name === 'custom') {
+      setCustomColors({ ...colors });
     }
   };
 
@@ -69,31 +66,31 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
   };
 
   const renderThemeOption = (name: ThemeName, label: string) => {
-    const themeColors = name === 'custom' ? customColors : themes[name];
+    const themeOptionColors = name === 'custom' ? customColors : themes[name];
 
     return (
       <TouchableOpacity
         style={[
           styles.themeOption,
-          selectedTheme === name && { borderColor: theme.primary, borderWidth: 2 },
+          selectedTheme === name && { borderColor: colors?.primary ?? '#6200ee', borderWidth: 2 },
         ]}
         onPress={() => handleSelectTheme(name)}
       >
         <View style={styles.themePreview}>
-          <View style={[styles.previewHeader, { backgroundColor: themeColors.primary }]}>
+          <View style={[styles.previewHeader, { backgroundColor: themeOptionColors.primary }]}>
             <View style={styles.previewButtons}>
               <View style={styles.previewButton} />
               <View style={styles.previewButton} />
               <View style={styles.previewButton} />
             </View>
           </View>
-          <View style={[styles.previewBody, { backgroundColor: themeColors.background }]}>
-            <View style={[styles.previewItem, { backgroundColor: themeColors.surface }]} />
-            <View style={[styles.previewItem, { backgroundColor: themeColors.surface }]} />
-            <View style={[styles.previewAccent, { backgroundColor: themeColors.secondary }]} />
+          <View style={[styles.previewBody, { backgroundColor: themeOptionColors.background }]}>
+            <View style={[styles.previewItem, { backgroundColor: themeOptionColors.surface }]} />
+            <View style={[styles.previewItem, { backgroundColor: themeOptionColors.surface }]} />
+            <View style={[styles.previewAccent, { backgroundColor: themeOptionColors.secondary }]} />
           </View>
         </View>
-        <Text style={[styles.themeLabel, { color: theme.onSurface }]}>{label}</Text>
+        <Text style={[styles.themeLabel, { color: colors?.onSurface ?? '#000' }]}>{label}</Text>
       </TouchableOpacity>
     );
   };
@@ -112,7 +109,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
         <Text
           style={[
             styles.swatchLabel,
-            { color: isLightColor(color) ? theme.onBackground : theme.onPrimary },
+            { color: isLightColor(color) ? (colors?.onSurface ?? '#000') : (colors?.onPrimary ?? '#fff') },
           ]}
         >
           {label}
@@ -134,7 +131,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors?.background ?? '#fff' }]}>
       <ScrollView 
         contentContainerStyle={[
           styles.scrollContent,
@@ -145,7 +142,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.sectionTitle, { color: theme.primary, marginTop: 16 }]}>Choose Theme</Text>
+        <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee', marginTop: 16 }]}>Choose Theme</Text>
 
         <View style={styles.themeOptions}>
           {renderThemeOption('light', 'Light')}
@@ -156,7 +153,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
 
         {selectedTheme === 'custom' && (
           <View style={styles.customizeSection}>
-            <Text style={[styles.sectionTitle, { color: theme.primary }]}>Customize Colors</Text>
+            <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>Customize Colors</Text>
 
             <View style={styles.colorSwatches}>
               {renderColorSwatch('primary', 'Primary')}
@@ -175,11 +172,11 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
               <View style={[
                 styles.colorPickerContainer, 
                 { 
-                  backgroundColor: theme.surface,
-                  shadowColor: theme.onBackground 
+                  backgroundColor: colors?.surface ?? '#fff',
+                  shadowColor: colors?.onBackground ?? '#000' 
                 }
               ]}>
-                <Text style={[styles.colorTitle, { color: theme.onSurface }]}>
+                <Text style={[styles.colorTitle, { color: colors?.onSurface ?? '#000' }]}>
                   {editingColor.charAt(0).toUpperCase() + editingColor.slice(1)}:{' '}
                   {currentColor || customColors[editingColor] || ''}
                 </Text>
@@ -188,7 +185,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
                     height: 300,
                     width: '100%',
                     borderWidth: 1,
-                    borderColor: theme.outline || 'rgba(0,0,0,0.1)',
+                    borderColor: colors?.outline ?? 'rgba(0,0,0,0.1)',
                     borderRadius: 8,
                     overflow: 'hidden',
                     padding: 5,
@@ -207,16 +204,16 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
                 </View>
                 <View style={[styles.colorButtonsContainer, { marginTop: 20 }]}>
                   <TouchableOpacity
-                    style={[styles.colorButton, { backgroundColor: theme.error }]}
+                    style={[styles.colorButton, { backgroundColor: colors?.error ?? '#B00020' }]}
                     onPress={cancelColorEditing}
                   >
-                    <Text style={[styles.colorButtonText, { color: theme.onError }]}>Cancel</Text>
+                    <Text style={[styles.colorButtonText, { color: colors?.onError ?? '#fff' }]}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.colorButton, { backgroundColor: theme.primary }]}
+                    style={[styles.colorButton, { backgroundColor: colors?.primary ?? '#6200ee' }]}
                     onPress={applyColorChange}
                   >
-                    <Text style={[styles.colorButtonText, { color: theme.onPrimary }]}>Apply</Text>
+                    <Text style={[styles.colorButtonText, { color: colors?.onPrimary ?? '#fff' }]}>Apply</Text>
                   </TouchableOpacity>
                 </View>
               </View>

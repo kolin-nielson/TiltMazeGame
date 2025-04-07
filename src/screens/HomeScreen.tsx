@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -21,6 +21,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { userProgress } = useMazes();
   const insets = useSafeAreaInsets();
 
+  // Log theme colors for debugging
+  useEffect(() => {
+    console.log('HomeScreen isDark:', isDark);
+    console.log('HomeScreen Colors:', JSON.stringify(colors, null, 2));
+  }, [colors, isDark]);
+
   return (
     <SafeAreaView 
       style={[
@@ -42,14 +48,27 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
         <View style={styles.statsContainer}>
           <Text 
-             variant="headlineSmall"
-             style={[styles.statLabel, { color: colors?.onSurfaceVariant ?? '#444444' }]}
+             style={[
+               styles.statLabel, 
+               { 
+                 color: colors?.onSurfaceVariant ?? '#444444',
+                 fontSize: 14, 
+                 textTransform: 'uppercase',
+                 fontWeight: '500'
+               }
+             ]}
           >
              Best Score
           </Text>
           <Text 
-             variant="displayMedium"
-             style={[styles.statNumber, { color: colors?.primary ?? '#6200ee' }]}
+             style={[
+               styles.statNumber, 
+               { 
+                 color: colors?.primary ?? '#6200ee',
+                 fontSize: 48, 
+                 fontWeight: 'bold'
+               }
+             ]}
           >
             {userProgress.highestScore ?? 0} 
           </Text>

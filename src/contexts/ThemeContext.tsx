@@ -174,13 +174,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
      ? customThemeColors 
      : (themes[themeName] || lightTheme);
 
-  // Construct the final theme object 
+  // Construct the final theme object for PaperProvider and context
   const finalTheme: MD3Theme = {
-    ...basePaperTheme,
-    colors: { 
-      // Merge base colors and current (custom) colors
+    ...basePaperTheme, // Start with base Paper theme (fonts, roundness, etc.)
+    colors: {        // Override colors with your theme's colors
       ...basePaperTheme.colors,
-      ...currentColors, 
+      ...currentColors, // Your specific theme colors take precedence
     },
   };
 
@@ -188,14 +187,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const contextColors: ThemeColors = {
       ...basePaperTheme.colors,
       ...currentColors,
-      // Explicitly list potentially missing required ThemeColors properties if necessary,
-      // but the spread should cover them if currentColors is correctly typed.
-      // Ensure currentColors *always* includes success, walls, ball, goal.
-      success: currentColors.success, 
+      success: currentColors.success,
       walls: currentColors.walls,
       ball: currentColors.ball,
       goal: currentColors.goal,
   };
+
+  // *** Add Log Here ***
+  console.log('--- ThemeContext Providing ---');
+  console.log('isDark:', finalTheme.dark);
+  console.log('Theme Name:', themeName);
+  console.log('Provided Colors (onSurface):', contextColors.onSurface);
+  console.log('Provided Colors (onBackground):', contextColors.onBackground);
+  // console.log('Full Context Value:', JSON.stringify({ themeName, isDark: finalTheme.dark, colors: contextColors }, null, 2));
 
   return (
     <ThemeContext.Provider
@@ -205,7 +209,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isDark: finalTheme.dark,
         setTheme: handleSetTheme,
         setCustomTheme: handleSetCustomTheme,
-        colors: contextColors, // Provide the correctly typed colors object
+        colors: contextColors,
       }}
     >
       {children}

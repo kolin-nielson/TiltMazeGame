@@ -26,14 +26,14 @@ const SettingItem: React.FC<SettingItemProps> = ({
   onPress,
   children,
 }) => {
-  const { theme } = useTheme();
-  const itemIconColor = iconColor || theme.primary;
-  const itemLabelColor = labelColor || theme.onSurface;
+  const { theme, colors } = useTheme();
+  const itemIconColor = iconColor || colors?.primary || '#6200ee';
+  const itemLabelColor = labelColor || colors?.onSurface || '#000000';
 
   const Content = (
     <View style={[styles.settingRow, { 
-      backgroundColor: theme.surface,
-      shadowColor: theme.onBackground,
+      backgroundColor: colors?.surface ?? '#ffffff',
+      shadowColor: colors?.onBackground ?? '#000000',
     }]}>
       <View style={styles.settingLabelContainer}>
         <MaterialIcons name={iconName} size={24} color={itemIconColor} style={styles.icon} />
@@ -57,7 +57,7 @@ interface SettingsScreenProps {
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-  const { theme, themeName, setTheme } = useTheme();
+  const { theme, themeName, setTheme, colors } = useTheme();
   const { settings, updateSettings } = useSettings();
   const { resetProgress } = useMazes();
   const insets = useSafeAreaInsets();
@@ -98,12 +98,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         styles.container, 
         { 
           paddingBottom: insets.bottom,
-          backgroundColor: theme.background 
+          backgroundColor: colors?.background ?? '#ffffff' 
         }
       ]}
     >
       <View style={styles.settingsGroup}>
-        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Game Settings</Text>
+        <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>Game Settings</Text>
 
         <SettingItem label="Sensitivity" iconName="speed">
           <View style={styles.sliderContainer}>
@@ -114,11 +114,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               step={0.1}
               value={settings.sensitivity}
               onValueChange={handleSensitivityChange}
-              minimumTrackTintColor={theme.primary}
-              maximumTrackTintColor={theme.onSurface + '40'}
-              thumbTintColor={theme.primary}
+              minimumTrackTintColor={colors?.primary ?? '#6200ee'}
+              maximumTrackTintColor={colors?.onSurfaceVariant ?? '#cccccc'}
+              thumbTintColor={colors?.primary ?? '#6200ee'}
             />
-            <Text style={[styles.sensitivityValue, { color: theme.onSurface }]}>
+            <Text style={[styles.sensitivityValue, { color: colors?.onSurface ?? '#000000' }]}>
               {settings.sensitivity.toFixed(1)}x
             </Text>
           </View>
@@ -126,9 +126,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
         <SettingItem label="Sound" iconName="volume-up">
           <Switch
-            trackColor={{ false: theme.surfaceVariant, true: theme.primary + '80' }}
-            thumbColor={settings.soundEnabled ? theme.primary : theme.onSurfaceVariant}
-            ios_backgroundColor={theme.surfaceVariant}
+            trackColor={{ false: colors?.surfaceVariant ?? '#E7E0EB', true: (colors?.primary ?? '#6200ee') + '80' }}
+            thumbColor={settings.soundEnabled ? (colors?.primary ?? '#6200ee') : (colors?.onSurfaceVariant ?? '#CAC4CF')}
+            ios_backgroundColor={colors?.surfaceVariant ?? '#E7E0EB'}
             onValueChange={handleSoundToggle}
             value={settings.soundEnabled}
           />
@@ -136,9 +136,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
         <SettingItem label="Vibration" iconName="vibration">
           <Switch
-            trackColor={{ false: theme.surfaceVariant, true: theme.primary + '80' }}
-            thumbColor={settings.vibrationEnabled ? theme.primary : theme.onSurfaceVariant}
-            ios_backgroundColor={theme.surfaceVariant}
+            trackColor={{ false: colors?.surfaceVariant ?? '#E7E0EB', true: (colors?.primary ?? '#6200ee') + '80' }}
+            thumbColor={settings.vibrationEnabled ? (colors?.primary ?? '#6200ee') : (colors?.onSurfaceVariant ?? '#CAC4CF')}
+            ios_backgroundColor={colors?.surfaceVariant ?? '#E7E0EB'}
             onValueChange={handleVibrationToggle}
             value={settings.vibrationEnabled}
           />
@@ -146,7 +146,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.settingsGroup}>
-        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Appearance</Text>
+        <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>Appearance</Text>
 
         <SettingItem 
           label="Theme" 
@@ -154,13 +154,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           onPress={() => navigation.navigate('Theme')}
         >
           <View style={styles.valueContainer}>
-            <Text style={[styles.settingValue, { color: theme.onSurface }]}>
+            <Text style={[styles.settingValue, { color: colors?.onSurface ?? '#000000' }]}>
               {themeName.charAt(0).toUpperCase() + themeName.slice(1)}
             </Text>
             <MaterialIcons
               name="chevron-right"
               size={24}
-              color={theme.onSurface}
+              color={colors?.onSurface ?? '#000000'}
               style={styles.chevron}
             />
           </View>
@@ -168,20 +168,20 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.settingsGroup}>
-        <Text style={[styles.sectionTitle, { color: theme.primary }]}>Data</Text>
+        <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>Data</Text>
 
         <SettingItem 
           label="Reset Progress"
           iconName="delete-forever"
-          iconColor={theme.error}
-          labelColor={theme.error}
+          iconColor={colors?.error ?? '#B00020'}
+          labelColor={colors?.error ?? '#B00020'}
           onPress={handleResetProgress}
         >
         </SettingItem>
       </View>
 
       <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: theme.onSurface + '80' }]}>Tilt Maze v1.0.0</Text>
+        <Text style={[styles.footerText, { color: colors?.onSurfaceVariant ?? '#444444' }]}>Tilt Maze v1.0.0</Text>
       </View>
     </View>
   );

@@ -4,68 +4,59 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Maze, Position } from '../types';
 import { MazeElements } from './maze/MazeElements';
 import { mazeRendererStyles } from '../styles/MazeRendererStyles';
+import Animated from 'react-native-reanimated';
 
 interface MazeRendererProps {
   maze: Maze;
-  ballPosition: Position;
+  ballPositionX: Animated.SharedValue<number>;
+  ballPositionY: Animated.SharedValue<number>;
   ballRadius?: number;
   containerStyle?: object;
-  paused?: boolean;
-  scale?: number;
+  colors: ThemeColors;
 }
 
 const MazeRenderer: React.FC<MazeRendererProps> = ({
   maze,
-  ballPosition,
-  ballRadius = 10,
+  ballPositionX,
+  ballPositionY,
+  ballRadius = 7,
   containerStyle = {},
-  paused = false,
-  scale = 1,
+  colors,
 }) => {
-  const { theme, colors } = useTheme();
+  const { theme, colors: themeColors } = useTheme();
   const mazeSize = 300;
   
-  const scaledSize = useMemo(() => mazeSize * scale, [mazeSize, scale]);
-  const containerOffset = useMemo(() => ({
-    x: (300 - scaledSize) / 2,
-    y: (300 - scaledSize) / 2,
-  }), [scaledSize]);
-
   const containerStyles = useMemo(() => [
     mazeRendererStyles.container,
     containerStyle,
     {
-      backgroundColor: colors?.surface ?? '#ffffff',
+      backgroundColor: themeColors?.surface ?? '#ffffff',
       borderRadius: 12,
       overflow: 'hidden',
     },
-  ], [containerStyle, colors?.surface]);
+  ], [containerStyle, themeColors?.surface]);
 
   return (
     <View style={containerStyles}>
       <MazeElements
         maze={maze}
-        ballPosition={ballPosition}
+        ballPositionX={ballPositionX}
+        ballPositionY={ballPositionY}
         ballRadius={ballRadius}
-        scale={scale}
-        paused={paused}
         colors={colors}
-        centerOffset={containerOffset}
       />
     </View>
   );
 };
 
 export default memo(MazeRenderer, (prevProps, nextProps) => {
-  const positionChanged = 
-    prevProps.ballPosition.x !== nextProps.ballPosition.x || 
-    prevProps.ballPosition.y !== nextProps.ballPosition.y;
-  
   const mazeChanged = prevProps.maze.id !== nextProps.maze.id;
-  const pausedChanged = prevProps.paused !== nextProps.paused;
-  const scaleChanged = prevProps.scale !== nextProps.scale;
   const radiusChanged = prevProps.ballRadius !== nextProps.ballRadius;
-  const themeChanged = prevProps.theme?.colors?.surface !== nextProps.theme?.colors?.surface;
-  
-  return !(positionChanged || mazeChanged || pausedChanged || scaleChanged || radiusChanged || themeChanged);
+  const colorsChanged = 
+    prevProps.colors?.surface !== nextProps.colors?.surface ||
+    prevProps.colors?.walls !== nextProps.colors?.walls ||
+    prevProps.colors?.ball !== nextProps.colors?.ball ||
+    prevProps.colors?.goal !== nextProps.colors?.goal;
+
+  return !(mazeChanged || radiusChanged || colorsChanged);
 });

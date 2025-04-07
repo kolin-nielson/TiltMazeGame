@@ -1,41 +1,22 @@
 import React from 'react';
-import { View } from 'react-native';
-import { Surface } from 'react-native-paper';
+import { Rect } from 'react-native-svg';
 import { Wall } from '../../types';
-import { mazeRendererStyles } from '../../styles/MazeRendererStyles';
 
 interface MazeWallProps {
   wall: Wall;
   index: number;
-  scale: number;
   color: string;
 }
 
-export const MazeWall: React.FC<MazeWallProps> = ({ wall, index, scale, color }) => {
+export const MazeWall: React.FC<MazeWallProps> = ({ wall, index, color }) => {
   return (
-    <View
-      style={[
-        mazeRendererStyles.wall,
-        {
-          left: wall.x * scale,
-          top: wall.y * scale,
-          width: wall.width * scale,
-          height: wall.height * scale,
-        },
-      ]}
-    >
-      <Surface
+    <Rect
         key={`wall-${index}`}
-        style={{
-          width: '100%',
-          height: '100%',
-          backgroundColor: color,
-          borderRadius: 2,
-        }}
-        elevation={3}
-      >
-        <></>
-      </Surface>
-    </View>
+      x={wall.x}
+      y={wall.y}
+      width={wall.width}
+      height={wall.height}
+      fill={color}
+    />
   );
 };

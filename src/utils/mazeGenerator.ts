@@ -65,35 +65,44 @@ function removeWall(current: Cell, next: Cell): void {
   }
 }
 
+// Updated function to prevent duplicate walls
 function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number): Wall[] {
     const walls: Wall[] = [];
-    const addedWalls = new Set<string>(); // To avoid duplicate walls
-
-    const addWall = (x: number, y: number, width: number, height: number) => {
-        const key = `${x}-${y}-${width}-${height}`;
-        if (!addedWalls.has(key)) {
-            walls.push({ x: x * scale, y: y * scale, width: width * scale, height: height * scale });
-            addedWalls.add(key);
-        }
-    };
+    const wallThicknessScaled = WALL_THICKNESS * scale;
+    const cellSizeScaled = CELL_SIZE * scale;
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             const cell = grid[y][x];
-            const cellX = x * CELL_SIZE;
-            const cellY = y * CELL_SIZE;
+            const cellX = x * cellSizeScaled;
+            const cellY = y * cellSizeScaled;
 
-            if (cell.walls.top) {
-                addWall(cellX, cellY, CELL_SIZE, WALL_THICKNESS);
+            // Always add top wall for the first row
+            if (y === 0 && cell.walls.top) {
+                walls.push({ x: cellX, y: cellY, width: cellSizeScaled, height: wallThicknessScaled });
             }
-            if (cell.walls.right) {
-                addWall(cellX + CELL_SIZE - WALL_THICKNESS, cellY, WALL_THICKNESS, CELL_SIZE);
+            // Always add left wall for the first column
+            if (x === 0 && cell.walls.left) {
+                walls.push({ x: cellX, y: cellY, width: wallThicknessScaled, height: cellSizeScaled });
             }
+
+            // Add bottom wall if it exists
             if (cell.walls.bottom) {
-                addWall(cellX, cellY + CELL_SIZE - WALL_THICKNESS, CELL_SIZE, WALL_THICKNESS);
+                walls.push({ 
+                  x: cellX, 
+                  y: cellY + cellSizeScaled - wallThicknessScaled, 
+                  width: cellSizeScaled, 
+                  height: wallThicknessScaled 
+                });
             }
-            if (cell.walls.left) {
-                addWall(cellX, cellY, WALL_THICKNESS, CELL_SIZE);
+            // Add right wall if it exists
+            if (cell.walls.right) {
+                walls.push({ 
+                  x: cellX + cellSizeScaled - wallThicknessScaled, 
+                  y: cellY, 
+                  width: wallThicknessScaled, 
+                  height: cellSizeScaled 
+                });
             }
         }
     }

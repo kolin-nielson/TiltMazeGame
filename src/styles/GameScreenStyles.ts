@@ -3,39 +3,26 @@ import { StyleSheet } from 'react-native';
 export const gameScreenStyles = StyleSheet.create({
   screen: {
     flex: 1,
-    position: 'relative',
   },
-  gameContainer: {
-    flex: 1,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 40,
-    paddingHorizontal: 10,
-  },
-  topBarContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    zIndex: 10,
-  },
-  scoreText: {
-    fontSize: 20,
+  appbarTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  mazeContainer: {
     flex: 1,
-    marginHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   mazeSurface: {
-    width: 320,
-    height: 320,
+    aspectRatio: 1,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    marginBottom: 20,
+    borderRadius: 16,
   },
   timerContainer: {
     marginBottom: 15,
@@ -118,13 +105,14 @@ export const gameScreenStyles = StyleSheet.create({
   },
   overlayText: {
     fontSize: 18,
-    marginBottom: 30,
+    marginBottom: 15,
     textAlign: 'center',
   },
   overlayButtonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
+    marginTop: 15,
   },
   overlayButton: {
     marginHorizontal: 10,

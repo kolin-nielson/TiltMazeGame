@@ -32,7 +32,8 @@ export const useGyroscope = (enabled = true) => {
       setAvailable(isGyroAvailable);
 
       if (isGyroAvailable && enabled) {
-        Gyroscope.setUpdateInterval(60);
+        // Try a faster update interval (target ~60fps)
+        Gyroscope.setUpdateInterval(16);
 
         // Reset smoothing history when listener starts/restarts
         prevDataRef.current = { x: 0, y: 0, z: 0 };

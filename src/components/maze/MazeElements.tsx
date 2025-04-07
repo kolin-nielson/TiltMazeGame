@@ -1,20 +1,20 @@
 import React, { memo, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
+import Svg from 'react-native-svg';
 import { Maze, Position, Wall } from '../../types';
 import { MazeWall } from './MazeWall';
 import { MazeGoal } from './MazeGoal';
 import { MazeBall } from './MazeBall';
 import { mazeRendererStyles } from '../../styles/MazeRendererStyles';
 import { ThemeColors } from '../../types';
+import Animated from 'react-native-reanimated';
 
 interface MazeElementsProps {
   maze: Maze;
-  ballPosition: Position;
+  ballPositionX: Animated.SharedValue<number>;
+  ballPositionY: Animated.SharedValue<number>;
   ballRadius: number;
-  scale: number;
-  paused: boolean;
   colors: ThemeColors;
-  centerOffset?: { x: number; y: number };
 }
 
 // Memoized wall component to reduce render overhead
@@ -40,59 +40,51 @@ const MemoizedWalls = memo(({ walls, scale, color }: {
 
 export const MazeElements: React.FC<MazeElementsProps> = memo(({
   maze,
-  ballPosition,
+  ballPositionX,
+  ballPositionY,
   ballRadius,
-  scale,
-  paused,
   colors,
-  centerOffset = { x: 0, y: 0 },
 }) => {
-  // Memoize the offset calculation
-  const offset = useMemo(() => 150 * (1 - scale), [scale]);
-
-  // Memoize the transform style to prevent object recreation on each render
-  const transformStyle = useMemo(() => ({
-    transform: [{ translateX: offset }, { translateY: offset }]
-  }), [offset]);
+  // Define the base size of the maze coordinate system
+  const mazeBaseSize = 300; 
 
   return (
     <View style={[mazeRendererStyles.mazeElementsContainer, styles.centeredContainer]}>
-      <View style={[styles.mazeContent, transformStyle]}>
+      <Svg 
+         width="100%"
+         height="100%" 
+         viewBox={`0 0 ${mazeBaseSize} ${mazeBaseSize}`} 
+      >
         <MazeGoal
           position={maze.endPosition}
-          scale={scale}
           ballRadius={ballRadius}
           color={colors?.goal ?? '#4CAF50'}
         />
 
         <MemoizedWalls 
           walls={maze.walls}
-          scale={scale}
           color={colors?.walls ?? '#333333'}
         />
 
-        {!paused && (
-          <MazeBall position={ballPosition} radius={ballRadius} scale={scale} color={colors?.ball ?? '#FF4081'} />
-        )}
-      </View>
+        <MazeBall 
+            ballPositionX={ballPositionX} 
+            ballPositionY={ballPositionY}
+            radius={ballRadius}
+            color={colors?.ball ?? '#FF4081'} 
+        /> 
+        
+      </Svg>
     </View>
   );
 }, (prevProps, nextProps) => {
-  // Only re-render when necessary props change
-  const ballChanged = 
-    prevProps.ballPosition.x !== nextProps.ballPosition.x || 
-    prevProps.ballPosition.y !== nextProps.ballPosition.y;
-  
   const mazeChanged = prevProps.maze.id !== nextProps.maze.id;
+  const radiusChanged = prevProps.ballRadius !== nextProps.ballRadius;
   const colorsChanged = 
     prevProps.colors?.goal !== nextProps.colors?.goal ||
     prevProps.colors?.walls !== nextProps.colors?.walls ||
     prevProps.colors?.ball !== nextProps.colors?.ball;
-  const pausedChanged = prevProps.paused !== nextProps.paused;
-  const scaleChanged = prevProps.scale !== nextProps.scale;
-  
-  // Return true if nothing changed (skip re-render)
-  return !(ballChanged || mazeChanged || colorsChanged || pausedChanged || scaleChanged);
+
+  return !(mazeChanged || radiusChanged || colorsChanged);
 });
 
 const styles = StyleSheet.create({

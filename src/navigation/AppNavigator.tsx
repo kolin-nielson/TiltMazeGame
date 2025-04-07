@@ -69,6 +69,7 @@ const AppNavigator: React.FC = () => {
           options={{
             title: 'Endless Maze',
             gestureEnabled: false,
+            headerBackVisible: false,
           }}
         />
         <Stack.Screen 

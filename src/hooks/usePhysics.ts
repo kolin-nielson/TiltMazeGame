@@ -1,8 +1,9 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import Matter from 'matter-js';
 import { Maze, Position } from '../types';
 import { Platform } from 'react-native';
 import { Dimensions } from 'react-native';
+import Animated, { useSharedValue, useAnimatedReaction, runOnJS } from 'react-native-reanimated';
 
 interface PhysicsOptions {
   width: number;
@@ -22,9 +23,10 @@ interface PhysicsWorld {
   goal: Matter.Body;
   reset: () => void;
   update: (tiltX: number, tiltY: number) => void;
-  getBallPosition: () => Position;
-  isGoalReached: () => boolean;
-  isGameOver: () => boolean;
+  ballPositionX: Animated.SharedValue<number>;
+  ballPositionY: Animated.SharedValue<number>;
+  goalReached: boolean;
+  gameOver: boolean;
   setQualityLevel: (level: 'low' | 'medium' | 'high') => void;
 }
 
@@ -67,10 +69,14 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   const wallsRef = useRef<Matter.Body[]>([]);
   const goalRef = useRef<Matter.Body>();
   const tickerRef = useRef<number | null>(null);
-  const goalReachedRef = useRef<boolean>(false);
+  const [goalReached, setGoalReached] = useState<boolean>(false);
+  const [gameOver, setGameOver] = useState<boolean>(false);
   const lastTimeRef = useRef<number>(0);
   const accumulatorRef = useRef<number>(0);
-  const gameOverRef = useRef<boolean>(false);
+
+  // Create SharedValues for ball position
+  const ballPositionX = useSharedValue(maze?.startPosition.x ?? 0);
+  const ballPositionY = useSharedValue(maze?.startPosition.y ?? 0);
 
   // Configure physics quality parameters based on device capability
   const getPhysicsQualitySettings = useCallback(() => {
@@ -107,14 +113,10 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   }, [qualityLevel]);
 
   useEffect(() => {
-    // --- Guard: Don't initialize if maze is null ---
-    if (!maze) {
-      // Optional: Clean up existing engine if maze becomes null after being valid?
-      // This depends on whether we expect the maze prop to transition from valid to null.
-      // For now, we assume it starts null and then becomes valid.
-      return; 
-    }
-    // --- End Guard ---
+    if (!maze) return; 
+    
+    runOnJS(setGoalReached)(false); 
+    runOnJS(setGameOver)(false); 
 
     const qualitySettings = getPhysicsQualitySettings();
     
@@ -220,20 +222,22 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     const goal = Matter.Bodies.circle(maze.endPosition.x, maze.endPosition.y, ballRadius * 1.8, {
       isStatic: true,
       isSensor: true,
+      label: 'goal',
       render: { fillStyle: '#4CAF50' },
     });
 
     Matter.Events.on(engine, 'collisionStart', event => {
       const pairs = event.pairs;
-
       for (let i = 0; i < pairs.length; i++) {
         const pair = pairs[i];
-
+        const bodyA = pair.bodyA;
+        const bodyB = pair.bodyB;
+        
         if (
-          (pair.bodyA === ball && pair.bodyB === goal) ||
-          (pair.bodyA === goal && pair.bodyB === ball)
+          (bodyA.label === 'ball' && bodyB.label === 'goal') ||
+          (bodyA.label === 'goal' && bodyB.label === 'ball')
         ) {
-          goalReachedRef.current = true;
+          runOnJS(setGoalReached)(true);
         }
       }
     });
@@ -247,6 +251,10 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     goalRef.current = goal;
     lastTimeRef.current = performance.now();
     accumulatorRef.current = 0;
+
+    // Initialize shared values when maze changes
+    ballPositionX.value = maze.startPosition.x;
+    ballPositionY.value = maze.startPosition.y;
 
     if (tickerRef.current === null) {
       const tick = () => {
@@ -269,51 +277,56 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           accumulatorRef.current -= timeStep;
         }
 
+        // *** Update SharedValues after physics engine update ***
+        if (ballRef.current) {
+           // Use withTiming or directly set .value for immediate update
+           // Direct update is usually fine here as physics drives it
+           ballPositionX.value = ballRef.current.position.x;
+           ballPositionY.value = ballRef.current.position.y;
+        }
+
+        // Schedule next tick
         tickerRef.current = requestAnimationFrame(tick);
       };
 
       tick();
     }
 
+    // Cleanup function
     return () => {
+      // 1. Stop the animation frame loop
       if (tickerRef.current !== null) {
         cancelAnimationFrame(tickerRef.current);
         tickerRef.current = null;
       }
+      // 2. Clean up the Matter.js engine
       if (engineRef.current) {
-        Matter.Events.off(engineRef.current);
+        // Clear the engine (removes world, etc.)
         Matter.Engine.clear(engineRef.current);
-        if (worldRef.current) {
-          Matter.Composite.clear(worldRef.current, false);
-        }
       }
+      // 3. Reset refs
       engineRef.current = undefined;
       worldRef.current = undefined;
       ballRef.current = undefined;
       wallsRef.current = [];
       goalRef.current = undefined;
-      goalReachedRef.current = false;
     };
-  }, [maze, width, height, ballRadius, gravityScale, wallThickness, qualityLevel, getPhysicsQualitySettings]);
+  }, [maze, width, height, ballRadius, gravityScale, wallThickness, qualityLevel, getPhysicsQualitySettings, ballPositionX, ballPositionY]);
 
-  const reset = () => {
-    if (ballRef.current && engineRef.current) {
-      Matter.Body.setPosition(ballRef.current, {
-        x: maze.startPosition.x,
-        y: maze.startPosition.y,
-      });
-
-      Matter.Body.setVelocity(ballRef.current, {
-        x: 0,
-        y: 0,
-      });
+  const reset = useCallback(() => {
+    if (ballRef.current && engineRef.current && maze) { // Ensure maze exists
+      const startX = maze.startPosition.x;
+      const startY = maze.startPosition.y;
+      Matter.Body.setPosition(ballRef.current, { x: startX, y: startY });
+      Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
 
       Matter.Body.setAngularVelocity(ballRef.current, 0);
 
       engineRef.current.gravity.x = 0;
       engineRef.current.gravity.y = 0;
 
-      goalReachedRef.current = false;
+      runOnJS(setGoalReached)(false);
+      runOnJS(setGameOver)(false);
 
       lastTimeRef.current = performance.now();
       accumulatorRef.current = 0;
@@ -322,8 +335,12 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       if (ballRef.current.isSleeping) {
         Matter.Sleeping.set(ballRef.current, false);
       }
+
+      // Reset shared values on the JS thread
+      ballPositionX.value = startX;
+      ballPositionY.value = startY;
     }
-  };
+  }, [maze, ballPositionX, ballPositionY, setGoalReached, setGameOver]);
 
   const update = useCallback(
     (tiltX: number, tiltY: number) => {
@@ -468,37 +485,25 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     return closest;
   };
 
-  const getBallPosition = useCallback((): Position => {
-    if (!ballRef.current) {
-      return maze?.startPosition ?? { x: 0, y: 0 };
-    }
-    return { x: ballRef.current.position.x, y: ballRef.current.position.y };
-  }, [maze]);
-
-  const isGoalReached = useCallback((): boolean => {
-    if (!engineRef.current) return false;
-    return goalReachedRef.current;
-  }, []);
-
-  const isGameOver = useCallback((): boolean => {
-    return gameOverRef.current;
-  }, []);
-
   const changeQualityLevel = (level: 'low' | 'medium' | 'high') => {
     setQualityLevel(level);
   };
 
-  return {
-    engine: engineRef.current!,
+  // Memoize the returned object
+  const physicsWorld = useMemo(() => ({
+    engine: engineRef.current!, 
     world: worldRef.current!,
     ball: ballRef.current!,
     walls: wallsRef.current,
     goal: goalRef.current!,
     reset,
     update,
-    getBallPosition,
-    isGoalReached,
-    isGameOver,
-    setQualityLevel: changeQualityLevel,
-  };
+    ballPositionX, 
+    ballPositionY,
+    goalReached,
+    gameOver, 
+    setQualityLevel: changeQualityLevel, 
+  }), [reset, update, ballPositionX, ballPositionY, goalReached, gameOver, changeQualityLevel]);
+
+  return physicsWorld;
 };

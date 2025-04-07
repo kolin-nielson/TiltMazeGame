@@ -1,42 +1,29 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Surface } from 'react-native-paper';
-import { Position } from '../../types';
-import { mazeRendererStyles } from '../../styles/MazeRendererStyles';
+import React, { memo } from 'react';
+import { Circle } from 'react-native-svg';
+import Animated, { useAnimatedProps } from 'react-native-reanimated';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface MazeBallProps {
-  position: Position;
+  ballPositionX: Animated.SharedValue<number>;
+  ballPositionY: Animated.SharedValue<number>;
   radius: number;
-  scale: number;
   color: string;
 }
 
-export const MazeBall: React.FC<MazeBallProps> = ({ position, radius, scale, color }) => {
-  const scaledRadius = radius * scale;
+export const MazeBall: React.FC<MazeBallProps> = memo(({ ballPositionX, ballPositionY, radius, color }) => {
+  const animatedProps = useAnimatedProps(() => {
+    return {
+      cx: ballPositionX.value,
+      cy: ballPositionY.value,
+    };
+  });
 
   return (
-    <View
-      style={[
-        mazeRendererStyles.ball,
-        {
-          left: (position.x - scaledRadius) * scale,
-          top: (position.y - scaledRadius) * scale,
-          width: scaledRadius * 2,
-          height: scaledRadius * 2,
-        },
-      ]}
-    >
-      <Surface
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: scaledRadius,
-          backgroundColor: color,
-        }}
-        elevation={4}
-      >
-        <></>
-      </Surface>
-    </View>
+    <AnimatedCircle
+      animatedProps={animatedProps}
+      r={radius}
+      fill={color}
+    />
   );
-};
+});

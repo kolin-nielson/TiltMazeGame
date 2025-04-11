@@ -13,16 +13,23 @@ interface GyroscopeData {
   z: number;
 }
 
+// Use variables outside the component to store calibration offset and state
+// This will persist even when the component is unmounted and remounted
+let globalCalibrationOffset: GyroscopeData | null = null;
+let isCalibrated = false; // Track if we've already calibrated
+let lastRawData: GyroscopeData | null = null; // Store the last raw data to detect device movement
+
 export const useGyroscope = (enabled = true) => {
   const [data, setData] = useState<GyroscopeData>({ x: 0, y: 0, z: 0 });
   const [available, setAvailable] = useState<boolean>(false);
   const { settings } = useSettings();
 
-  // State to hold the calibration offset
-  const [calibrationOffset, setCalibrationOffset] = useState<GyroscopeData | null>(null);
   // Refs to store the latest raw data and smoothing history
   const rawGyroDataRef = useRef<GyroscopeData>({ x: 0, y: 0, z: 0 });
   const prevDataRef = useRef<GyroscopeData>({ x: 0, y: 0, z: 0 });
+
+  // Use the global calibration offset ref instead of component state
+  // This ensures the calibration persists even when the component is unmounted and remounted
 
   useEffect(() => {
     let subscription: { remove: () => void } | null = null;
@@ -35,8 +42,14 @@ export const useGyroscope = (enabled = true) => {
         // Try a faster update interval (target ~60fps)
         Gyroscope.setUpdateInterval(16);
 
-        // Reset smoothing history when listener starts/restarts
-        prevDataRef.current = { x: 0, y: 0, z: 0 };
+        // Only reset smoothing history, NOT calibration offset
+        // This ensures calibration persists between levels
+        if (!prevDataRef.current) {
+          prevDataRef.current = { x: 0, y: 0, z: 0 };
+        }
+
+        // Log calibration status for debugging
+        console.log('Gyroscope calibration status:', isCalibrated ? 'CALIBRATED' : 'NOT CALIBRATED');
 
         subscription = Gyroscope.addListener(gyroData => {
           let adjustedData = { ...gyroData };
@@ -47,16 +60,17 @@ export const useGyroscope = (enabled = true) => {
 
           // Store the latest raw (platform-adjusted) data
           rawGyroDataRef.current = adjustedData;
+          lastRawData = { ...adjustedData }; // Update global last raw data
 
-          // --- Apply Calibration Offset --- 
-          let relativeData = { ...adjustedData }; 
-          if (calibrationOffset) {
-            relativeData.x -= calibrationOffset.x;
-            relativeData.y -= calibrationOffset.y;
+          // --- Apply Calibration Offset ---
+          let relativeData = { ...adjustedData };
+          if (globalCalibrationOffset) {
+            relativeData.x -= globalCalibrationOffset.x;
+            relativeData.y -= globalCalibrationOffset.y;
             // Assuming Z is not used for tilt calibration, but adjust if needed
-            // relativeData.z -= calibrationOffset.z; 
+            // relativeData.z -= globalCalibrationOffset.z;
           }
-          // --- End Calibration --- 
+          // --- End Calibration ---
 
           // Apply dead zone to *relative* data
           const deadZone = 0.02;
@@ -89,10 +103,10 @@ export const useGyroscope = (enabled = true) => {
           setData(sensitizedData); // Update the hook's output state
         });
       } else {
-         // If not available or disabled, clear offset and reset data
-         setCalibrationOffset(null);
+         // If not available or disabled, just reset data but keep calibration
+         // This ensures calibration persists when the game is paused
          setData({ x: 0, y: 0, z: 0 });
-         prevDataRef.current = { x: 0, y: 0, z: 0 };
+         // Don't reset calibration offset here
       }
     };
 
@@ -105,17 +119,38 @@ export const useGyroscope = (enabled = true) => {
     };
   }, [enabled, settings.sensitivity]);
 
-  // Reset function now captures the calibration offset
+  // Reset function now captures the calibration offset in the global variable
   const reset = useCallback(() => {
-    setCalibrationOffset(rawGyroDataRef.current); // Store current raw orientation
-    setData({ x: 0, y: 0, z: 0 }); // Reset processed data state immediately
-    prevDataRef.current = { x: 0, y: 0, z: 0 }; // Reset smoothing history
-    console.log('Gyroscope calibrated offset:', rawGyroDataRef.current); // Optional: for debugging
+    // Make sure we have valid data before calibrating
+    if (rawGyroDataRef.current.x !== 0 || rawGyroDataRef.current.y !== 0 || rawGyroDataRef.current.z !== 0) {
+      globalCalibrationOffset = { ...rawGyroDataRef.current }; // Store current raw orientation in global variable
+      lastRawData = { ...rawGyroDataRef.current }; // Also store as last raw data
+      setData({ x: 0, y: 0, z: 0 }); // Reset processed data state immediately
+      prevDataRef.current = { x: 0, y: 0, z: 0 }; // Reset smoothing history
+      isCalibrated = true; // Mark as calibrated globally
+      console.log('Gyroscope calibrated offset:', globalCalibrationOffset); // Optional: for debugging
+    } else {
+      console.log('Skipping calibration - no valid gyroscope data yet');
+    }
   }, []); // No dependencies needed, relies on ref
 
+  // Function to check if device has moved significantly since calibration
+  const hasDeviceMovedSignificantly = useCallback(() => {
+    if (!lastRawData || !globalCalibrationOffset) return false;
+
+    const threshold = 0.1; // Threshold for significant movement
+    const dx = Math.abs(lastRawData.x - globalCalibrationOffset.x);
+    const dy = Math.abs(lastRawData.y - globalCalibrationOffset.y);
+
+    return dx > threshold || dy > threshold;
+  }, []);
+
+  // Return additional flags and functions to help components manage calibration
   return {
     data,
     available,
     reset,
+    isCalibrated: isCalibrated,
+    hasDeviceMovedSignificantly,
   };
 };

@@ -1,4 +1,5 @@
 import { Maze, Wall, Position } from '../types';
+import { GAME } from '../config/constants';
 
 // --- Configuration ---
 const BASE_GRID_SIZE = 5; // Smallest grid size (e.g., 5x5 cells)
@@ -88,20 +89,20 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
 
             // Add bottom wall if it exists
             if (cell.walls.bottom) {
-                walls.push({ 
-                  x: cellX, 
-                  y: cellY + cellSizeScaled - wallThicknessScaled, 
-                  width: cellSizeScaled, 
-                  height: wallThicknessScaled 
+                walls.push({
+                  x: cellX,
+                  y: cellY + cellSizeScaled - wallThicknessScaled,
+                  width: cellSizeScaled,
+                  height: wallThicknessScaled
                 });
             }
             // Add right wall if it exists
             if (cell.walls.right) {
-                walls.push({ 
-                  x: cellX + cellSizeScaled - wallThicknessScaled, 
-                  y: cellY, 
-                  width: wallThicknessScaled, 
-                  height: cellSizeScaled 
+                walls.push({
+                  x: cellX + cellSizeScaled - wallThicknessScaled,
+                  y: cellY,
+                  width: wallThicknessScaled,
+                  height: cellSizeScaled
                 });
             }
         }
@@ -111,6 +112,8 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
 
 
 // --- Main Generator Function ---
+// Note: Difficulty is capped at GAME.MAX_DIFFICULTY (currently set to 4) in GameScreen.tsx
+// Higher difficulty levels create more complex mazes with larger grid sizes
 
 export const generateMaze = (difficulty: number): Maze => {
   const gridSize = BASE_GRID_SIZE + (difficulty - 1) * GRID_INCREMENT;
@@ -180,4 +183,4 @@ export const generateMaze = (difficulty: number): Maze => {
     updatedAt: Date.now(),
     difficulty: difficultyLevel,
   };
-}; 
+};

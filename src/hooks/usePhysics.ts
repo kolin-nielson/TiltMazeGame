@@ -40,29 +40,29 @@ const isLowEndDevice = () => {
   // More sophisticated detection would require native modules
   const { width, height } = Dimensions.get('window');
   const screenPixels = width * height;
-  
+
   if (Platform.OS === 'android') {
     // Pixel 3 has 1080 x 2160 resolution (2,332,800 pixels)
     // Consider similar or lower resolution devices as lower-end
     return screenPixels <= 2350000;
   }
-  
+
   return false;
 };
 
 // Accept Maze or null
 export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsWorld => {
-  const { 
-    width, 
-    height, 
-    gravityScale = 0.015, 
-    ballRadius = 7, 
+  const {
+    width,
+    height,
+    gravityScale = 0.015,
+    ballRadius = 7,
     wallThickness = 10,
     qualityLevel: initialQualityLevel = isLowEndDevice() ? 'low' : 'high'
   } = options;
 
   const [qualityLevel, setQualityLevel] = useState<'low' | 'medium' | 'high'>(initialQualityLevel);
-  
+
   const engineRef = useRef<Matter.Engine>();
   const worldRef = useRef<Matter.World>();
   const ballRef = useRef<Matter.Body>();
@@ -113,13 +113,13 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   }, [qualityLevel]);
 
   useEffect(() => {
-    if (!maze) return; 
-    
-    runOnJS(setGoalReached)(false); 
-    runOnJS(setGameOver)(false); 
+    if (!maze) return;
+
+    runOnJS(setGoalReached)(false);
+    runOnJS(setGameOver)(false);
 
     const qualitySettings = getPhysicsQualitySettings();
-    
+
     const engine = Matter.Engine.create({
       gravity: { x: 0, y: 0, scale: 1 },
       enableSleeping: false,
@@ -150,7 +150,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
     // Use simpler wall collision boxes on lower-end devices
     const wallSimplificationFactor = qualityLevel === 'low' ? 0.99 : 0.98;
-    
+
     const walls = maze.walls.map(wall =>
       Matter.Bodies.rectangle(
         wall.x + wall.width / 2,
@@ -232,7 +232,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         const pair = pairs[i];
         const bodyA = pair.bodyA;
         const bodyB = pair.bodyB;
-        
+
         if (
           (bodyA.label === 'ball' && bodyB.label === 'goal') ||
           (bodyA.label === 'goal' && bodyB.label === 'ball')
@@ -260,7 +260,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       const tick = () => {
         const now = performance.now();
         let frameTime = now - lastTimeRef.current;
-        
+
         // Limit maximum frame time to prevent large jumps after app pause/resume
         if (frameTime > 200) {
           frameTime = qualitySettings.timeStep;
@@ -315,6 +315,9 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
   const reset = useCallback(() => {
     if (ballRef.current && engineRef.current && maze) { // Ensure maze exists
+      // IMPORTANT: This function only resets the physics engine, not the gyroscope calibration
+      // This ensures the gyroscope calibration is preserved between levels
+
       const startX = maze.startPosition.x;
       const startY = maze.startPosition.y;
       Matter.Body.setPosition(ballRef.current, { x: startX, y: startY });
@@ -322,8 +325,10 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
       Matter.Body.setAngularVelocity(ballRef.current, 0);
 
-      engineRef.current.gravity.x = 0;
-      engineRef.current.gravity.y = 0;
+      // Don't reset gravity to zero here - this would cause the ball to stop responding to tilt
+      // Instead, let the update function handle gravity based on the current gyroscope data
+      // engineRef.current.gravity.x = 0;
+      // engineRef.current.gravity.y = 0;
 
       runOnJS(setGoalReached)(false);
       runOnJS(setGameOver)(false);
@@ -339,6 +344,8 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       // Reset shared values on the JS thread
       ballPositionX.value = startX;
       ballPositionY.value = startY;
+
+      console.log('[Physics] Reset complete - ball position reset to start');
     }
   }, [maze, ballPositionX, ballPositionY, setGoalReached, setGameOver]);
 
@@ -360,7 +367,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       if (qualityLevel === 'low') {
         maxVelocity = 2.5; // Lower max velocity on low-end devices for better stability
       }
-      
+
       const velocity = ballRef.current.velocity;
       const currentSpeed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
 
@@ -491,18 +498,18 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
   // Memoize the returned object
   const physicsWorld = useMemo(() => ({
-    engine: engineRef.current!, 
+    engine: engineRef.current!,
     world: worldRef.current!,
     ball: ballRef.current!,
     walls: wallsRef.current,
     goal: goalRef.current!,
     reset,
     update,
-    ballPositionX, 
+    ballPositionX,
     ballPositionY,
     goalReached,
-    gameOver, 
-    setQualityLevel: changeQualityLevel, 
+    gameOver,
+    setQualityLevel: changeQualityLevel,
   }), [reset, update, ballPositionX, ballPositionY, goalReached, gameOver, changeQualityLevel]);
 
   return physicsWorld;

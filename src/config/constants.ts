@@ -37,6 +37,10 @@ export const SCREENS = {
   STATS: 'Stats',
 };
 
+export const GAME = {
+  MAX_DIFFICULTY: 4,
+};
+
 export const DEFAULT_SETTINGS = {
   soundEnabled: true,
   vibrationEnabled: true,

@@ -14,6 +14,7 @@ import { useGyroscope } from '../hooks/useGyroscope';
 import { gameScreenStyles } from '../styles/GameScreenStyles';
 import { generateMaze } from '../utils/mazeGenerator';
 import { Maze } from '../types';
+import { GAME } from '../config/constants';
 import * as Haptics from 'expo-haptics';
 
 import MazeRenderer from '../components/MazeRenderer';
@@ -35,6 +36,7 @@ const GameScreen: React.FC = () => {
   const [levelsCompleted, setLevelsCompleted] = useState<number>(0);
   const [isQuitConfirmVisible, setIsQuitConfirmVisible] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [gyroscopeCalibrated, setGyroscopeCalibrated] = useState(false);
 
   useEffect(() => {
     if (difficulty === 1) {
@@ -51,77 +53,126 @@ const GameScreen: React.FC = () => {
   };
 
   const {
-    ballPositionX, 
-    ballPositionY, 
-    update, 
+    ballPositionX,
+    ballPositionY,
+    update,
     reset: resetPhysics,
     goalReached,
-    gameOver 
+    gameOver
   } = usePhysics(currentMaze, physicsOptions);
 
+  // Always keep the gyroscope enabled to maintain calibration
+  // We'll just ignore the data when not playing
   const {
     data: gyroData,
     available: gyroscopeAvailable,
     reset: resetGyroscope,
-  } = useGyroscope(gameState === 'playing');
+    isCalibrated: gyroIsCalibrated,
+    hasDeviceMovedSignificantly,
+  } = useGyroscope(true);
 
+  // Initialize the game when it first loads
   useEffect(() => {
     if (gameState === 'loading') {
+       console.log('Game loading, initializing...');
        handlePlayAgain();
     }
   }, [gameState, handlePlayAgain]);
+
+  // Make sure gyroscope is calibrated when the game starts playing
+  useEffect(() => {
+    if (gameState === 'playing' && !gyroIsCalibrated && gyroscopeAvailable) {
+      console.log('Game started playing, calibrating gyroscope...');
+      resetGyroscope();
+      setGyroscopeCalibrated(true);
+    } else if (gyroIsCalibrated && !gyroscopeCalibrated) {
+      // Sync our local state with the global state
+      console.log('Syncing gyroscope calibration state...');
+      setGyroscopeCalibrated(true);
+    }
+  }, [gameState, gyroscopeCalibrated, gyroIsCalibrated, gyroscopeAvailable, resetGyroscope]);
 
   const handlePlayAgain = useCallback(() => {
     if (resetPhysics) {
       resetPhysics();
     }
-    resetGyroscope();
+
+    // Only reset gyroscope calibration when starting a new game if it hasn't been calibrated yet
+    if (!gyroIsCalibrated) {
+      console.log('Initial gyroscope calibration');
+      resetGyroscope();
+      setGyroscopeCalibrated(true);
+    } else {
+      console.log('Keeping existing gyroscope calibration');
+    }
+
     setDifficulty(1);
     setLevelsCompleted(0);
     const initialMaze = generateMaze(1);
     setCurrentMaze(initialMaze);
     setGameState('playing');
-  }, [resetPhysics, resetGyroscope]);
+  }, [resetPhysics, resetGyroscope, gyroIsCalibrated]);
 
   const handleGoalReachedAndNextLevel = useCallback(() => {
     if (gameState === 'playing') {
       console.log('[Goal Reached] Start handling next level...');
 
+      // CRITICAL: We must NOT reset the gyroscope calibration between levels
+      // This is what causes the user to have to tilt their device more and more
+
       // Reset physics FIRST to set goalReached to false
       console.log('[Goal Reached] Calling resetPhysics...');
       if (resetPhysics) {
-          resetPhysics(); 
+          resetPhysics();
       }
       console.log('[Goal Reached] resetPhysics complete.');
+
+      // Log the current calibration state
+      console.log('[Goal Reached] Gyroscope calibration preserved:', gyroIsCalibrated ? 'YES' : 'NO');
+      console.log('[Goal Reached] Device moved significantly:', hasDeviceMovedSignificantly() ? 'YES' : 'NO');
 
       const completedLevelNumber = difficulty;
       setLevelsCompleted(prev => prev + 1);
       updateHighestEndlessLevel(completedLevelNumber);
 
-      const nextDifficulty = difficulty + 1;
+      // Cap difficulty at maximum level (4)
+      const nextDifficulty = Math.min(difficulty + 1, GAME.MAX_DIFFICULTY);
       console.log(`[Goal Reached] Generating maze for difficulty: ${nextDifficulty}`);
-      const nextMaze = generateMaze(nextDifficulty); 
+      const nextMaze = generateMaze(nextDifficulty);
       console.log('[Goal Reached] Maze generation complete.');
-      
+
       // Set new maze and difficulty AFTER resetting physics
       setDifficulty(nextDifficulty);
       setCurrentMaze(nextMaze);
-      
-      setGameState('playing'); 
+
+      setGameState('playing');
       console.log('[Goal Reached] Finished handling next level.');
     }
   }, [
-    gameState, 
-    difficulty, 
+    gameState,
+    difficulty,
     resetPhysics,
-    updateHighestEndlessLevel
+    updateHighestEndlessLevel,
+    gyroIsCalibrated,
+    hasDeviceMovedSignificantly
   ]);
 
+  // Only apply gyroscope data to physics when the game is in the playing state
   useEffect(() => {
     if (gameState === 'playing' && gyroscopeAvailable && update) {
+      // Check if device has moved significantly and we need to recalibrate
+      if (gyroIsCalibrated && hasDeviceMovedSignificantly()) {
+        console.log('Device moved significantly since calibration, recalibrating...');
+        resetGyroscope();
+      }
+
+      // Apply the calibrated gyroscope data to the physics engine
       update(gyroData.x, gyroData.y);
+    } else if (gameState !== 'playing' && update) {
+      // When not playing, set gravity to zero to stop ball movement
+      update(0, 0);
     }
-  }, [gameState, gyroscopeAvailable, gyroData, update]);
+  }, [gameState, gyroscopeAvailable, gyroData, update, gyroIsCalibrated, hasDeviceMovedSignificantly, resetGyroscope]);
 
   useEffect(() => {
     if (gameState === 'playing') {
@@ -131,7 +182,7 @@ const GameScreen: React.FC = () => {
         handleGoalReachedAndNextLevel();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     // Rationale: We only want this effect to run on actual state changes (gameState, gameOver, goalReached),
     // not when the handler function reference changes due to its own dependencies (like difficulty).
   }, [gameState, gameOver, goalReached, handleGameOver]);
@@ -140,12 +191,12 @@ const GameScreen: React.FC = () => {
     const handleBackPress = () => {
       if (gameState === 'playing') {
         // Do nothing and prevent default back action while playing
-        return true; 
+        return true;
       }
       // Allow back navigation only if game is over or still loading
       // If loading, back might go to home. If game over, back goes to home.
       // Returning false allows the default system behavior (usually exit screen)
-      return false; 
+      return false;
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
@@ -171,8 +222,11 @@ const GameScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  // This function allows the user to manually recalibrate the gyroscope during gameplay
+  // by pressing the compass button in the app bar
   const handleResetTilt = useCallback(() => {
-    resetGyroscope();
+    resetGyroscope(); // Explicitly reset calibration when user requests it
+    setGyroscopeCalibrated(true); // Mark as calibrated
     if (settings.vibrationEnabled) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
@@ -241,21 +295,21 @@ const GameScreen: React.FC = () => {
              Quit Game?
           </Dialog.Title>
           <Dialog.Content>
-            <Text 
-              variant="bodyMedium" 
+            <Text
+              variant="bodyMedium"
               style={{ color: colors?.onSurfaceVariant ?? '#444' }}
             >
               Are you sure you want to quit? Your current score will be lost if it's not your best.
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button 
+            <Button
               onPress={hideQuitConfirm}
               textColor={colors?.primary ?? '#6200ee'}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onPress={handleQuitConfirm}
               textColor={colors?.error ?? '#B00020'}
             >
@@ -282,15 +336,15 @@ const GameScreen: React.FC = () => {
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
-        duration={Snackbar.DURATION_SHORT} 
-        style={{ 
+        duration={Snackbar.DURATION_SHORT}
+        style={{
             backgroundColor: colors?.inverseSurface ?? colors?.onSurface,
             marginBottom: 50
-        }} 
-        theme={{ colors: { 
-            inverseSurface: colors?.surface, 
-            inverseOnSurface: colors?.inverseOnSurface ?? colors?.surface 
-        } }} 
+        }}
+        theme={{ colors: {
+            inverseSurface: colors?.surface,
+            inverseOnSurface: colors?.inverseOnSurface ?? colors?.surface
+        } }}
       >
          <Text style={{ color: colors?.inverseOnSurface ?? colors?.surface }}>Tilt orientation reset!</Text>
       </Snackbar>

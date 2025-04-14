@@ -126,7 +126,7 @@ export const useGyroscope = (enabled = true) => {
       globalCalibrationOffset = { ...rawGyroDataRef.current }; // Store current raw orientation in global variable
       lastRawData = { ...rawGyroDataRef.current }; // Also store as last raw data
       setData({ x: 0, y: 0, z: 0 }); // Reset processed data state immediately
-      prevDataRef.current = { x: 0, y: 0, z: 0 }; // Reset smoothing history
+      // prevDataRef.current = { x: 0, y: 0, z: 0 }; // DO NOT reset smoothing history
       isCalibrated = true; // Mark as calibrated globally
       console.log('Gyroscope calibrated offset:', globalCalibrationOffset); // Optional: for debugging
     } else {
@@ -138,7 +138,7 @@ export const useGyroscope = (enabled = true) => {
   const hasDeviceMovedSignificantly = useCallback(() => {
     if (!lastRawData || !globalCalibrationOffset) return false;
 
-    const threshold = 0.1; // Threshold for significant movement
+    const threshold = 0.15; // Increase threshold slightly
     const dx = Math.abs(lastRawData.x - globalCalibrationOffset.x);
     const dy = Math.abs(lastRawData.y - globalCalibrationOffset.y);
 

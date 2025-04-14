@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Dimensions, BackHandler } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Button, Surface, Text, Portal, Dialog, IconButton, Appbar, Snackbar } from 'react-native-paper';
@@ -37,6 +37,8 @@ const GameScreen: React.FC = () => {
   const [isQuitConfirmVisible, setIsQuitConfirmVisible] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [gyroscopeCalibrated, setGyroscopeCalibrated] = useState(false);
+  const [isManualRecalibrating, setIsManualRecalibrating] = useState(false);
+  const recalibrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (difficulty === 1) {
@@ -97,21 +99,12 @@ const GameScreen: React.FC = () => {
       resetPhysics();
     }
 
-    // Only reset gyroscope calibration when starting a new game if it hasn't been calibrated yet
-    if (!gyroIsCalibrated) {
-      console.log('Initial gyroscope calibration');
-      resetGyroscope();
-      setGyroscopeCalibrated(true);
-    } else {
-      console.log('Keeping existing gyroscope calibration');
-    }
-
     setDifficulty(1);
     setLevelsCompleted(0);
     const initialMaze = generateMaze(1);
     setCurrentMaze(initialMaze);
     setGameState('playing');
-  }, [resetPhysics, resetGyroscope, gyroIsCalibrated]);
+  }, [resetPhysics]);
 
   const handleGoalReachedAndNextLevel = useCallback(() => {
     if (gameState === 'playing') {
@@ -157,22 +150,39 @@ const GameScreen: React.FC = () => {
     hasDeviceMovedSignificantly
   ]);
 
-  // Only apply gyroscope data to physics when the game is in the playing state
+  // Effect to apply gyroscope data to physics
   useEffect(() => {
     if (gameState === 'playing' && gyroscopeAvailable && update) {
-      // Check if device has moved significantly and we need to recalibrate
-      if (gyroIsCalibrated && hasDeviceMovedSignificantly()) {
-        console.log('Device moved significantly since calibration, recalibrating...');
-        resetGyroscope();
-      }
-
       // Apply the calibrated gyroscope data to the physics engine
       update(gyroData.x, gyroData.y);
     } else if (gameState !== 'playing' && update) {
       // When not playing, set gravity to zero to stop ball movement
       update(0, 0);
     }
-  }, [gameState, gyroscopeAvailable, gyroData, update, gyroIsCalibrated, hasDeviceMovedSignificantly, resetGyroscope]);
+    // Dependencies: only what's needed to apply updates
+  }, [gameState, gyroscopeAvailable, update, gyroData]);
+
+  // Effect to handle automatic recalibration based on movement
+  useEffect(() => {
+    if (
+      gameState === 'playing' &&
+      gyroscopeAvailable &&
+      !isManualRecalibrating &&
+      gyroIsCalibrated &&
+      hasDeviceMovedSignificantly()
+    ) {
+      console.log('Device moved significantly since calibration, recalibrating...');
+      resetGyroscope();
+    }
+    // Dependencies: only what's needed for the recalibration check
+  }, [
+    gameState,
+    gyroscopeAvailable,
+    gyroIsCalibrated,
+    isManualRecalibrating,
+    hasDeviceMovedSignificantly,
+    resetGyroscope,
+  ]);
 
   useEffect(() => {
     if (gameState === 'playing') {
@@ -225,18 +235,40 @@ const GameScreen: React.FC = () => {
   // This function allows the user to manually recalibrate the gyroscope during gameplay
   // by pressing the compass button in the app bar
   const handleResetTilt = useCallback(() => {
+    // Clear any existing timeout
+    if (recalibrationTimeoutRef.current) {
+      clearTimeout(recalibrationTimeoutRef.current);
+    }
+
+    setIsManualRecalibrating(true); // Set flag before reset
     resetGyroscope(); // Explicitly reset calibration when user requests it
     setGyroscopeCalibrated(true); // Mark as calibrated
     if (settings.vibrationEnabled) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setSnackbarVisible(true);
+
+    // Reset the flag after a short delay
+    recalibrationTimeoutRef.current = setTimeout(() => {
+      setIsManualRecalibrating(false);
+      console.log("Manual recalibration debounce finished.");
+    }, 500); // 500ms delay
+
   }, [resetGyroscope, settings.vibrationEnabled]);
 
   // Log theme colors for debugging
   useEffect(() => {
     console.log('GameScreen Theme Colors:', JSON.stringify(colors, null, 2));
   }, [colors]);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (recalibrationTimeoutRef.current) {
+        clearTimeout(recalibrationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (gameState === 'loading' || !currentMaze) {
     return (

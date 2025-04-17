@@ -1,24 +1,26 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Dimensions, BackHandler } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Button, Surface, Text, Portal, Dialog, IconButton, Appbar, Snackbar } from 'react-native-paper';
+import { Button, Surface, Text, Portal, Dialog, Appbar, Snackbar } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
+
 import { useSettings } from '../contexts/SettingsContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMazes } from '../contexts/MazeContext';
-import { RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
 import { usePhysics } from '../hooks/usePhysics';
 import { useGyroscope } from '../hooks/useGyroscope';
+
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { gameScreenStyles } from '../styles/GameScreenStyles';
 import { generateMaze } from '../utils/mazeGenerator';
 import { Maze } from '../types';
 import { GAME } from '../config/constants';
-import * as Haptics from 'expo-haptics';
 
 import MazeRenderer from '../components/MazeRenderer';
 import { GameOverOverlay } from '../components/game/GameOverOverlay';
+import TiltCalibrationOverlay from '../components/game/TiltCalibrationOverlay';
 
 type GameScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type GameState = 'loading' | 'playing' | 'game_over';
@@ -26,9 +28,10 @@ type GameState = 'loading' | 'playing' | 'game_over';
 const GameScreen: React.FC = () => {
   const { width, height } = Dimensions.get('window');
   const navigation = useNavigation<GameScreenNavigationProp>();
-  const { theme, colors, isDark } = useTheme();
+  const { colors, isDark } = useTheme();
   const { settings } = useSettings();
   const { updateHighestEndlessLevel } = useMazes();
+  const { updateSettings } = useSettings();
 
   const [gameState, setGameState] = useState<GameState>('loading');
   const [currentMaze, setCurrentMaze] = useState<Maze | null>(null);
@@ -38,27 +41,15 @@ const GameScreen: React.FC = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [gyroscopeCalibrated, setGyroscopeCalibrated] = useState(false);
   const [isManualRecalibrating, setIsManualRecalibrating] = useState(false);
+  const [showCalibrationOverlay, setShowCalibrationOverlay] = useState(false);
   const recalibrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (difficulty === 1) {
-       console.log('Generating initial maze for difficulty 1');
-       const initialMaze = generateMaze(difficulty);
-       console.log('Initial maze generated:', initialMaze.id, 'with laser gates:', initialMaze.laserGates ? initialMaze.laserGates.length : 'none');
-       if (initialMaze.laserGates) {
-         initialMaze.laserGates.forEach(gate => {
-           console.log('Laser gate in initial maze:', gate.id, 'at position:', gate.x, gate.y);
-         });
-       }
-       setCurrentMaze(initialMaze);
-    }
-  }, [difficulty]);
 
   const physicsOptions = {
     width,
     height,
     gravityScale: 0.015,
     ballRadius: 7,
+    vibrationEnabled: settings.vibrationEnabled,
   };
 
   const {
@@ -70,8 +61,6 @@ const GameScreen: React.FC = () => {
     gameOver
   } = usePhysics(currentMaze, physicsOptions);
 
-  // Always keep the gyroscope enabled to maintain calibration
-  // We'll just ignore the data when not playing
   const {
     data: gyroData,
     available: gyroscopeAvailable,
@@ -80,119 +69,79 @@ const GameScreen: React.FC = () => {
     hasDeviceMovedSignificantly,
   } = useGyroscope(true);
 
-  // Initialize the game when it first loads
   useEffect(() => {
     if (gameState === 'loading') {
-       console.log('Game loading, initializing...');
-       handlePlayAgain();
+      handlePlayAgain();
     }
   }, [gameState, handlePlayAgain]);
 
-  // Make sure gyroscope is calibrated when the game starts playing
   useEffect(() => {
     if (gameState === 'playing' && !gyroIsCalibrated && gyroscopeAvailable) {
-      console.log('Game started playing, calibrating gyroscope...');
       resetGyroscope();
       setGyroscopeCalibrated(true);
     } else if (gyroIsCalibrated && !gyroscopeCalibrated) {
-      // Sync our local state with the global state
-      console.log('Syncing gyroscope calibration state...');
       setGyroscopeCalibrated(true);
     }
   }, [gameState, gyroscopeCalibrated, gyroIsCalibrated, gyroscopeAvailable, resetGyroscope]);
 
   const handlePlayAgain = useCallback(() => {
-    console.log('handlePlayAgain called');
-
-    // First set game state to loading to ensure clean state
     setGameState('loading');
 
-    // Use setTimeout to ensure state changes have time to propagate
     setTimeout(() => {
-      // Reset physics engine
       if (resetPhysics) {
         resetPhysics();
       }
 
-      // Reset game state
       setDifficulty(1);
       setLevelsCompleted(0);
 
-      // Generate a new maze
-      console.log('Generating maze in handlePlayAgain');
       const initialMaze = generateMaze(1);
-      console.log('Maze generated in handlePlayAgain:', initialMaze.id, 'with laser gates:', initialMaze.laserGates ? initialMaze.laserGates.length : 'none');
 
-      // Log laser gates for debugging
-      if (initialMaze.laserGates) {
-        initialMaze.laserGates.forEach(gate => {
-          console.log('Laser gate in handlePlayAgain maze:', gate.id, 'at position:', gate.x, gate.y);
-        });
-      }
-
-      // Update the maze and game state
       setCurrentMaze(initialMaze);
       setGameState('playing');
-    }, 100); // Small delay to ensure clean state transition
+    }, 100);
   }, [resetPhysics]);
 
   const handleGoalReachedAndNextLevel = useCallback(() => {
     if (gameState === 'playing') {
-      console.log('[Goal Reached] Start handling next level...');
-
-      // CRITICAL: We must NOT reset the gyroscope calibration between levels
-      // This is what causes the user to have to tilt their device more and more
-
-      // Reset physics FIRST to set goalReached to false
-      console.log('[Goal Reached] Calling resetPhysics...');
       if (resetPhysics) {
-          resetPhysics();
+        resetPhysics();
       }
-      console.log('[Goal Reached] resetPhysics complete.');
-
-      // Log the current calibration state
-      console.log('[Goal Reached] Gyroscope calibration preserved:', gyroIsCalibrated ? 'YES' : 'NO');
-      console.log('[Goal Reached] Device moved significantly:', hasDeviceMovedSignificantly() ? 'YES' : 'NO');
 
       const completedLevelNumber = difficulty;
-      setLevelsCompleted(prev => prev + 1);
+      const newLevelCount = levelsCompleted + 1;
+      setLevelsCompleted(newLevelCount);
       updateHighestEndlessLevel(completedLevelNumber);
 
-      // Cap difficulty at maximum level (4)
-      const nextDifficulty = Math.min(difficulty + 1, GAME.MAX_DIFFICULTY);
-      console.log(`[Goal Reached] Generating maze for difficulty: ${nextDifficulty}`);
-      const nextMaze = generateMaze(nextDifficulty);
-      console.log('[Goal Reached] Maze generation complete.');
+      if (newLevelCount > (settings.highestScore || 0)) {
+        updateSettings({ highestScore: newLevelCount });
+      }
 
-      // Set new maze and difficulty AFTER resetting physics
+      const nextDifficulty = Math.min(difficulty + 1, GAME.MAX_DIFFICULTY);
+      const nextMaze = generateMaze(nextDifficulty);
+
       setDifficulty(nextDifficulty);
       setCurrentMaze(nextMaze);
 
       setGameState('playing');
-      console.log('[Goal Reached] Finished handling next level.');
     }
   }, [
     gameState,
     difficulty,
     resetPhysics,
     updateHighestEndlessLevel,
-    gyroIsCalibrated,
-    hasDeviceMovedSignificantly
+    levelsCompleted,
+    settings.highestScore,
+    updateSettings
   ]);
-
-  // Effect to apply gyroscope data to physics
   useEffect(() => {
     if (gameState === 'playing' && gyroscopeAvailable && update) {
-      // Apply the calibrated gyroscope data to the physics engine
       update(gyroData.x, gyroData.y);
     } else if (gameState !== 'playing' && update) {
-      // When not playing, set gravity to zero to stop ball movement
       update(0, 0);
     }
-    // Dependencies: only what's needed to apply updates
   }, [gameState, gyroscopeAvailable, update, gyroData]);
 
-  // Effect to handle automatic recalibration based on movement
   useEffect(() => {
     if (
       gameState === 'playing' &&
@@ -201,10 +150,8 @@ const GameScreen: React.FC = () => {
       gyroIsCalibrated &&
       hasDeviceMovedSignificantly()
     ) {
-      console.log('Device moved significantly since calibration, recalibrating...');
       resetGyroscope();
     }
-    // Dependencies: only what's needed for the recalibration check
   }, [
     gameState,
     gyroscopeAvailable,
@@ -222,44 +169,28 @@ const GameScreen: React.FC = () => {
         handleGoalReachedAndNextLevel();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    // Rationale: We only want this effect to run on actual state changes (gameState, gameOver, goalReached),
-    // not when the handler function reference changes due to its own dependencies (like difficulty).
-  }, [gameState, gameOver, goalReached, handleGameOver]);
+  }, [gameState, gameOver, goalReached]);
 
   useEffect(() => {
     const handleBackPress = () => {
       if (gameState === 'playing') {
-        // Do nothing and prevent default back action while playing
         return true;
       }
-      // Allow back navigation only if game is over or still loading
-      // If loading, back might go to home. If game over, back goes to home.
-      // Returning false allows the default system behavior (usually exit screen)
       return false;
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
-
     return () => subscription.remove();
-    // Dependencies: only gameState affects the logic now
   }, [gameState]);
 
-  const { updateSettings } = useSettings();
-
   const handleGameOver = useCallback(() => {
-    // Update high score if current score is higher
     if (levelsCompleted > (settings.highestScore || 0)) {
-      console.log(`[Game Over] New high score! ${levelsCompleted} (previous: ${settings.highestScore || 0})`);
       updateSettings({ highestScore: levelsCompleted });
     }
-
     setGameState('game_over');
   }, [levelsCompleted, settings.highestScore, updateSettings]);
 
-  const handleExit = () => {
-    navigation.goBack();
-  };
+  const handleExit = () => navigation.goBack();
 
   const showQuitConfirm = () => setIsQuitConfirmVisible(true);
   const hideQuitConfirm = () => setIsQuitConfirmVisible(false);
@@ -270,36 +201,30 @@ const GameScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  // This function allows the user to manually recalibrate the gyroscope during gameplay
-  // by pressing the compass button in the app bar
   const handleResetTilt = useCallback(() => {
-    // Clear any existing timeout
     if (recalibrationTimeoutRef.current) {
       clearTimeout(recalibrationTimeoutRef.current);
     }
 
-    setIsManualRecalibrating(true); // Set flag before reset
-    resetGyroscope(); // Explicitly reset calibration when user requests it
-    setGyroscopeCalibrated(true); // Mark as calibrated
+    setIsManualRecalibrating(true);
+    setShowCalibrationOverlay(true);
+  }, []);
+
+  const handleCalibrationComplete = useCallback(() => {
+    resetGyroscope();
+    setGyroscopeCalibrated(true);
+    setShowCalibrationOverlay(false);
+
     if (settings.vibrationEnabled) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     setSnackbarVisible(true);
 
-    // Reset the flag after a short delay
     recalibrationTimeoutRef.current = setTimeout(() => {
       setIsManualRecalibrating(false);
-      console.log("Manual recalibration debounce finished.");
-    }, 500); // 500ms delay
-
+    }, 500);
   }, [resetGyroscope, settings.vibrationEnabled]);
 
-  // Log theme colors for debugging
-  useEffect(() => {
-    console.log('GameScreen Theme Colors:', JSON.stringify(colors, null, 2));
-  }, [colors]);
-
-  // Clear timeout on unmount
   useEffect(() => {
     return () => {
       if (recalibrationTimeoutRef.current) {
@@ -416,6 +341,16 @@ const GameScreen: React.FC = () => {
       >
          <Text style={{ color: colors?.inverseOnSurface ?? colors?.surface }}>Tilt orientation reset!</Text>
       </Snackbar>
+
+      {showCalibrationOverlay && (
+        <Portal>
+          <TiltCalibrationOverlay
+            onCalibrationComplete={handleCalibrationComplete}
+            colors={colors}
+            duration={2000}
+          />
+        </Portal>
+      )}
     </View>
   );
 };

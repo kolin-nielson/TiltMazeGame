@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, Platform } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { useMazes } from '../contexts/MazeContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import GameLogo from '../components/GameLogo';
@@ -18,20 +18,15 @@ interface HomeScreenProps {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { theme, colors, isDark } = useTheme();
-  const { userProgress } = useMazes();
+
+  const { settings } = useSettings();
   const insets = useSafeAreaInsets();
 
-  // Log theme colors for debugging
-  useEffect(() => {
-    console.log('HomeScreen isDark:', isDark);
-    console.log('HomeScreen Colors:', JSON.stringify(colors, null, 2));
-  }, [colors, isDark]);
-
   return (
-    <SafeAreaView 
+    <SafeAreaView
       style={[
-        styles.container, 
-        { 
+        styles.container,
+        {
           backgroundColor: theme?.colors?.background ?? '#ffffff',
           paddingTop: insets.top,
           paddingBottom: insets.bottom + 20,
@@ -47,12 +42,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </View>
 
         <View style={styles.statsContainer}>
-          <Text 
+          <Text
              style={[
-               styles.statLabel, 
-               { 
+               styles.statLabel,
+               {
                  color: colors?.onSurfaceVariant ?? '#444444',
-                 fontSize: 14, 
+                 fontSize: 14,
                  textTransform: 'uppercase',
                  fontWeight: '500'
                }
@@ -60,23 +55,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           >
              Best Score
           </Text>
-          <Text 
+          <Text
              style={[
-               styles.statNumber, 
-               { 
+               styles.statNumber,
+               {
                  color: colors?.primary ?? '#6200ee',
-                 fontSize: 48, 
+                 fontSize: 48,
                  fontWeight: 'bold'
                }
              ]}
           >
-            {userProgress.highestScore ?? 0} 
+            {settings.highestScore ?? 0}
           </Text>
         </View>
 
         <View style={styles.menuContainer}>
           <Button
-            mode="contained" 
+            mode="contained"
             icon={({ size, color }) => (
               <MaterialIcons name="play-arrow" size={size} color={color} />
             )}
@@ -85,7 +80,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             contentStyle={styles.buttonContent}
             labelStyle={styles.buttonLabel}
           >
-            Play 
+            Play
           </Button>
 
           <Button

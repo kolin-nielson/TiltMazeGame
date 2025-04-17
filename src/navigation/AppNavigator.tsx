@@ -67,7 +67,7 @@ const AppNavigator: React.FC = () => {
           name="Game"
           component={GameScreen}
           options={{
-            title: 'Endless Maze',
+            title: 'Tilt Maze',
             gestureEnabled: false,
             headerBackVisible: false,
           }}

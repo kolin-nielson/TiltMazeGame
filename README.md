@@ -1,81 +1,63 @@
 # Tilt Maze Game
 
-A physics-based mobile game where players navigate a ball through challenging mazes by tilting their device. Perfect for casual gaming sessions, Tilt Maze offers an engaging experience that tests your dexterity and spatial awareness with progressively difficult levels.
+A fun mobile game where you tilt your phone to roll a ball through mazes! Try to reach the goal while avoiding walls and dangerous laser gates. How many levels can you complete?
 
-## Application Description
+## What's This Game About?
 
-Tilt Maze is an interactive mobile game that leverages your device's gyroscope to create an immersive gaming experience. Players tilt their phones to guide a ball through increasingly complex mazes, avoiding walls and finding the most efficient path to the goal. The game features 30 unique mazes across three difficulty levels (Easy, Medium, Hard), each designed to challenge your spatial reasoning and motor skills.
+Tilt Maze is a simple but addictive game that uses your phone's motion sensors. Just tilt your device to move the ball around - it feels super natural, like rolling a real ball! The game starts easy but gets harder as you go, with trickier mazes and laser gates that turn on and off. You'll need good timing and steady hands to get through them.
 
-The app includes a comprehensive theme system, allowing players to personalize their gaming experience with different color schemes. Progress tracking keeps record of completed levels and best times, giving players incentive to improve their performance. With intuitive controls and polished visuals, Tilt Maze provides an accessible yet challenging gaming experience for players of all ages.
+The game keeps track of your best score so you can try to beat it next time. You can also switch between light and dark themes depending on what looks best to you. The controls are easy to learn but the later levels will really test your skills!
 
-## Wireframes
+## Game Screenshots
 
-Below are the wireframes created for the Tilt Maze Game application:
+![Home Screen](Wireframes/home.png)
+*The home screen where you can see your best score and start playing*
 
-![Home Screen and Navigation](Wireframes/home.png)
-*Home screen and primary navigation flow*
+![Game Screen](Wireframes/levelselect.png)
+*The main game screen where you tilt to control the ball*
 
-![Level Select and Game Screen](Wireframes/levelselect.png)
-*Level selection interface and active gameplay screen*
+![Settings Screen](Wireframes/settings.png)
+*Change themes and adjust game settings*
 
-![Settings and Theme Customization](Wireframes/settings.png)
-*Settings panel and theme customization options*
+## How I Used Material Design
 
-## Material Design Implementation
+I built this game using Material Design to make it look modern and feel great to use. You can see this in the clean, simple layouts and the way everything has a consistent style.
 
-The Tilt Maze game embraces Google's Material Design principles to create an intuitive and visually pleasing user experience. Each screen utilizes elevation, surface differentiation, and intentional color choices to enhance usability. The app implements consistent components like cards with proper elevation shadows for level selection, buttons with appropriate state changes, and modal overlays that follow Material Design guidelines for transitions and depth.
+The game uses cards and surfaces that appear to float above the background with subtle shadows. This creates a sense of depth that helps you understand what's important on the screen. For example, on the game over screen, the score card pops out against the darker background, making it easy to read your results. The buttons have a nice ripple effect when you tap them, giving you instant feedback that you pressed something.
 
-Material Design typography principles are applied throughout the application with a clear hierarchy of text styles. Headers, body text, and interactive elements follow Material guidelines for font weight, size, and spacing. The color system is built on Material Design's theming approach, with primary, secondary, surface, and accent colors carefully selected for optimal contrast and accessibility. The custom theme editor allows users to personalize their experience while maintaining Material Design's emphasis on meaningful motion and depth.
+Colors are another big part of Material Design in this game. I carefully picked colors that work well together and made sure text is always easy to read. The game has both light and dark themes that follow Material Design color guidelines. You'll notice that important buttons (like "Play Again") stand out with bold colors, while less important ones (like "Exit") are more subtle. This helps guide you through the game without having to think about what to do next.
 
-Interactive elements follow Material Design's responsive touch feedback principles, with ripple effects on buttons and controls. Dialog components for settings and level completion use Material Design's standard layout patterns and animation timing. The game embraces Material Design's principles of purposeful animation through smooth transitions between screens and state changes. Even the game elements themselves—like the ball and maze surfaces—respect Material Design's approach to representing physical objects with appropriate shadows and elevation to create a cohesive, polished experience.
+## How to Play
 
-## Features
+1. Tilt your phone to move the ball
+2. Try to reach the green goal area
+3. Avoid walls and laser gates (they'll end your game!)
+4. Complete as many levels as you can
+5. Try to beat your high score!
 
-- **Motion Controls**: Use your device's built-in gyroscope to control the game with intuitive tilting movements
-- **Multiple Difficulty Levels**: Progress through various mazes of increasing complexity
-- **Customizable Themes**: Choose from light, dark, blue, or create your own custom color theme
-- **Performance Tracking**: Track your best times and completion statistics for each level
-- **Responsive Design**: Optimized for both phones and tablets with adaptive layouts
+## Cool Features
 
-## Technical Details
+- Tilt controls that feel natural
+- Mazes that get harder as you play
+- Dangerous laser gates that turn on and off
+- High score tracking
+- Light and dark themes
+- Haptic feedback when you win or lose
 
-- Built with React Native and Expo
-- Uses React Navigation for screen management
-- Implements Matter.js physics engine for realistic ball movement
-- Leverages device sensors via Expo Sensors for tilt controls
-- Persists user preferences and progress with AsyncStorage
-- Styled with React Native Paper (Material Design components)
+## Want to Try It?
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v16+)
-- npm or yarn
-- Expo Go app for testing on physical devices
-
-## Acknowledgements
-
-- [Expo](https://expo.dev/) for simplifying React Native development
-- [Matter.js](https://brm.io/matter-js/) for the physics engine
-- [React Native Paper](https://callstack.github.io/react-native-paper/) for Material Design components
-
-## Project Structure
-
-```
-TiltMazeGame/
-├── src/                # Source code
-│   ├── api/            # API clients and services
-│   ├── components/     # UI components
-│   ├── contexts/       # React contexts for state management
-│   ├── features/       # Feature modules
-│   ├── hooks/          # Custom React hooks
-│   ├── navigation/     # Navigation configuration
-│   ├── screens/        # Main app screens
-│   ├── types/          # TypeScript type definitions
-│   └── utils/          # Utility functions
-├── assets/             # Static assets
-├── Wireframes/         # App wireframes and design mockups
-└── docs/               # Documentation
+```bash
+git clone https://github.com/kolin-nielson/TiltMazeGame.git
+cd TiltMazeGame
+npm install
+npm start
 ```
 
+Then scan the QR code with the Expo Go app on your phone.
+
+## Built With
+
+- React Native
+- Expo
+- React Native Paper (for Material Design)
+- Matter.js (for realistic physics)

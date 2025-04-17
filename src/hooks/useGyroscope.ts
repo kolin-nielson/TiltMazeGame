@@ -48,9 +48,6 @@ export const useGyroscope = (enabled = true) => {
           prevDataRef.current = { x: 0, y: 0, z: 0 };
         }
 
-        // Log calibration status for debugging
-        console.log('Gyroscope calibration status:', isCalibrated ? 'CALIBRATED' : 'NOT CALIBRATED');
-
         subscription = Gyroscope.addListener(gyroData => {
           let adjustedData = { ...gyroData };
 
@@ -128,9 +125,7 @@ export const useGyroscope = (enabled = true) => {
       setData({ x: 0, y: 0, z: 0 }); // Reset processed data state immediately
       // prevDataRef.current = { x: 0, y: 0, z: 0 }; // DO NOT reset smoothing history
       isCalibrated = true; // Mark as calibrated globally
-      console.log('Gyroscope calibrated offset:', globalCalibrationOffset); // Optional: for debugging
-    } else {
-      console.log('Skipping calibration - no valid gyroscope data yet');
+
     }
   }, []); // No dependencies needed, relies on ref
 

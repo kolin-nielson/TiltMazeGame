@@ -3,12 +3,12 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors, ThemeName } from '../types';
 // Import Paper theme types and default themes
-import { 
-    MD3LightTheme, 
-    MD3DarkTheme, 
+import {
+    MD3LightTheme,
+    MD3DarkTheme,
     MD3Theme, // Or use Theme for older versions
-    adaptNavigationTheme 
-} from 'react-native-paper'; 
+    adaptNavigationTheme
+} from 'react-native-paper';
 
 interface ThemeContextType {
   theme: MD3Theme;
@@ -43,6 +43,7 @@ const lightTheme: ThemeColors = {
   walls: '#333333',              // Dark grey for walls
   ball: '#FF4081',               // Material pink A200
   goal: '#4CAF50',               // Material green 500
+  laser: '#FF1744',              // Red A400 for laser gates
 };
 
 const darkTheme: ThemeColors = {
@@ -69,6 +70,7 @@ const darkTheme: ThemeColors = {
   walls: '#BBBBBB',
   ball: '#03DAC6',
   goal: '#BB86FC',
+  laser: '#FF5252',              // Red A200 for dark theme
 };
 
 const blueTheme: ThemeColors = {
@@ -95,6 +97,7 @@ const blueTheme: ThemeColors = {
   walls: '#1976D2',              // Material blue 700
   ball: '#F44336',               // Material red 500
   goal: '#4CAF50',               // Material green 500
+  laser: '#00E5FF',              // Cyan A400 - different color for blue theme
 };
 
 export const themes: Record<ThemeName, ThemeColors> = {
@@ -127,7 +130,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const loadedCustomTheme = JSON.parse(savedCustomTheme);
           // Ensure loaded custom theme has all required fields from ThemeColors
           // You might want to merge with a default base here
-          setCustomThemeColors({...lightTheme, ...loadedCustomTheme}); 
+          setCustomThemeColors({...lightTheme, ...loadedCustomTheme});
         }
       } catch (error) {
         console.error('Failed to load theme:', error);
@@ -170,8 +173,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const isDark = themeName === 'dark';
   const basePaperTheme = isDark ? MD3DarkTheme : MD3LightTheme;
 
-  const currentColors: ThemeColors = themeName === 'custom' 
-     ? customThemeColors 
+  const currentColors: ThemeColors = themeName === 'custom'
+     ? customThemeColors
      : (themes[themeName] || lightTheme);
 
   // Construct the final theme object for PaperProvider and context
@@ -191,6 +194,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       walls: currentColors.walls,
       ball: currentColors.ball,
       goal: currentColors.goal,
+      laser: currentColors.laser || '#FF0000',
   };
 
   // *** Add Log Here ***
@@ -204,7 +208,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ThemeContext.Provider
       value={{
-        theme: finalTheme, 
+        theme: finalTheme,
         themeName,
         isDark: finalTheme.dark,
         setTheme: handleSetTheme,
@@ -224,5 +228,5 @@ export const useTheme = (): ThemeContextType => {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   // Return the full context value, which now includes the Paper theme, colors, isDark etc.
-  return context; 
+  return context;
 };

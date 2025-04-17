@@ -18,6 +18,8 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
     ],
+    // No laser gates in the first maze for tutorial purposes
+    laserGates: [],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
     createdAt: 0, updatedAt: 0,
@@ -147,6 +149,32 @@ export const defaultMazes: Maze[] = [
       // Central barrier with two routes (shortened)
       { x: 150, y: 30, width: 10, height: 100 },
       { x: 150, y: 170, width: 10, height: 100 },
+    ],
+    laserGates: [
+      // Laser gate in the top path - goes from wall to wall
+      {
+        id: 'laser-1',
+        x: 10,
+        y: 75,
+        width: 140,
+        height: 4,
+        direction: 'horizontal',
+        interval: 1200, // 1.2 seconds per cycle
+        phase: 0,      // Start at the beginning of the cycle
+        onDuration: 0.4 // On for 40% of the cycle
+      },
+      // Laser gate in the bottom path - goes from wall to wall
+      {
+        id: 'laser-2',
+        x: 160,
+        y: 215,
+        width: 130,
+        height: 4,
+        direction: 'horizontal',
+        interval: 1500, // 1.5 seconds per cycle
+        phase: 0.5,    // Start at the middle of the cycle (opposite of the first laser)
+        onDuration: 0.4 // On for 40% of the cycle
+      }
     ],
     startPosition: { x: 30, y: 150 },
     endPosition: { x: 270, y: 150 },
@@ -278,6 +306,56 @@ export const defaultMazes: Maze[] = [
       { x: 60, y: 120, width: 170, height: 10 }, { x: 60, y: 120, width: 10, height: 60 },
       { x: 60, y: 180, width: 170, height: 10 }, { x: 230, y: 180, width: 10, height: 60 },
       { x: 40, y: 240, width: 200, height: 10 },
+    ],
+    laserGates: [
+      // Laser gate in the first corridor - spans the entire corridor
+      {
+        id: 'laser-3',
+        x: 85,
+        y: 30,
+        width: 4,
+        height: 30,
+        direction: 'vertical',
+        interval: 1300, // 1.3 seconds per cycle
+        phase: 0,      // Start at the beginning of the cycle
+        onDuration: 0.4 // On for 40% of the cycle
+      },
+      // Laser gate in the second corridor - spans the entire corridor
+      {
+        id: 'laser-4',
+        x: 160,
+        y: 70,
+        width: 4,
+        height: 50,
+        direction: 'vertical',
+        interval: 1700, // 1.7 seconds per cycle
+        phase: 0.3,    // Offset phase
+        onDuration: 0.3 // On for 30% of the cycle
+      },
+      // Laser gate in the third corridor - spans the entire corridor
+      {
+        id: 'laser-5',
+        x: 85,
+        y: 130,
+        width: 4,
+        height: 50,
+        direction: 'vertical',
+        interval: 1500, // 1.5 seconds per cycle
+        phase: 0.6,    // Offset phase
+        onDuration: 0.35 // On for 35% of the cycle
+      },
+      // Laser gate in the fourth corridor - spans the entire corridor
+      {
+        id: 'laser-6',
+        x: 160,
+        y: 190,
+        width: 4,
+        height: 50,
+        direction: 'vertical',
+        interval: 2000, // 2 seconds per cycle
+        phase: 0.9,    // Offset phase
+        onDuration: 0.25 // On for 25% of the cycle
+      }
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 260, y: 260 },

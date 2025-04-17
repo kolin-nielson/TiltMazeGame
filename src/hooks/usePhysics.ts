@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import Matter from 'matter-js';
-import { Maze, Position } from '../types';
+import { Maze, Position, LaserGate } from '../types';
 import { Platform } from 'react-native';
 import { Dimensions } from 'react-native';
 import Animated, { useSharedValue, useAnimatedReaction, runOnJS } from 'react-native-reanimated';
@@ -67,6 +67,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   const worldRef = useRef<Matter.World>();
   const ballRef = useRef<Matter.Body>();
   const wallsRef = useRef<Matter.Body[]>([]);
+  const laserGatesRef = useRef<Matter.Body[]>([]);
   const goalRef = useRef<Matter.Body>();
   const tickerRef = useRef<number | null>(null);
   const [goalReached, setGoalReached] = useState<boolean>(false);
@@ -144,7 +145,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       },
       collisionFilter: {
         category: 0x0002,
-        mask: 0x0001,
+        mask: 0x0001 | 0x0004, // Collide with walls (0x0001) and lasers (0x0004)
       },
     });
 
@@ -226,28 +227,154 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       render: { fillStyle: '#4CAF50' },
     });
 
+    // Create laser gates if they exist in the maze
+    const laserGates: Matter.Body[] = [];
+    if (maze.laserGates && maze.laserGates.length > 0) {
+      maze.laserGates.forEach(laserGate => {
+        const laserBody = Matter.Bodies.rectangle(
+          laserGate.x + laserGate.width / 2,
+          laserGate.y + laserGate.height / 2,
+          laserGate.width,
+          laserGate.height,
+          {
+            isStatic: true,
+            isSensor: true, // Make it a sensor so it doesn't affect physics but still detects collisions
+            label: `laser-${laserGate.id}`,
+            render: { fillStyle: '#FF0000' },
+            collisionFilter: {
+              category: 0x0004, // New category for lasers
+              mask: 0x0002,    // Only collide with ball (category 0x0002)
+            },
+            friction: 0,      // No friction
+            frictionAir: 0,   // No air friction
+            restitution: 0,   // No bounce
+            // Store the laser gate data for reference
+            plugin: {
+              laserGate: laserGate
+            }
+          }
+        );
+        laserGates.push(laserBody);
+      });
+    }
+
+    // Log all collision categories for debugging
+    console.log('Ball collision category:', 0x0002);
+    console.log('Wall collision category:', 0x0001);
+    console.log('Laser collision category:', 0x0004);
+    console.log('Ball collision mask:', 0x0001 | 0x0004);
+    console.log('Laser collision mask:', 0x0002);
+
+    // Log all laser gates for debugging
+    if (maze.laserGates && maze.laserGates.length > 0) {
+      console.log(`Created ${maze.laserGates.length} laser gates in physics engine`);
+      maze.laserGates.forEach(laserGate => {
+        console.log(`Laser gate ${laserGate.id} at (${laserGate.x}, ${laserGate.y}) with size ${laserGate.width}x${laserGate.height}`);
+      });
+    } else {
+      console.log('No laser gates in this maze');
+    }
+
+    // Reset game over state when creating a new physics world
+    gameOverTriggeredRef.current = false;
+    console.log('Game over flag initialized:', gameOverTriggeredRef.current);
+
     Matter.Events.on(engine, 'collisionStart', event => {
+      const pairs = event.pairs;
+      console.log(`Collision event with ${pairs.length} pairs`);
+
+      for (let i = 0; i < pairs.length; i++) {
+        const pair = pairs[i];
+        const bodyA = pair.bodyA;
+        const bodyB = pair.bodyB;
+
+        console.log(`Collision between ${bodyA.label} and ${bodyB.label}`);
+
+        if (
+          (bodyA.label === 'ball' && bodyB.label === 'goal') ||
+          (bodyA.label === 'goal' && bodyB.label === 'ball')
+        ) {
+          console.log('Goal reached!');
+          runOnJS(setGoalReached)(true);
+        }
+
+        // Check for laser gate collisions
+        if (
+          !gameOverTriggeredRef.current && // Skip if game over already triggered
+          ((bodyA.label === 'ball' && bodyB.label?.startsWith('laser-')) ||
+          (bodyA.label?.startsWith('laser-') && bodyB.label === 'ball'))
+        ) {
+          const laserBody = bodyA.label?.startsWith('laser-') ? bodyA : bodyB;
+          const laserGate = laserBody.plugin?.laserGate as LaserGate;
+
+          console.log(`Laser collision detected with ${laserGate.id}`);
+
+          // Only trigger game over if the laser is in its active phase
+          // This is determined by the animation state in the MazeLaserGate component
+          const now = Date.now();
+          const cyclePosition = ((now % laserGate.interval) / laserGate.interval + laserGate.phase) % 1;
+          const isLaserActive = cyclePosition < laserGate.onDuration;
+
+          console.log(`Laser active check: now=${now}, interval=${laserGate.interval}, phase=${laserGate.phase}, onDuration=${laserGate.onDuration}`);
+          console.log(`Cycle position: ${cyclePosition}, isActive: ${isLaserActive}`);
+
+          if (isLaserActive) {
+            console.log(`Laser collision detected with ${laserGate.id} - ACTIVE LASER - GAME OVER`);
+            gameOverTriggeredRef.current = true;
+            console.log('Game over flag set to:', gameOverTriggeredRef.current);
+            runOnJS(setGameOver)(true);
+            // Break out of the loop after triggering game over
+            break;
+          } else {
+            console.log(`Laser collision detected with ${laserGate.id} - inactive laser, no game over`);
+          }
+        }
+      }
+    });
+
+    // Also listen for collisionActive to catch continuous collisions
+    Matter.Events.on(engine, 'collisionActive', event => {
+      // Skip if game over has already been triggered
+      if (gameOverTriggeredRef.current) return;
+
       const pairs = event.pairs;
       for (let i = 0; i < pairs.length; i++) {
         const pair = pairs[i];
         const bodyA = pair.bodyA;
         const bodyB = pair.bodyB;
 
+        // Check for laser gate collisions
         if (
-          (bodyA.label === 'ball' && bodyB.label === 'goal') ||
-          (bodyA.label === 'goal' && bodyB.label === 'ball')
+          (bodyA.label === 'ball' && bodyB.label?.startsWith('laser-')) ||
+          (bodyA.label?.startsWith('laser-') && bodyB.label === 'ball')
         ) {
-          runOnJS(setGoalReached)(true);
+          const laserBody = bodyA.label?.startsWith('laser-') ? bodyA : bodyB;
+          const laserGate = laserBody.plugin?.laserGate as LaserGate;
+
+          // Only trigger game over if the laser is in its active phase
+          const now = Date.now();
+          const cyclePosition = ((now % laserGate.interval) / laserGate.interval + laserGate.phase) % 1;
+          const isLaserActive = cyclePosition < laserGate.onDuration;
+
+          if (isLaserActive && !gameOverTriggeredRef.current) {
+            console.log(`Continuous laser collision with ${laserGate.id} - ACTIVE LASER - GAME OVER`);
+            gameOverTriggeredRef.current = true;
+            console.log('Game over flag set to:', gameOverTriggeredRef.current);
+            runOnJS(setGameOver)(true);
+            // Break out of the loop after triggering game over
+            break;
+          }
         }
       }
     });
 
-    Matter.Composite.add(world, [ball, ...walls, ...boundWalls, goal]);
+    Matter.Composite.add(world, [ball, ...walls, ...boundWalls, ...laserGates, goal]);
 
     engineRef.current = engine;
     worldRef.current = world;
     ballRef.current = ball;
     wallsRef.current = [...walls, ...boundWalls];
+    laserGatesRef.current = laserGates;
     goalRef.current = goal;
     lastTimeRef.current = performance.now();
     accumulatorRef.current = 0;
@@ -309,9 +436,13 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       worldRef.current = undefined;
       ballRef.current = undefined;
       wallsRef.current = [];
+      laserGatesRef.current = [];
       goalRef.current = undefined;
     };
   }, [maze, width, height, ballRadius, gravityScale, wallThickness, qualityLevel, getPhysicsQualitySettings, ballPositionX, ballPositionY]);
+
+  // Create a simple boolean ref to track if game over has been triggered
+  const gameOverTriggeredRef = useRef(false);
 
   const reset = useCallback(() => {
     if (ballRef.current && engineRef.current && maze) { // Ensure maze exists
@@ -329,6 +460,10 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       // Instead, let the update function handle gravity based on the current gyroscope data
       // engineRef.current.gravity.x = 0;
       // engineRef.current.gravity.y = 0;
+
+      // Reset the game over triggered flag
+      gameOverTriggeredRef.current = false;
+      console.log('Game over flag reset:', gameOverTriggeredRef.current);
 
       runOnJS(setGoalReached)(false);
       runOnJS(setGameOver)(false);

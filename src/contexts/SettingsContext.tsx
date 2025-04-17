@@ -8,10 +8,11 @@ interface SettingsContextType {
 }
 
 const defaultSettings: AppSettings = {
-  vibration: true,
-  sound: true,
-  theme: 'default',
+  vibrationEnabled: true,
+  soundEnabled: true,
+  theme: 'light',
   sensitivity: 2.0,
+  highestScore: 0,
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);

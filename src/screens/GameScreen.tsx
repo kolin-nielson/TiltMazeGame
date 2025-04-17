@@ -42,7 +42,14 @@ const GameScreen: React.FC = () => {
 
   useEffect(() => {
     if (difficulty === 1) {
+       console.log('Generating initial maze for difficulty 1');
        const initialMaze = generateMaze(difficulty);
+       console.log('Initial maze generated:', initialMaze.id, 'with laser gates:', initialMaze.laserGates ? initialMaze.laserGates.length : 'none');
+       if (initialMaze.laserGates) {
+         initialMaze.laserGates.forEach(gate => {
+           console.log('Laser gate in initial maze:', gate.id, 'at position:', gate.x, gate.y);
+         });
+       }
        setCurrentMaze(initialMaze);
     }
   }, [difficulty]);
@@ -95,15 +102,38 @@ const GameScreen: React.FC = () => {
   }, [gameState, gyroscopeCalibrated, gyroIsCalibrated, gyroscopeAvailable, resetGyroscope]);
 
   const handlePlayAgain = useCallback(() => {
-    if (resetPhysics) {
-      resetPhysics();
-    }
+    console.log('handlePlayAgain called');
 
-    setDifficulty(1);
-    setLevelsCompleted(0);
-    const initialMaze = generateMaze(1);
-    setCurrentMaze(initialMaze);
-    setGameState('playing');
+    // First set game state to loading to ensure clean state
+    setGameState('loading');
+
+    // Use setTimeout to ensure state changes have time to propagate
+    setTimeout(() => {
+      // Reset physics engine
+      if (resetPhysics) {
+        resetPhysics();
+      }
+
+      // Reset game state
+      setDifficulty(1);
+      setLevelsCompleted(0);
+
+      // Generate a new maze
+      console.log('Generating maze in handlePlayAgain');
+      const initialMaze = generateMaze(1);
+      console.log('Maze generated in handlePlayAgain:', initialMaze.id, 'with laser gates:', initialMaze.laserGates ? initialMaze.laserGates.length : 'none');
+
+      // Log laser gates for debugging
+      if (initialMaze.laserGates) {
+        initialMaze.laserGates.forEach(gate => {
+          console.log('Laser gate in handlePlayAgain maze:', gate.id, 'at position:', gate.x, gate.y);
+        });
+      }
+
+      // Update the maze and game state
+      setCurrentMaze(initialMaze);
+      setGameState('playing');
+    }, 100); // Small delay to ensure clean state transition
   }, [resetPhysics]);
 
   const handleGoalReachedAndNextLevel = useCallback(() => {
@@ -215,9 +245,17 @@ const GameScreen: React.FC = () => {
     // Dependencies: only gameState affects the logic now
   }, [gameState]);
 
+  const { updateSettings } = useSettings();
+
   const handleGameOver = useCallback(() => {
+    // Update high score if current score is higher
+    if (levelsCompleted > (settings.highestScore || 0)) {
+      console.log(`[Game Over] New high score! ${levelsCompleted} (previous: ${settings.highestScore || 0})`);
+      updateSettings({ highestScore: levelsCompleted });
+    }
+
     setGameState('game_over');
-  }, []);
+  }, [levelsCompleted, settings.highestScore, updateSettings]);
 
   const handleExit = () => {
     navigation.goBack();
@@ -315,6 +353,7 @@ const GameScreen: React.FC = () => {
             ballPositionY={ballPositionY}
             ballRadius={7}
             colors={colors}
+            gameState={gameState}
           />
         </Surface>
       </View>
@@ -357,10 +396,7 @@ const GameScreen: React.FC = () => {
             score={levelsCompleted}
             bestScore={settings.highestScore ?? 0}
             onPlayAgain={handlePlayAgain}
-            onContinueWithAd={() => {
-               console.log("Continue with Ad - Not implemented");
-               handlePlayAgain();
-            }}
+            onExit={handleExit}
           />
         </Portal>
       )}

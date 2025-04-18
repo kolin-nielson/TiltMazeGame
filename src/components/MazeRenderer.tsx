@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import { View } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
+import { useAppSelector, RootState } from '../store';
 import { Maze, Position, ThemeColors } from '../types';
 import { MazeElements } from './maze/MazeElements';
 import { mazeRendererStyles } from '../styles/MazeRendererStyles';
@@ -25,7 +25,7 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
   colors,
   gameState = 'playing',
 }) => {
-  const { theme, colors: themeColors } = useTheme();
+  const themeColors = useAppSelector((state: RootState) => state.theme.colors);
   const mazeSize = 300;
 
   const containerStyles = useMemo(() => [

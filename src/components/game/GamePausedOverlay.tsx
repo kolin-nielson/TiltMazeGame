@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Button, Card } from 'react-native-paper';
 import { gameScreenStyles } from '../../styles/GameScreenStyles';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useAppSelector, RootState } from '../../store';
 
 interface GamePausedOverlayProps {
   onResume: () => void;
@@ -15,15 +15,15 @@ export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
   onRestart,
   onExit,
 }) => {
-  const { theme } = useTheme();
-  
+  const colors = useAppSelector((state: RootState) => state.theme.colors);
+
   return (
     <View style={[
-      gameScreenStyles.overlay, 
+      gameScreenStyles.overlay,
       { backgroundColor: `${theme.background}CC` }
     ]}>
-      <Card 
-        style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]} 
+      <Card
+        style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]}
         elevation={3}
       >
         <Card.Title

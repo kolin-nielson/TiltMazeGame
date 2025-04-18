@@ -231,7 +231,9 @@ export const generateMaze = (difficulty: number): Maze => {
   }
 
   // --- Generate Maze Object ---
-  const id = `endless-${difficulty}-${Date.now()}`;
+  // Use a consistent ID format that doesn't change on every generation
+  // This prevents lasers from changing position when calibrating
+  const id = `endless-${difficulty}`;
   const name = `Endless Level ${difficulty}`;
 
   // Convert grid cells to wall coordinates, applying scale

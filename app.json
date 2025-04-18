@@ -7,6 +7,14 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "jsEngine": "hermes",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/your-project-id"
+    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -16,8 +24,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourusername.tiltmaze",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSMotionUsageDescription": "This app uses motion sensors to control the game through device tilting."
+        "NSMotionUsageDescription": "This app uses motion sensors to control the game through device tilting.",
+        "UIRequiresFullScreen": true,
+        "UIStatusBarHidden": true
       }
     },
     "android": {
@@ -25,7 +36,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["android.permission.VIBRATE"]
+      "package": "com.yourusername.tiltmaze",
+      "versionCode": 1,
+      "permissions": ["android.permission.VIBRATE"],
+      "softwareKeyboardLayoutMode": "pan",
+      "allowBackup": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,6 +52,11 @@
           "motionPermission": "Allow $(PRODUCT_NAME) to access your device motion to control the game."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
   }
 }

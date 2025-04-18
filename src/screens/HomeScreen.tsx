@@ -2,24 +2,18 @@ import React from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useTheme } from '../contexts/ThemeContext';
-import { useSettings } from '../contexts/SettingsContext';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { useAppSelector, RootState } from '../store';
+import { useNavigation } from '@react-navigation/native';
+import { HomeScreenNavigationProp } from '../navigation/types';
 import GameLogo from '../components/GameLogo';
 import { StatusBar } from 'expo-status-bar';
 import { Button, Text } from 'react-native-paper';
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
-
-interface HomeScreenProps {
-  navigation: HomeScreenNavigationProp;
-}
-
-const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { theme, colors, isDark } = useTheme();
-
-  const { settings } = useSettings();
+const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
+  const colors = useAppSelector((state: RootState) => state.theme.colors);
+  const isDark = useAppSelector((state: RootState) => state.theme.isDark);
+  const highestScore = useAppSelector((state: RootState) => state.settings.highestScore);
   const insets = useSafeAreaInsets();
 
   return (
@@ -27,14 +21,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       style={[
         styles.container,
         {
-          backgroundColor: theme?.colors?.background ?? '#ffffff',
+          backgroundColor: colors?.background ?? '#ffffff',
           paddingTop: insets.top,
           paddingBottom: insets.bottom + 20,
           paddingHorizontal: 20
         }
       ]}
     >
-      <StatusBar style={isDark ?? false ? 'light' : 'dark'} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <View style={styles.mainContent}>
         <View style={styles.logoContainer}>
@@ -65,7 +59,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                }
              ]}
           >
-            {settings.highestScore ?? 0}
+            {highestScore ?? 0}
           </Text>
         </View>
 

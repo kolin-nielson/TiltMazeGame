@@ -6,6 +6,48 @@ import * as Haptics from 'expo-haptics';
 
 import { Maze, LaserGate } from '../types';
 
+// Helper function to check if two line segments intersect
+const lineIntersectsLine = (
+  x1: number, y1: number, x2: number, y2: number,
+  x3: number, y3: number, x4: number, y4: number
+): boolean => {
+  // Calculate the direction vectors
+  const dx1 = x2 - x1;
+  const dy1 = y2 - y1;
+  const dx2 = x4 - x3;
+  const dy2 = y4 - y3;
+
+  // Calculate the determinant
+  const determinant = dx1 * dy2 - dy1 * dx2;
+
+  // If determinant is zero, lines are parallel
+  if (determinant === 0) return false;
+
+  // Calculate the parameters for the intersection point
+  const t1 = ((x3 - x1) * dy2 - (y3 - y1) * dx2) / determinant;
+  const t2 = ((x1 - x3) * dy1 - (y1 - y3) * dx1) / -determinant;
+
+  // Check if the intersection point is within both line segments
+  return t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1;
+};
+
+// Helper function to check if a line segment intersects with a rectangle
+const lineIntersectsRectangle = (
+  line: { x1: number; y1: number; x2: number; y2: number },
+  rectX1: number,
+  rectY1: number,
+  rectX2: number,
+  rectY2: number
+): boolean => {
+  // Check if line intersects with any of the rectangle's edges
+  return (
+    lineIntersectsLine(line.x1, line.y1, line.x2, line.y2, rectX1, rectY1, rectX2, rectY1) || // Top edge
+    lineIntersectsLine(line.x1, line.y1, line.x2, line.y2, rectX1, rectY2, rectX2, rectY2) || // Bottom edge
+    lineIntersectsLine(line.x1, line.y1, line.x2, line.y2, rectX1, rectY1, rectX1, rectY2) || // Left edge
+    lineIntersectsLine(line.x1, line.y1, line.x2, line.y2, rectX2, rectY1, rectX2, rectY2)    // Right edge
+  );
+};
+
 interface PhysicsOptions {
   width: number;
   height: number;
@@ -78,30 +120,30 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     switch (qualityLevel) {
       case 'low':
         return {
-          constraintIterations: 1,
-          positionIterations: 2,
-          velocityIterations: 2,
+          constraintIterations: 2,
+          positionIterations: 4,  // Increased from 2
+          velocityIterations: 3,  // Increased from 2
           timeStep: LOW_QUALITY_TIME_STEP,
-          frictionAir: 0.0005, // Slightly higher air friction for stability
-          sleepThreshold: 60,  // Higher sleep threshold
+          frictionAir: 0.0006,    // Increased for better stability
+          sleepThreshold: 60,     // Higher sleep threshold
         };
       case 'medium':
         return {
-          constraintIterations: 2,
-          positionIterations: 4,
-          velocityIterations: 3,
+          constraintIterations: 3,
+          positionIterations: 6,  // Increased from 4
+          velocityIterations: 5,  // Increased from 3
           timeStep: FIXED_TIME_STEP,
-          frictionAir: 0.0003,
+          frictionAir: 0.0004,    // Increased for better stability
           sleepThreshold: 45,
         };
       case 'high':
       default:
         return {
-          constraintIterations: 2,
-          positionIterations: 6,
-          velocityIterations: 4,
+          constraintIterations: 4,
+          positionIterations: 8,  // Increased from 6
+          velocityIterations: 6,  // Increased from 4
           timeStep: FIXED_TIME_STEP,
-          frictionAir: 0.0002,
+          frictionAir: 0.0003,    // Increased for better stability
           sleepThreshold: 30,
         };
     }
@@ -115,25 +157,30 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
     const qualitySettings = getPhysicsQualitySettings();
 
+    // Create physics engine with improved collision detection settings
     const engine = Matter.Engine.create({
       gravity: { x: 0, y: 0, scale: 1 },
       enableSleeping: false,
       constraintIterations: qualitySettings.constraintIterations,
-      positionIterations: qualitySettings.positionIterations,
-      velocityIterations: qualitySettings.velocityIterations,
+      positionIterations: Math.max(8, qualitySettings.positionIterations),  // Increase for better collision resolution
+      velocityIterations: Math.max(8, qualitySettings.velocityIterations),  // Increase for better collision resolution
     });
+
+    // Configure engine for continuous collision detection
+    engine.timing.timeScale = 1;
+    engine.timing.lastDelta = 16.67;  // ~60fps
 
     const world = engine.world;
 
     const ball = Matter.Bodies.circle(maze.startPosition.x, maze.startPosition.y, ballRadius, {
       label: 'ball',
-      restitution: 0.2,
-      friction: 0.0005,
+      restitution: 0.05,  // Lower restitution to reduce bouncing
+      friction: 0.002,    // Slightly more friction
       frictionAir: qualitySettings.frictionAir,
-      frictionStatic: 0.001,
-      density: 0.08,
+      frictionStatic: 0.003,
+      density: 0.15,      // Higher density for more stable collisions
       inertia: Infinity,
-      slop: 0.01,
+      slop: 0.001,        // Minimal slop for more precise collisions
       render: {
         fillStyle: '#FF4081',
       },
@@ -144,24 +191,24 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     });
 
 
-    const wallSimplificationFactor = qualityLevel === 'low' ? 0.99 : 0.98;
+    const wallSimplificationFactor = 1.0;
 
     const walls = maze.walls.map(wall =>
       Matter.Bodies.rectangle(
         wall.x + wall.width / 2,
         wall.y + wall.height / 2,
-        wall.width * wallSimplificationFactor,
-        wall.height * wallSimplificationFactor,
+        wall.width + 4, // Add 4px to wall size to ensure no gaps
+        wall.height + 4,
         {
           isStatic: true,
-          friction: 0.05,
-          restitution: 0.1,
-          slop: 0.01,
+          friction: 0.2,       // More friction for walls
+          restitution: 0.01,    // Very low restitution to prevent bouncing through walls
+          slop: 0.001,          // Minimal slop for precise collisions
           collisionFilter: {
             category: 0x0001,
             mask: 0x0002,
           },
-          chamfer: { radius: qualityLevel === 'low' ? 0 : 1 },
+          chamfer: { radius: 0 },
           render: { fillStyle: '#333333' },
         }
       )
@@ -447,17 +494,32 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       engineRef.current.gravity.x = tiltX * gravityMagnitude;
       engineRef.current.gravity.y = tiltY * gravityMagnitude;
 
-      let maxVelocity = 3.0;
+      // Adjust max velocity based on quality level and sensitivity
+      // Lower max velocity to prevent tunneling through walls
+      let maxVelocity = 1.2;  // Further reduced from 1.5
       if (qualityLevel === 'low') {
-        maxVelocity = 2.5;
+        maxVelocity = 1.0;  // Further reduced from 1.2
       }
 
       const velocity = ballRef.current.velocity;
       const currentSpeed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
 
       if (currentSpeed > 0) {
+        // Always apply some velocity capping to prevent tunneling
+        // More aggressive capping at higher speeds
+        let speedFactor = 1.0;
+
         if (currentSpeed > maxVelocity) {
-          const speedFactor = maxVelocity / currentSpeed;
+          // Hard cap at max velocity
+          speedFactor = maxVelocity / currentSpeed;
+        } else if (currentSpeed > maxVelocity * 0.8) {
+          // Soft cap when approaching max velocity
+          const excess = (currentSpeed - maxVelocity * 0.8) / (maxVelocity * 0.2);
+          speedFactor = 1.0 - (excess * 0.3); // Gradually reduce by up to 30%
+        }
+
+        // Apply velocity capping
+        if (speedFactor < 1.0) {
           const newVelX = velocity.x * speedFactor;
           const newVelY = velocity.y * speedFactor;
 
@@ -520,7 +582,8 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
         const bounds = wall.bounds;
 
-        const safeRadius = radius * 1.2;
+        // Increase safe radius for better collision prediction
+        const safeRadius = radius * 1.5;
 
         return (
           predictedX + safeRadius > bounds.min.x &&
@@ -530,25 +593,85 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         );
       });
 
-      if (potentialCollisions.length > 0 && currentSpeed > 1 && ballRef.current) {
-        Matter.Body.setVelocity(ballRef.current, {
-          x: velocity.x * 0.8,
-          y: velocity.y * 0.8,
+      // Implement continuous collision detection for high-speed movements
+      if (ballRef.current && currentSpeed > 0) {
+        // Calculate the predicted position after multiple time steps
+        const timeSteps = 3; // Look ahead multiple steps
+        const dt = 1 / 60; // Assuming 60fps
+
+        // Current position and velocity
+        const pos = { x: position.x, y: position.y };
+        const vel = { x: velocity.x, y: velocity.y };
+
+        // Predict future position
+        const futurePos = {
+          x: pos.x + vel.x * dt * timeSteps,
+          y: pos.y + vel.y * dt * timeSteps
+        };
+
+        // Check if the path between current and future position intersects any wall
+        const willCollide = potentialCollisions.some(wall => {
+          // Simple line-rectangle intersection test
+          if (!wall.bounds) return false;
+
+          // Create a line segment from current to future position
+          const line = { x1: pos.x, y1: pos.y, x2: futurePos.x, y2: futurePos.y };
+
+          // Check if line intersects with wall bounds
+          return lineIntersectsRectangle(
+            line,
+            wall.bounds.min.x,
+            wall.bounds.min.y,
+            wall.bounds.max.x,
+            wall.bounds.max.y
+          );
         });
 
-        potentialCollisions.forEach(wall => {
-          const dirX = position.x - wall.position.x;
-          const dirY = position.y - wall.position.y;
-          const distance = Math.sqrt(dirX * dirX + dirY * dirY);
+        // If collision is predicted, apply preventive measures
+        if (willCollide) {
+          // Reduce velocity more aggressively
+          const reductionFactor = Math.min(0.5, 1.0 / (currentSpeed + 0.1));
+          Matter.Body.setVelocity(ballRef.current, {
+            x: velocity.x * reductionFactor,
+            y: velocity.y * reductionFactor,
+          });
 
-          if (distance > 0) {
-            const repulsionForce = 0.0003 / Math.max(distance, 1);
-            Matter.Body.applyForce(ballRef.current!, position, {
-              x: (dirX / distance) * repulsionForce,
-              y: (dirY / distance) * repulsionForce,
-            });
-          }
-        });
+          // Apply repulsion forces from nearby walls
+          potentialCollisions.forEach(wall => {
+            const dirX = position.x - wall.position.x;
+            const dirY = position.y - wall.position.y;
+            const distance = Math.sqrt(dirX * dirX + dirY * dirY);
+
+            if (distance > 0) {
+              // Stronger repulsion for predicted collisions
+              const repulsionForce = 0.002 / Math.max(distance, 0.5);
+              Matter.Body.applyForce(ballRef.current!, position, {
+                x: (dirX / distance) * repulsionForce,
+                y: (dirY / distance) * repulsionForce,
+              });
+            }
+          });
+        } else if (potentialCollisions.length > 0 && currentSpeed > 0.3) {
+          // Standard collision prevention for non-critical cases
+          Matter.Body.setVelocity(ballRef.current, {
+            x: velocity.x * 0.7,
+            y: velocity.y * 0.7,
+          });
+
+          potentialCollisions.forEach(wall => {
+            const dirX = position.x - wall.position.x;
+            const dirY = position.y - wall.position.y;
+            const distance = Math.sqrt(dirX * dirX + dirY * dirY);
+
+            if (distance > 0) {
+              const repulsionForce = 0.001 / Math.max(distance, 1);
+              Matter.Body.applyForce(ballRef.current!, position, {
+                x: (dirX / distance) * repulsionForce,
+                y: (dirY / distance) * repulsionForce,
+              });
+            }
+          });
+        }
       }
     },
     [qualityLevel]

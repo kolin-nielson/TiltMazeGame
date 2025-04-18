@@ -1,47 +1,69 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Dimensions, BackHandler } from 'react-native';
-import { Button, Surface, Text, Portal, Dialog, Appbar, Snackbar } from 'react-native-paper';
+import { Text, Portal, Snackbar, Button, Dialog, Surface, Appbar } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 
-import { useSettings } from '../contexts/SettingsContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { useMazes } from '../contexts/MazeContext';
+import { useAppSelector, useAppDispatch, RootState } from '../store';
+import { updateSettings, saveSettings } from '../store/slices/settingsSlice';
+import { updateHighestEndlessLevel, saveMazeProgress, setCurrentMaze } from '../store/slices/mazeSlice';
+import {
+  setGameState,
+  setDifficulty,
+  setLevelsCompleted,
+  setGoalReached,
+  setGameOver,
+  setShowCalibrationOverlay,
+  setShowLevelTransition,
+  setShowDeathAnimation,
+  setDeathPosition,
+  setGyroscopeCalibrated,
+  setIsManualRecalibrating
+} from '../store/slices/gameSlice';
 import { usePhysics } from '../hooks/usePhysics';
 import { useGyroscope } from '../hooks/useGyroscope';
 
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { GameScreenNavigationProp } from '../navigation/types';
 import { gameScreenStyles } from '../styles/GameScreenStyles';
 import { generateMaze } from '../utils/mazeGenerator';
 import { Maze } from '../types';
 import { GAME } from '../config/constants';
 
-import MazeRenderer from '../components/MazeRenderer';
 import { GameOverOverlay } from '../components/game/GameOverOverlay';
 import TiltCalibrationOverlay from '../components/game/TiltCalibrationOverlay';
+import LevelTransition from '../components/game/LevelTransition';
+import BasicDeathAnimation from '../components/game/BasicDeathAnimation';
+import GameHeader from '../components/game/GameHeader';
+import QuitConfirmDialog from '../components/game/QuitConfirmDialog';
+import MazeView from '../components/game/MazeView';
 
-type GameScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type GameState = 'loading' | 'playing' | 'game_over';
 
 const GameScreen: React.FC = () => {
   const { width, height } = Dimensions.get('window');
+  const dispatch = useAppDispatch();
   const navigation = useNavigation<GameScreenNavigationProp>();
-  const { colors, isDark } = useTheme();
-  const { settings } = useSettings();
-  const { updateHighestEndlessLevel } = useMazes();
-  const { updateSettings } = useSettings();
+  const colors = useAppSelector((state: RootState) => state.theme.colors);
+  const isDark = useAppSelector((state: RootState) => state.theme.isDark);
+  const settings = useAppSelector((state: RootState) => state.settings);
 
-  const [gameState, setGameState] = useState<GameState>('loading');
-  const [currentMaze, setCurrentMaze] = useState<Maze | null>(null);
-  const [difficulty, setDifficulty] = useState<number>(1);
-  const [levelsCompleted, setLevelsCompleted] = useState<number>(0);
+  // Game state from Redux
+  const gameState = useAppSelector((state: RootState) => state.game.gameState) as GameState;
+  const currentMaze = useAppSelector((state: RootState) => state.maze.currentMaze);
+  const difficulty = useAppSelector((state: RootState) => state.game.difficulty);
+  const levelsCompleted = useAppSelector((state: RootState) => state.game.levelsCompleted);
+  const gyroscopeCalibrated = useAppSelector((state: RootState) => state.game.gyroscopeCalibrated);
+  const isManualRecalibrating = useAppSelector((state: RootState) => state.game.isManualRecalibrating);
+  const showCalibrationOverlay = useAppSelector((state: RootState) => state.game.showCalibrationOverlay);
+  const showLevelTransition = useAppSelector((state: RootState) => state.game.showLevelTransition);
+  const showDeathAnimation = useAppSelector((state: RootState) => state.game.showDeathAnimation);
+  const deathPosition = useAppSelector((state: RootState) => state.game.deathPosition);
+
+  // Local state
   const [isQuitConfirmVisible, setIsQuitConfirmVisible] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [gyroscopeCalibrated, setGyroscopeCalibrated] = useState(false);
-  const [isManualRecalibrating, setIsManualRecalibrating] = useState(false);
-  const [showCalibrationOverlay, setShowCalibrationOverlay] = useState(false);
   const recalibrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const physicsOptions = {
@@ -85,22 +107,22 @@ const GameScreen: React.FC = () => {
   }, [gameState, gyroscopeCalibrated, gyroIsCalibrated, gyroscopeAvailable, resetGyroscope]);
 
   const handlePlayAgain = useCallback(() => {
-    setGameState('loading');
+    dispatch(setGameState('loading'));
 
     setTimeout(() => {
       if (resetPhysics) {
         resetPhysics();
       }
 
-      setDifficulty(1);
-      setLevelsCompleted(0);
+      dispatch(setDifficulty(1));
+      dispatch(setLevelsCompleted(0));
 
       const initialMaze = generateMaze(1);
 
-      setCurrentMaze(initialMaze);
-      setGameState('playing');
+      dispatch(setCurrentMaze(initialMaze));
+      dispatch(setGameState('playing'));
     }, 100);
-  }, [resetPhysics]);
+  }, [dispatch, resetPhysics]);
 
   const handleGoalReachedAndNextLevel = useCallback(() => {
     if (gameState === 'playing') {
@@ -110,29 +132,28 @@ const GameScreen: React.FC = () => {
 
       const completedLevelNumber = difficulty;
       const newLevelCount = levelsCompleted + 1;
-      setLevelsCompleted(newLevelCount);
-      updateHighestEndlessLevel(completedLevelNumber);
+      dispatch(setLevelsCompleted(newLevelCount));
+      dispatch(updateHighestEndlessLevel(completedLevelNumber));
+      dispatch(saveMazeProgress());
 
       if (newLevelCount > (settings.highestScore || 0)) {
-        updateSettings({ highestScore: newLevelCount });
+        dispatch(updateSettings({ highestScore: newLevelCount }));
+        dispatch(saveSettings({ highestScore: newLevelCount }));
       }
 
-      const nextDifficulty = Math.min(difficulty + 1, GAME.MAX_DIFFICULTY);
-      const nextMaze = generateMaze(nextDifficulty);
+      // Show level transition before generating new maze
+      dispatch(setShowLevelTransition(true));
 
-      setDifficulty(nextDifficulty);
-      setCurrentMaze(nextMaze);
-
-      setGameState('playing');
+      // The actual level transition will happen when the animation completes
+      // See handleLevelTransitionComplete
     }
   }, [
+    dispatch,
     gameState,
     difficulty,
     resetPhysics,
-    updateHighestEndlessLevel,
     levelsCompleted,
-    settings.highestScore,
-    updateSettings
+    settings.highestScore
   ]);
   useEffect(() => {
     if (gameState === 'playing' && gyroscopeAvailable && update) {
@@ -185,10 +206,63 @@ const GameScreen: React.FC = () => {
 
   const handleGameOver = useCallback(() => {
     if (levelsCompleted > (settings.highestScore || 0)) {
-      updateSettings({ highestScore: levelsCompleted });
+      dispatch(updateSettings({ highestScore: levelsCompleted }));
+      dispatch(saveSettings({ highestScore: levelsCompleted }));
     }
-    setGameState('game_over');
-  }, [levelsCompleted, settings.highestScore, updateSettings]);
+
+    // Get current ball position for death animation
+    // Make sure to get the latest values from the shared values
+    const currentX = ballPositionX.value;
+    const currentY = ballPositionY.value;
+
+    dispatch(setDeathPosition({
+      x: currentX,
+      y: currentY
+    }));
+
+    // Add strong haptic feedback for death
+    if (settings.vibrationEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+      // Add a second haptic feedback after a short delay for emphasis
+      setTimeout(() => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }, 150);
+    }
+
+    // Show death animation
+    dispatch(setShowDeathAnimation(true));
+
+    // Game over state will be set after animation completes
+  }, [dispatch, levelsCompleted, settings.highestScore, ballPositionX, ballPositionY]);
+
+  const handleDeathAnimationComplete = useCallback(() => {
+    // Hide the death animation
+    dispatch(setShowDeathAnimation(false));
+
+    // Add a slight delay before showing the game over screen
+    // This gives the player a moment to process what happened
+    setTimeout(() => {
+      dispatch(setGameState('game_over'));
+
+      // Add a subtle haptic feedback when the game over screen appears
+      if (settings.vibrationEnabled) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    }, 300);
+  }, [dispatch, settings.vibrationEnabled]);
+
+  const handleLevelTransitionComplete = useCallback(() => {
+    dispatch(setShowLevelTransition(false));
+
+    // Now actually change the level
+    const nextDifficulty = Math.min(difficulty + 1, GAME.MAX_DIFFICULTY);
+    const nextMaze = generateMaze(nextDifficulty);
+
+    dispatch(setDifficulty(nextDifficulty));
+    dispatch(setCurrentMaze(nextMaze));
+    dispatch(setGameState('playing'));
+  }, [dispatch, difficulty, GAME.MAX_DIFFICULTY]);
 
   const handleExit = () => navigation.goBack();
 
@@ -206,14 +280,15 @@ const GameScreen: React.FC = () => {
       clearTimeout(recalibrationTimeoutRef.current);
     }
 
-    setIsManualRecalibrating(true);
-    setShowCalibrationOverlay(true);
+    dispatch(setIsManualRecalibrating(true));
+    dispatch(setShowCalibrationOverlay(true));
   }, []);
 
   const handleCalibrationComplete = useCallback(() => {
+    // Only reset the gyroscope, don't regenerate the maze
     resetGyroscope();
-    setGyroscopeCalibrated(true);
-    setShowCalibrationOverlay(false);
+    dispatch(setGyroscopeCalibrated(true));
+    dispatch(setShowCalibrationOverlay(false));
 
     if (settings.vibrationEnabled) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -221,9 +296,9 @@ const GameScreen: React.FC = () => {
     setSnackbarVisible(true);
 
     recalibrationTimeoutRef.current = setTimeout(() => {
-      setIsManualRecalibrating(false);
+      dispatch(setIsManualRecalibrating(false));
     }, 500);
-  }, [resetGyroscope, settings.vibrationEnabled]);
+  }, [dispatch, resetGyroscope, settings.vibrationEnabled]);
 
   useEffect(() => {
     return () => {
@@ -245,74 +320,29 @@ const GameScreen: React.FC = () => {
     <View style={[gameScreenStyles.screen, { backgroundColor: colors?.background ?? '#fff' }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      <Appbar.Header
-         style={{ backgroundColor: colors?.surface ?? '#fff' }}
-         mode="center-aligned"
-      >
-        <Appbar.Action
-            icon="close"
-            onPress={showQuitConfirm}
-            color={colors?.primary ?? '#6200ee'}
-            size={24}
-        />
-        <Appbar.Content
-            title={`Score: ${levelsCompleted}`}
-            titleStyle={[gameScreenStyles.appbarTitle, { color: colors?.onSurface ?? '#000'}]}
-        />
-        <Appbar.Action
-            icon="compass-outline"
-            onPress={handleResetTilt}
-            color={colors?.primary ?? '#6200ee'}
-            size={24}
-        />
-      </Appbar.Header>
+      <GameHeader
+        score={levelsCompleted}
+        onQuit={showQuitConfirm}
+        onCalibrate={handleResetTilt}
+        colors={colors}
+      />
 
-      <View style={gameScreenStyles.gameContainer}>
-        <Surface
-          style={[ gameScreenStyles.mazeSurface, { backgroundColor: colors?.surface ?? '#fff' } ]}
-          elevation={4}
-        >
-          <MazeRenderer
-            maze={currentMaze}
-            ballPositionX={ballPositionX}
-            ballPositionY={ballPositionY}
-            ballRadius={7}
-            colors={colors}
-            gameState={gameState}
-          />
-        </Surface>
-      </View>
+      <MazeView
+        maze={currentMaze}
+        ballPositionX={ballPositionX}
+        ballPositionY={ballPositionY}
+        ballRadius={7}
+        colors={colors}
+        gameState={gameState}
+      />
 
       <Portal>
-        <Dialog visible={isQuitConfirmVisible} onDismiss={hideQuitConfirm}>
-          <Dialog.Title
-             style={{ color: colors?.onSurface ?? '#000' }}
-          >
-             Quit Game?
-          </Dialog.Title>
-          <Dialog.Content>
-            <Text
-              variant="bodyMedium"
-              style={{ color: colors?.onSurfaceVariant ?? '#444' }}
-            >
-              Are you sure you want to quit? Your current score will be lost if it's not your best.
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button
-              onPress={hideQuitConfirm}
-              textColor={colors?.primary ?? '#6200ee'}
-            >
-              Cancel
-            </Button>
-            <Button
-              onPress={handleQuitConfirm}
-              textColor={colors?.error ?? '#B00020'}
-            >
-              Quit
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
+        <QuitConfirmDialog
+          visible={isQuitConfirmVisible}
+          onDismiss={hideQuitConfirm}
+          onConfirm={handleQuitConfirm}
+          colors={colors}
+        />
       </Portal>
 
       {gameState === 'game_over' && (
@@ -351,6 +381,25 @@ const GameScreen: React.FC = () => {
           />
         </Portal>
       )}
+
+      {showLevelTransition && (
+        <Portal>
+          <LevelTransition
+            level={difficulty}
+            visible={showLevelTransition}
+            onTransitionComplete={handleLevelTransitionComplete}
+            colors={colors}
+          />
+        </Portal>
+      )}
+
+      {/* Full-screen death animation */}
+      <BasicDeathAnimation
+        visible={showDeathAnimation}
+        position={deathPosition}
+        onAnimationComplete={handleDeathAnimationComplete}
+        colors={colors}
+      />
     </View>
   );
 };

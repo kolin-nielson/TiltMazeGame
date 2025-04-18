@@ -9,7 +9,7 @@ import {
   TouchableOpacityProps,
   Platform,
 } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useAppSelector, RootState } from '../../store';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text';
 export type ButtonSize = 'small' | 'medium' | 'large';
@@ -50,7 +50,7 @@ const Button: React.FC<ButtonProps> = ({
   onPress,
   ...rest
 }) => {
-  const { theme } = useTheme();
+  const colors = useAppSelector((state: RootState) => state.theme.colors);
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {

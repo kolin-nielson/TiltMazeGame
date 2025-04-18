@@ -40,42 +40,55 @@ export interface Ball {
 }
 
 export interface ThemeColors {
+  // Material Design 3 base colors
   primary: string;
   onPrimary: string;
-  primaryContainer?: string;
-  onPrimaryContainer?: string;
+  primaryContainer: string;
+  onPrimaryContainer: string;
   secondary: string;
-  onSecondary?: string;
-  secondaryContainer?: string;
-  onSecondaryContainer?: string;
-  tertiary?: string;
-  onTertiary?: string;
-  background: string;
-  onBackground?: string;
-  surface: string;
-  onSurface?: string;
-  surfaceVariant?: string;
-  onSurfaceVariant?: string;
-  outline?: string;
+  onSecondary: string;
+  secondaryContainer: string;
+  onSecondaryContainer: string;
+  tertiary: string;
+  onTertiary: string;
+  tertiaryContainer: string;
+  onTertiaryContainer: string;
   error: string;
-  onError?: string;
-  success: string;
+  onError: string;
+  errorContainer: string;
+  onErrorContainer: string;
+  background: string;
+  onBackground: string;
+  surface: string;
+  onSurface: string;
+  surfaceVariant: string;
+  onSurfaceVariant: string;
+  outline: string;
+  outlineVariant: string;
+  shadow: string;
+  scrim: string;
+  inverseSurface: string;
+  inverseOnSurface: string;
+  inversePrimary: string;
+  surfaceDisabled: string;
+  onSurfaceDisabled: string;
+  backdrop: string;
 
-  walls: string;
-  ball: string;
-  goal: string;
+  // Game-specific colors
+  walls?: string;
+  ball?: string;
+  goal?: string;
   laser?: string;
 }
 
-export type ThemeName = 'light' | 'dark' | 'blue' | 'custom';
+export type ThemeName = 'light' | 'dark' | 'system';
 
 export interface AppSettings {
   vibrationEnabled: boolean;
   soundEnabled: boolean;
-  theme: ThemeName;
-  customTheme?: ThemeColors;
   sensitivity: number;
   highestScore?: number;
+  qualityLevel: 'low' | 'medium' | 'high';
 }
 
 export interface LevelStats {

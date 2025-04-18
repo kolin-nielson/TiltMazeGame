@@ -2,40 +2,49 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import ColorPicker from 'react-native-wheel-color-picker';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useAppSelector, useAppDispatch, RootState } from '../store';
+import { setTheme, saveTheme, setIsDark } from '../store/slices/themeSlice';
 import { ThemeColors, ThemeName } from '../types';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { useNavigation } from '@react-navigation/native';
+import { ThemeScreenNavigationProp } from '../navigation/types';
+import { lightTheme, darkTheme } from '../styles/themes';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type ThemeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Theme'>;
+// Define themes object
+const themes: Record<ThemeName, ThemeColors> = {
+  light: lightTheme,
+  dark: darkTheme,
+  system: lightTheme, // Default to light for preview
+};
 
-interface ThemeScreenProps {
-  navigation: ThemeScreenNavigationProp;
-}
+const ThemeScreen: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const navigation = useNavigation<ThemeScreenNavigationProp>();
+  const themeName = useAppSelector((state: RootState) => state.theme.themeName);
+  const colors = useAppSelector((state: RootState) => state.theme.colors);
+  const isDark = useAppSelector((state: RootState) => state.theme.isDark);
 
-const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
-  const { theme, themeName, setTheme, setCustomTheme, colors, isDark } = useTheme();
   const [selectedTheme, setSelectedTheme] = useState<ThemeName>(themeName);
-  const [customColors, setCustomColors] = useState<ThemeColors>({ ...colors });
   const [editingColor, setEditingColor] = useState<keyof ThemeColors | null>(null);
   const [currentColor, setCurrentColor] = useState<string>('');
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     setSelectedTheme(themeName);
-    if (themeName === 'custom') {
-      setCustomColors({ ...colors });
-    }
-  }, [themeName, colors]);
+  }, [themeName]);
 
   const handleSelectTheme = (name: ThemeName) => {
     setSelectedTheme(name);
-    setTheme(name);
+    dispatch(setTheme(name));
+    dispatch(saveTheme(name));
 
-    if (name === 'custom') {
-      setCustomColors({ ...colors });
+    // Update dark mode state based on selected theme
+    if (name === 'dark') {
+      dispatch(setIsDark(true));
+    } else if (name === 'light') {
+      dispatch(setIsDark(false));
     }
+    // For 'system', the App.tsx useEffect will handle it based on device setting
   };
 
   const handleColorChange = (color: string) => {
@@ -43,21 +52,13 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
   };
 
   const applyColorChange = () => {
-    if (editingColor && currentColor) {
-      const updatedColors = {
-        ...customColors,
-        [editingColor]: currentColor,
-      };
-
-      setCustomColors(updatedColors);
-      setCustomTheme(updatedColors);
-      setEditingColor(null);
-    }
+    // Custom theme functionality removed in this version
+    setEditingColor(null);
   };
 
   const startEditingColor = (colorKey: keyof ThemeColors) => {
     setEditingColor(colorKey);
-    setCurrentColor(customColors[colorKey] || '');
+    setCurrentColor(colors[colorKey] || '');
   };
 
   const cancelColorEditing = () => {
@@ -66,7 +67,10 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
   };
 
   const renderThemeOption = (name: ThemeName, label: string) => {
-    const themeOptionColors = name === 'custom' ? customColors : themes[name];
+    // Skip system theme in the UI options
+    if (name === 'system') return null;
+
+    const themeOptionColors = themes[name];
 
     return (
       <TouchableOpacity
@@ -96,7 +100,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
   };
 
   const renderColorSwatch = (colorKey: keyof ThemeColors, label: string) => {
-    const color = customColors[colorKey] || '';
+    const color = colors[colorKey] || '';
     return (
       <TouchableOpacity
         style={[
@@ -132,7 +136,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors?.background ?? '#fff' }]}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
           {
@@ -147,11 +151,10 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
         <View style={styles.themeOptions}>
           {renderThemeOption('light', 'Light')}
           {renderThemeOption('dark', 'Dark')}
-          {renderThemeOption('blue', 'Blue')}
-          {renderThemeOption('custom', 'Custom')}
+          {renderThemeOption('system', 'System')}
         </View>
 
-        {selectedTheme === 'custom' && (
+        {false && (
           <View style={styles.customizeSection}>
             <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>Customize Colors</Text>
 
@@ -170,15 +173,15 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
 
             {editingColor && (
               <View style={[
-                styles.colorPickerContainer, 
-                { 
+                styles.colorPickerContainer,
+                {
                   backgroundColor: colors?.surface ?? '#fff',
-                  shadowColor: colors?.onBackground ?? '#000' 
+                  shadowColor: colors?.onBackground ?? '#000'
                 }
               ]}>
                 <Text style={[styles.colorTitle, { color: colors?.onSurface ?? '#000' }]}>
                   {editingColor.charAt(0).toUpperCase() + editingColor.slice(1)}:{' '}
-                  {currentColor || customColors[editingColor] || ''}
+                  {currentColor || colors[editingColor] || ''}
                 </Text>
                 <View
                   style={{
@@ -192,7 +195,7 @@ const ThemeScreen: React.FC<ThemeScreenProps> = ({ navigation }) => {
                   }}
                 >
                   <ColorPicker
-                    color={currentColor || customColors[editingColor] || ''}
+                    color={currentColor || colors[editingColor] || ''}
                     onColorChange={handleColorChange}
                     thumbSize={40}
                     sliderSize={40}

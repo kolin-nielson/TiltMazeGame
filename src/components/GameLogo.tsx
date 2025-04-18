@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Defs, Rect, Path, Circle, Text as SvgText, G } from 'react-native-svg';
-import { useTheme } from '../contexts/ThemeContext';
+import Svg, { Rect, Path, Circle, Text as SvgText, G } from 'react-native-svg';
+import { useAppSelector, RootState } from '../store';
 
 interface GameLogoProps {
   size?: number;
@@ -9,7 +9,7 @@ interface GameLogoProps {
 }
 
 const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
-  const { colors } = useTheme();
+  const colors = useAppSelector((state: RootState) => state.theme.colors);
 
   const baseSize = 100;
   const scale = size / baseSize;
@@ -40,10 +40,10 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
             fill={colors?.primaryContainer ?? '#E9DDFF'}
           />
           <Path
-            d={`M ${rectOriginX + rectSize*0.2},${rectOriginY + rectSize*0.2} 
-               L ${rectOriginX + rectSize*0.8},${rectOriginY + rectSize*0.2} 
-               L ${rectOriginX + rectSize*0.8},${rectOriginY + rectSize*0.6} 
-               L ${rectOriginX + rectSize*0.4},${rectOriginY + rectSize*0.6} 
+            d={`M ${rectOriginX + rectSize*0.2},${rectOriginY + rectSize*0.2}
+               L ${rectOriginX + rectSize*0.8},${rectOriginY + rectSize*0.2}
+               L ${rectOriginX + rectSize*0.8},${rectOriginY + rectSize*0.6}
+               L ${rectOriginX + rectSize*0.4},${rectOriginY + rectSize*0.6}
                L ${rectOriginX + rectSize*0.4},${rectOriginY + rectSize*0.8}`}
             stroke={colors?.primary ?? '#6200EE'}
             strokeWidth={strokeWidth}

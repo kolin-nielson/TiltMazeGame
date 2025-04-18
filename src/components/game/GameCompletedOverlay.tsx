@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Button, Card, Surface } from 'react-native-paper';
 import { gameScreenStyles } from '../../styles/GameScreenStyles';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useAppSelector, RootState } from '../../store';
 
 interface GameCompletedOverlayProps {
   elapsedTime: string;
@@ -17,15 +17,15 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
   onRestart,
   onExit,
 }) => {
-  const { theme } = useTheme();
-  
+  const colors = useAppSelector((state: RootState) => state.theme.colors);
+
   return (
     <View style={[
-      gameScreenStyles.overlay, 
-      { backgroundColor: `${theme.background}CC` } 
+      gameScreenStyles.overlay,
+      { backgroundColor: `${theme.background}CC` }
     ]}>
-      <Card 
-        style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]} 
+      <Card
+        style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]}
         elevation={3}
       >
         <Card.Title
@@ -34,20 +34,20 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
           titleStyle={[gameScreenStyles.cardTitle, { color: theme.onSurface }]}
         />
         <Card.Content style={gameScreenStyles.cardContent}>
-          <Surface 
+          <Surface
             style={[
-              gameScreenStyles.statsContainer, 
-              { 
+              gameScreenStyles.statsContainer,
+              {
                 backgroundColor: theme.primaryContainer || `${theme.primary}22`,
                 borderRadius: 12
               }
-            ]} 
+            ]}
             elevation={1}
           >
             <View style={gameScreenStyles.statsRow}>
               <Text style={[
-                gameScreenStyles.statLabel, 
-                { 
+                gameScreenStyles.statLabel,
+                {
                   color: theme.onPrimaryContainer || theme.onSurface,
                   fontWeight: '500'
                 }
@@ -55,8 +55,8 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
                 Time:
               </Text>
               <Text style={[
-                gameScreenStyles.statValue, 
-                { 
+                gameScreenStyles.statValue,
+                {
                   color: theme.onPrimaryContainer || theme.primary,
                   fontWeight: '500'
                 }

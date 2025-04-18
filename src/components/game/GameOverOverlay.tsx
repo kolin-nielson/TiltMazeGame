@@ -3,7 +3,7 @@ import { View, StyleSheet, StyleProp, TextStyle, ViewStyle } from 'react-native'
 import { Button, Card, Text } from 'react-native-paper';
 import { gameScreenStyles } from '../../styles/GameScreenStyles';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useAppSelector, RootState } from '../../store';
 import { ThemeColors } from '../../types';
 
 interface GameOverOverlayProps {
@@ -75,13 +75,13 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   </Button>
 );
 
-export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
+const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
   score,
   bestScore,
   onPlayAgain,
   onExit,
 }) => {
-  const { colors } = useTheme();
+  const colors = useAppSelector((state: RootState) => state.theme.colors);
   const isNewHighScore = score > bestScore;
 
   return (
@@ -239,3 +239,5 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 });
+
+export const GameOverOverlay = React.memo(GameOverOverlayComponent);

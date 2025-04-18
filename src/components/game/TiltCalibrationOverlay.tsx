@@ -129,4 +129,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TiltCalibrationOverlay;
+export default React.memo(TiltCalibrationOverlay);

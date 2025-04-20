@@ -40,7 +40,7 @@ const gameSlice = createSlice({
     setDifficulty: (state, action: PayloadAction<number>) => {
       state.difficulty = action.payload;
     },
-    incrementLevelsCompleted: (state) => {
+    incrementLevelsCompleted: state => {
       state.levelsCompleted += 1;
     },
     setLevelsCompleted: (state, action: PayloadAction<number>) => {
@@ -70,7 +70,7 @@ const gameSlice = createSlice({
     setIsManualRecalibrating: (state, action: PayloadAction<boolean>) => {
       state.isManualRecalibrating = action.payload;
     },
-    resetGame: (state) => {
+    resetGame: state => {
       state.gameState = 'loading';
       state.difficulty = 1;
       state.levelsCompleted = 0;

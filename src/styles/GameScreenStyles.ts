@@ -150,12 +150,7 @@ export const gameScreenStyles = StyleSheet.create({
   iconButton: {
     margin: 0,
   },
-  calibrateText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: -5,
-  },
+
   gameContainer: {
     flex: 1,
     justifyContent: 'center',

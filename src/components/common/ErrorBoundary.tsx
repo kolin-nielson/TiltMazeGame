@@ -52,24 +52,20 @@ class ErrorBoundary extends Component<Props, State> {
             <View style={styles.iconContainer}>
               <MaterialCommunityIcons name="alert-circle" size={64} color="#F44336" />
             </View>
-            
+
             <Text style={styles.title}>Something went wrong</Text>
-            
+
             <Text style={styles.message}>
               The app encountered an unexpected error. Please try again.
             </Text>
-            
+
             <ScrollView style={styles.errorDetails}>
               <Text style={styles.errorText}>
                 {this.state.error?.toString() || 'Unknown error'}
               </Text>
             </ScrollView>
-            
-            <Button 
-              mode="contained" 
-              onPress={this.resetError}
-              style={styles.button}
-            >
+
+            <Button mode="contained" onPress={this.resetError} style={styles.button}>
               Try Again
             </Button>
           </Surface>

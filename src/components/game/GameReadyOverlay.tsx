@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Button, Card } from 'react-native-paper';
-import { gameScreenStyles } from '../../styles/GameScreenStyles';
-import { useAppSelector, RootState } from '../../store';
+import { gameScreenStyles } from '@styles/GameScreenStyles';
+import { useAppSelector, RootState } from '@store';
 
 interface GameReadyOverlayProps {
   mazeName: string;
@@ -18,10 +18,7 @@ export const GameReadyOverlay: React.FC<GameReadyOverlayProps> = ({
   const colors = useAppSelector((state: RootState) => state.theme.colors);
 
   return (
-    <View style={[
-      gameScreenStyles.overlay,
-      { backgroundColor: `${theme.background}CC` }
-    ]}>
+    <View style={[gameScreenStyles.overlay, { backgroundColor: `${theme.background}CC` }]}>
       <Card
         style={[gameScreenStyles.messageCard, { backgroundColor: theme.surface }]}
         elevation={3}

@@ -9,7 +9,7 @@ import {
   TouchableOpacityProps,
   Platform,
 } from 'react-native';
-import { useAppSelector, RootState } from '../../store';
+import { useAppSelector, RootState } from '@store';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text';
 export type ButtonSize = 'small' | 'medium' | 'large';
@@ -50,7 +50,8 @@ const Button: React.FC<ButtonProps> = ({
   onPress,
   ...rest
 }) => {
-  const colors = useAppSelector((state: RootState) => state.theme.colors);
+  // Get theme colors from Redux store
+  const themeColors = useAppSelector((state: RootState) => state.theme.colors);
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
@@ -61,16 +62,16 @@ const Button: React.FC<ButtonProps> = ({
       case 'primary':
         return {
           ...baseStyle,
-          backgroundColor: theme.primary,
-          borderColor: theme.primary,
+          backgroundColor: themeColors.primary,
+          borderColor: themeColors.primary,
           borderWidth: 1,
           ...getShadowStyle(3),
         };
       case 'secondary':
         return {
           ...baseStyle,
-          backgroundColor: theme.secondary,
-          borderColor: theme.secondary,
+          backgroundColor: themeColors.secondary,
+          borderColor: themeColors.secondary,
           borderWidth: 1,
           ...getShadowStyle(2),
         };
@@ -78,7 +79,7 @@ const Button: React.FC<ButtonProps> = ({
         return {
           ...baseStyle,
           backgroundColor: 'transparent',
-          borderColor: theme.primary,
+          borderColor: themeColors.primary,
           borderWidth: 1,
           ...getShadowStyle(1),
         };
@@ -96,7 +97,7 @@ const Button: React.FC<ButtonProps> = ({
   const getShadowStyle = (elevation: number): ViewStyle => {
     if (Platform.OS === 'ios') {
       return {
-        shadowColor: theme.onBackground,
+        shadowColor: themeColors.onBackground,
         shadowOffset: { width: 0, height: elevation },
         shadowOpacity: 0.1 + elevation * 0.03,
         shadowRadius: elevation,
@@ -133,9 +134,9 @@ const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'outline':
       case 'text':
-        return theme.primary;
+        return themeColors.primary;
       default:
-        return theme.onPrimary;
+        return themeColors.onPrimary;
     }
   };
 
@@ -161,7 +162,9 @@ const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={loadingColor || (variant === 'outline' ? theme.primary : theme.onPrimary)}
+          color={
+            loadingColor || (variant === 'outline' ? themeColors.primary : themeColors.onPrimary)
+          }
           size="small"
         />
       ) : (

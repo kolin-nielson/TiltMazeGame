@@ -2,10 +2,10 @@ import React from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useAppSelector, RootState } from '../store';
+import { useAppSelector, RootState } from '@store';
 import { useNavigation } from '@react-navigation/native';
-import { HomeScreenNavigationProp } from '../navigation/types';
-import GameLogo from '../components/GameLogo';
+import { HomeScreenNavigationProp } from '@navigation/types';
+import GameLogo from '@components/logo/GameLogo';
 import { StatusBar } from 'expo-status-bar';
 import { Button, Text } from 'react-native-paper';
 
@@ -24,8 +24,8 @@ const HomeScreen: React.FC = () => {
           backgroundColor: colors?.background ?? '#ffffff',
           paddingTop: insets.top,
           paddingBottom: insets.bottom + 20,
-          paddingHorizontal: 20
-        }
+          paddingHorizontal: 20,
+        },
       ]}
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -37,27 +37,27 @@ const HomeScreen: React.FC = () => {
 
         <View style={styles.statsContainer}>
           <Text
-             style={[
-               styles.statLabel,
-               {
-                 color: colors?.onSurfaceVariant ?? '#444444',
-                 fontSize: 14,
-                 textTransform: 'uppercase',
-                 fontWeight: '500'
-               }
-             ]}
+            style={[
+              styles.statLabel,
+              {
+                color: colors?.onSurfaceVariant ?? '#444444',
+                fontSize: 14,
+                textTransform: 'uppercase',
+                fontWeight: '500',
+              },
+            ]}
           >
-             Best Score
+            Best Score
           </Text>
           <Text
-             style={[
-               styles.statNumber,
-               {
-                 color: colors?.primary ?? '#6200ee',
-                 fontSize: 48,
-                 fontWeight: 'bold'
-               }
-             ]}
+            style={[
+              styles.statNumber,
+              {
+                color: colors?.primary ?? '#6200ee',
+                fontSize: 48,
+                fontWeight: 'bold',
+              },
+            ]}
           >
             {highestScore ?? 0}
           </Text>
@@ -79,9 +79,7 @@ const HomeScreen: React.FC = () => {
 
           <Button
             mode="outlined"
-            icon={({ size, color }) => (
-              <MaterialIcons name="settings" size={size} color={color} />
-            )}
+            icon={({ size, color }) => <MaterialIcons name="settings" size={size} color={color} />}
             onPress={() => navigation.navigate('Settings')}
             style={styles.menuButton}
             contentStyle={styles.buttonContent}
@@ -117,8 +115,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     opacity: 0.8,
   },
-  statNumber: {
-  },
+  statNumber: {},
   menuContainer: {
     width: '85%',
     alignItems: 'center',

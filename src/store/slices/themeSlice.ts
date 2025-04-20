@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { ThemeColors } from '../../types';
-import { lightTheme, darkTheme } from '../../styles/themes';
+import { ThemeColors } from '@types';
+import { lightTheme, darkTheme } from '@styles/themes';
 
 export type ThemeName = 'light' | 'dark' | 'system';
 
@@ -22,22 +22,18 @@ const initialState: ThemeState = {
   error: null,
 };
 
-// Async thunks
-export const loadTheme = createAsyncThunk(
-  'theme/loadTheme',
-  async (_, { rejectWithValue }) => {
-    try {
-      const themeJson = await AsyncStorage.getItem('theme');
-      if (themeJson) {
-        const savedTheme = JSON.parse(themeJson);
-        return savedTheme;
-      }
-      return { themeName: 'system' };
-    } catch (error) {
-      return rejectWithValue('Failed to load theme');
+export const loadTheme = createAsyncThunk('theme/loadTheme', async (_, { rejectWithValue }) => {
+  try {
+    const themeJson = await AsyncStorage.getItem('theme');
+    if (themeJson) {
+      const savedTheme = JSON.parse(themeJson);
+      return savedTheme;
     }
+    return { themeName: 'system' };
+  } catch (error) {
+    return rejectWithValue('Failed to load theme');
   }
-);
+});
 
 export const saveTheme = createAsyncThunk(
   'theme/saveTheme',
@@ -63,9 +59,9 @@ const themeSlice = createSlice({
       state.colors = action.payload ? darkTheme : lightTheme;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
-      .addCase(loadTheme.pending, (state) => {
+      .addCase(loadTheme.pending, state => {
         state.status = 'loading';
       })
       .addCase(loadTheme.fulfilled, (state, action) => {

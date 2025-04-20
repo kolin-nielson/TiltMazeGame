@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, Switch, TouchableOpacity, Alert, Platform } fro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import { useAppSelector, useAppDispatch, RootState } from '../store';
-import { updateSettings, saveSettings } from '../store/slices/settingsSlice';
-import { resetMazeProgress } from '../store/slices/mazeSlice';
+import { useAppSelector, useAppDispatch, RootState } from '@store';
+import { updateSettings, saveSettings } from '@store/slices/settingsSlice';
+import { resetMazeProgress } from '@store/slices/mazeSlice';
 import { useNavigation } from '@react-navigation/native';
-import { SettingsScreenNavigationProp } from '../navigation/types';
+import { SettingsScreenNavigationProp } from '@navigation/types';
 
 type SettingItemProps = {
   label: string;
@@ -31,10 +31,15 @@ const SettingItem: React.FC<SettingItemProps> = ({
   const itemLabelColor = labelColor || colors?.onSurface || '#000000';
 
   const Content = (
-    <View style={[styles.settingRow, {
-      backgroundColor: colors?.surface ?? '#ffffff',
-      shadowColor: colors?.onBackground ?? '#000000',
-    }]}>
+    <View
+      style={[
+        styles.settingRow,
+        {
+          backgroundColor: colors?.surface ?? '#ffffff',
+          shadowColor: colors?.onBackground ?? '#000000',
+        },
+      ]}
+    >
       <View style={styles.settingLabelContainer}>
         <MaterialIcons name={iconName} size={24} color={itemIconColor} style={styles.icon} />
         <Text style={[styles.settingLabel, { color: itemLabelColor }]}>{label}</Text>
@@ -84,11 +89,14 @@ const SettingsScreen: React.FC = () => {
   }, []);
 
   // Only update actual settings when sliding completes
-  const handleSlidingComplete = useCallback((value: number) => {
-    setIsSliding(false);
-    dispatch(updateSettings({ sensitivity: value }));
-    dispatch(saveSettings({ sensitivity: value }));
-  }, [dispatch]);
+  const handleSlidingComplete = useCallback(
+    (value: number) => {
+      setIsSliding(false);
+      dispatch(updateSettings({ sensitivity: value }));
+      dispatch(saveSettings({ sensitivity: value }));
+    },
+    [dispatch]
+  );
 
   // Track when sliding starts
   const handleSlidingStart = useCallback(() => {
@@ -121,19 +129,21 @@ const SettingsScreen: React.FC = () => {
         styles.container,
         {
           paddingBottom: insets.bottom,
-          backgroundColor: colors?.background ?? '#ffffff'
-        }
+          backgroundColor: colors?.background ?? '#ffffff',
+        },
       ]}
     >
       <View style={styles.settingsGroup}>
-        <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>Game Settings</Text>
+        <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>
+          Game Settings
+        </Text>
 
         <SettingItem label="Sensitivity" iconName="speed">
           <View style={styles.sliderContainer}>
             <Slider
               style={styles.slider}
-              minimumValue={0.1}
-              maximumValue={2.0}
+              minimumValue={0.2}
+              maximumValue={2.5}
               step={0.1}
               value={sliderValue}
               onValueChange={handleSensitivityChange}
@@ -143,16 +153,30 @@ const SettingsScreen: React.FC = () => {
               maximumTrackTintColor={colors?.onSurfaceVariant ?? '#cccccc'}
               thumbTintColor={colors?.primary ?? '#6200ee'}
             />
-            <Text style={[styles.sensitivityValue, { color: colors?.onSurface ?? '#000000' }]}>
-              {sliderValue.toFixed(1)}x
-            </Text>
+            <View style={styles.sensitivityLabelContainer}>
+              <Text style={[styles.sensitivityValue, { color: colors?.onSurface ?? '#000000' }]}>
+                {sliderValue.toFixed(1)}x
+              </Text>
+              <Text
+                style={[styles.sensitivityLabel, { color: colors?.onSurfaceVariant ?? '#666666' }]}
+              >
+                {sliderValue <= 0.5 ? 'Precise' : sliderValue >= 1.8 ? 'Fast' : 'Balanced'}
+              </Text>
+            </View>
           </View>
         </SettingItem>
 
         <SettingItem label="Sound" iconName="volume-up">
           <Switch
-            trackColor={{ false: colors?.surfaceVariant ?? '#E7E0EB', true: (colors?.primary ?? '#6200ee') + '80' }}
-            thumbColor={settings.soundEnabled ? (colors?.primary ?? '#6200ee') : (colors?.onSurfaceVariant ?? '#CAC4CF')}
+            trackColor={{
+              false: colors?.surfaceVariant ?? '#E7E0EB',
+              true: (colors?.primary ?? '#6200ee') + '80',
+            }}
+            thumbColor={
+              settings.soundEnabled
+                ? colors?.primary ?? '#6200ee'
+                : colors?.onSurfaceVariant ?? '#CAC4CF'
+            }
             ios_backgroundColor={colors?.surfaceVariant ?? '#E7E0EB'}
             onValueChange={handleSoundToggle}
             value={settings.soundEnabled}
@@ -161,8 +185,15 @@ const SettingsScreen: React.FC = () => {
 
         <SettingItem label="Vibration" iconName="vibration">
           <Switch
-            trackColor={{ false: colors?.surfaceVariant ?? '#E7E0EB', true: (colors?.primary ?? '#6200ee') + '80' }}
-            thumbColor={settings.vibrationEnabled ? (colors?.primary ?? '#6200ee') : (colors?.onSurfaceVariant ?? '#CAC4CF')}
+            trackColor={{
+              false: colors?.surfaceVariant ?? '#E7E0EB',
+              true: (colors?.primary ?? '#6200ee') + '80',
+            }}
+            thumbColor={
+              settings.vibrationEnabled
+                ? colors?.primary ?? '#6200ee'
+                : colors?.onSurfaceVariant ?? '#CAC4CF'
+            }
             ios_backgroundColor={colors?.surfaceVariant ?? '#E7E0EB'}
             onValueChange={handleVibrationToggle}
             value={settings.vibrationEnabled}
@@ -171,13 +202,11 @@ const SettingsScreen: React.FC = () => {
       </View>
 
       <View style={styles.settingsGroup}>
-        <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>Appearance</Text>
+        <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>
+          Appearance
+        </Text>
 
-        <SettingItem
-          label="Theme"
-          iconName="palette"
-          onPress={() => navigation.navigate('Theme')}
-        >
+        <SettingItem label="Theme" iconName="palette" onPress={() => navigation.navigate('Theme')}>
           <View style={styles.valueContainer}>
             <Text style={[styles.settingValue, { color: colors?.onSurface ?? '#000000' }]}>
               {themeName.charAt(0).toUpperCase() + themeName.slice(1)}
@@ -201,12 +230,13 @@ const SettingsScreen: React.FC = () => {
           iconColor={colors?.error ?? '#B00020'}
           labelColor={colors?.error ?? '#B00020'}
           onPress={handleResetProgress}
-        >
-        </SettingItem>
+        ></SettingItem>
       </View>
 
       <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: colors?.onSurfaceVariant ?? '#444444' }]}>Tilt Maze v1.0.0</Text>
+        <Text style={[styles.footerText, { color: colors?.onSurfaceVariant ?? '#444444' }]}>
+          Tilt Maze v1.0.0
+        </Text>
       </View>
     </View>
   );
@@ -242,8 +272,7 @@ const styles = StyleSheet.create({
           shadowOpacity: 0.08,
           shadowRadius: 2,
         }
-      : { elevation: 1 }
-    )
+      : { elevation: 1 }),
   },
   settingLabelContainer: {
     flexDirection: 'row',
@@ -277,10 +306,19 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
   },
+  sensitivityLabelContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    minWidth: 60,
+  },
   sensitivityValue: {
-    width: 40,
     textAlign: 'right',
     fontSize: 16,
+    fontWeight: '500',
+  },
+  sensitivityLabel: {
+    fontSize: 12,
+    marginTop: 2,
   },
   footer: {
     marginTop: 'auto',

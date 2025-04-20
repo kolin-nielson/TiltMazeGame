@@ -11,19 +11,17 @@ interface MazeBallProps {
   color: string;
 }
 
-export const MazeBall: React.FC<MazeBallProps> = memo(({ ballPositionX, ballPositionY, radius, color }) => {
-  const animatedProps = useAnimatedProps(() => {
-    return {
-      cx: ballPositionX.value,
-      cy: ballPositionY.value,
-    };
-  });
+export const MazeBall: React.FC<MazeBallProps> = memo(
+  ({ ballPositionX, ballPositionY, radius, color }) => {
+    const animatedProps = useAnimatedProps(() => {
+      return {
+        cx: ballPositionX.value,
+        cy: ballPositionY.value,
+      };
+    });
 
-  return (
-    <AnimatedCircle
-      animatedProps={animatedProps}
-      r={radius}
-      fill={color}
-    />
-  );
-});
+    return <AnimatedCircle animatedProps={animatedProps} r={radius} fill={color} />;
+  }
+);
+
+MazeBall.displayName = 'MazeBall';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Rect, Path, Circle, Text as SvgText, G } from 'react-native-svg';
-import { useAppSelector, RootState } from '../store';
+import { useAppSelector, RootState } from '@store';
 
 interface GameLogoProps {
   size?: number;
@@ -21,16 +21,12 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
   const rectOriginY = (baseSize - rectSize) / 2;
 
   const textYOffset = baseSize * 1.1;
-  const totalHeight = showText ? textYOffset + (baseSize * 0.18) : baseSize;
+  const totalHeight = showText ? textYOffset + baseSize * 0.18 : baseSize;
 
   return (
     <View style={styles.container}>
-      <Svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${baseSize} ${baseSize}`}
-      >
-        <G transform={`rotate(${tiltAngle}, ${baseSize/2}, ${baseSize/2})`}>
+      <Svg width={size} height={size} viewBox={`0 0 ${baseSize} ${baseSize}`}>
+        <G transform={`rotate(${tiltAngle}, ${baseSize / 2}, ${baseSize / 2})`}>
           <Rect
             x={rectOriginX}
             y={rectOriginY}
@@ -40,11 +36,11 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
             fill={colors?.primaryContainer ?? '#E9DDFF'}
           />
           <Path
-            d={`M ${rectOriginX + rectSize*0.2},${rectOriginY + rectSize*0.2}
-               L ${rectOriginX + rectSize*0.8},${rectOriginY + rectSize*0.2}
-               L ${rectOriginX + rectSize*0.8},${rectOriginY + rectSize*0.6}
-               L ${rectOriginX + rectSize*0.4},${rectOriginY + rectSize*0.6}
-               L ${rectOriginX + rectSize*0.4},${rectOriginY + rectSize*0.8}`}
+            d={`M ${rectOriginX + rectSize * 0.2},${rectOriginY + rectSize * 0.2}
+               L ${rectOriginX + rectSize * 0.8},${rectOriginY + rectSize * 0.2}
+               L ${rectOriginX + rectSize * 0.8},${rectOriginY + rectSize * 0.6}
+               L ${rectOriginX + rectSize * 0.4},${rectOriginY + rectSize * 0.6}
+               L ${rectOriginX + rectSize * 0.4},${rectOriginY + rectSize * 0.8}`}
             stroke={colors?.primary ?? '#6200EE'}
             strokeWidth={strokeWidth}
             strokeLinecap="round"

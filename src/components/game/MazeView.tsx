@@ -1,9 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Surface } from 'react-native-paper';
-import { gameScreenStyles } from '../../styles/GameScreenStyles';
-import MazeRenderer from '../MazeRenderer';
-import { Maze, ThemeColors } from '../../types';
+import { MazeElements } from '@components/maze/MazeElements';
+import { Maze, ThemeColors } from '@types';
 import Animated from 'react-native-reanimated';
 
 interface MazeViewProps {
@@ -15,6 +13,8 @@ interface MazeViewProps {
   gameState: string;
 }
 
+const RENDER_SIZE = 300;
+
 const MazeView: React.FC<MazeViewProps> = ({
   maze,
   ballPositionX,
@@ -24,20 +24,23 @@ const MazeView: React.FC<MazeViewProps> = ({
   gameState,
 }) => {
   return (
-    <View style={gameScreenStyles.gameContainer}>
-      <Surface
-        style={[gameScreenStyles.mazeSurface, { backgroundColor: colors?.surface ?? '#fff' }]}
-        elevation={4}
-      >
-        <MazeRenderer
-          maze={maze}
-          ballPositionX={ballPositionX}
-          ballPositionY={ballPositionY}
-          ballRadius={ballRadius}
-          colors={colors}
-          gameState={gameState}
-        />
-      </Surface>
+    <View
+      style={{
+        width: RENDER_SIZE,
+        height: RENDER_SIZE,
+        backgroundColor: colors?.surface ?? '#fff',
+        borderRadius: 12,
+        overflow: 'hidden',
+      }}
+    >
+      <MazeElements
+        maze={maze}
+        ballPositionX={ballPositionX}
+        ballPositionY={ballPositionY}
+        ballRadius={ballRadius}
+        colors={colors}
+        gameState={gameState}
+      />
     </View>
   );
 };

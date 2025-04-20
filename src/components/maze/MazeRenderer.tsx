@@ -1,9 +1,9 @@
 import React, { memo, useMemo } from 'react';
 import { View } from 'react-native';
-import { useAppSelector, RootState } from '../store';
-import { Maze, Position, ThemeColors } from '../types';
-import { MazeElements } from './maze/MazeElements';
-import { mazeRendererStyles } from '../styles/MazeRendererStyles';
+import { useAppSelector, RootState } from '@store';
+import { Maze, Position, ThemeColors } from '@types';
+import { MazeElements } from '@components/maze/MazeElements';
+import { mazeRendererStyles } from '@styles/MazeRendererStyles';
 import Animated from 'react-native-reanimated';
 
 interface MazeRendererProps {
@@ -28,15 +28,18 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
   const themeColors = useAppSelector((state: RootState) => state.theme.colors);
   const mazeSize = 300;
 
-  const containerStyles = useMemo(() => [
-    mazeRendererStyles.container,
-    containerStyle,
-    {
-      backgroundColor: themeColors?.surface ?? '#ffffff',
-      borderRadius: 12,
-      overflow: 'hidden',
-    },
-  ], [containerStyle, themeColors?.surface]);
+  const containerStyles = useMemo(
+    () => [
+      mazeRendererStyles.container,
+      containerStyle,
+      {
+        backgroundColor: themeColors?.surface ?? '#ffffff',
+        borderRadius: 12,
+        overflow: 'hidden',
+      },
+    ],
+    [containerStyle, themeColors?.surface]
+  );
 
   return (
     <View style={containerStyles}>

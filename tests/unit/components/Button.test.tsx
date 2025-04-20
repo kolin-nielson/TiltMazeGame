@@ -1,25 +1,15 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import Button from '../../../src/components/common/Button';
-import { ThemeProvider } from '../../../src/contexts/ThemeContext';
+import Button from '@components/common/Button';
 
-jest.mock('../../../src/contexts/ThemeContext', () => ({
-  useTheme: () => ({
-    theme: {
-      primary: '#6200ee',
-      secondary: '#03dac6',
-      background: '#ffffff',
-      surface: '#f5f5f5',
-      text: '#000000',
-      error: '#b00020',
-      walls: '#333333',
-      ball: '#ff6f00',
-      goal: '#76ff03',
-    },
-    themeName: 'light',
-    setTheme: jest.fn(),
+jest.mock('@store', () => ({
+  useAppSelector: jest.fn().mockReturnValue({
+    primary: '#6200ee',
+    secondary: '#03dac6',
+    background: '#ffffff',
+    surface: '#f5f5f5',
+    onPrimary: '#ffffff',
   }),
-  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 describe('Button Component', () => {

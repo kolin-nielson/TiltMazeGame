@@ -9,8 +9,8 @@ import {
   Mask,
   Rect,
 } from 'react-native-svg';
-import { ThemeColors } from '../../types';
-import { shadeColor } from '../../utils/colorUtils';
+import { ThemeColors } from '@types';
+import { shadeColor } from '@utils/colorUtils';
 
 interface LogoGradientsProps {
   colors: ThemeColors;
@@ -20,17 +20,29 @@ interface LogoGradientsProps {
 const LogoGradients: React.FC<LogoGradientsProps> = ({ colors, size }) => {
   // Get shadow color based on theme
   const shadowColor = colors?.onBackground || '#000000';
-  
+
   return (
     <>
       <LinearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <Stop offset="0%" stopColor={shadeColor(colors?.primary ?? '#6200ee', 20)} stopOpacity="1" />
-        <Stop offset="100%" stopColor={shadeColor(colors?.primary ?? '#6200ee', -20)} stopOpacity="1" />
+        <Stop
+          offset="0%"
+          stopColor={shadeColor(colors?.primary ?? '#6200ee', 20)}
+          stopOpacity="1"
+        />
+        <Stop
+          offset="100%"
+          stopColor={shadeColor(colors?.primary ?? '#6200ee', -20)}
+          stopOpacity="1"
+        />
       </LinearGradient>
 
       <LinearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <Stop offset="0%" stopColor={colors?.secondary ?? '#03DAC6'} stopOpacity="1" />
-        <Stop offset="100%" stopColor={shadeColor(colors?.secondary ?? '#03DAC6', -30)} stopOpacity="1" />
+        <Stop
+          offset="100%"
+          stopColor={shadeColor(colors?.secondary ?? '#03DAC6', -30)}
+          stopOpacity="1"
+        />
       </LinearGradient>
 
       <RadialGradient id="ballGradient" cx="40%" cy="40%" r="60%" fx="25%" fy="25%">
@@ -41,7 +53,11 @@ const LogoGradients: React.FC<LogoGradientsProps> = ({ colors, size }) => {
 
       <LinearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <Stop offset="0%" stopColor={shadeColor(colors?.background ?? '#000', 5)} stopOpacity="1" />
-        <Stop offset="100%" stopColor={shadeColor(colors?.background ?? '#000', -10)} stopOpacity="1" />
+        <Stop
+          offset="100%"
+          stopColor={shadeColor(colors?.background ?? '#000', -10)}
+          stopOpacity="1"
+        />
       </LinearGradient>
 
       <RadialGradient id="shadowGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">

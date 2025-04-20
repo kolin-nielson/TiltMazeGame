@@ -1,10 +1,9 @@
-import { Maze, Wall, Position, LaserGate } from '../types';
-import { GAME } from '../config/constants';
+import { Maze, Wall, Position, LaserGate } from '@types';
+import { GAME } from '@config/constants';
 
-// --- Configuration ---
 const BASE_GRID_SIZE = 5; // Smallest grid size (e.g., 5x5 cells)
 const GRID_INCREMENT = 1; // How many cells to add per difficulty level (e.g., difficulty 1 = 5x5, 2 = 6x6)
-const CELL_SIZE = 40;     // Pixel size of each cell in the maze
+const CELL_SIZE = 40; // Pixel size of each cell in the maze
 const WALL_THICKNESS = 4; // Pixel thickness of walls
 const MAZE_AREA_SIZE = 300; // The target playable area size (ensure CELL_SIZE * gridSize fits)
 
@@ -15,10 +14,14 @@ interface Cell {
   walls: { top: boolean; right: boolean; bottom: boolean; left: boolean };
 }
 
-// --- Helper Functions ---
 
-// Function to check if a path exists from start to end with laser gates
-function isPathPossible(grid: Cell[][], rows: number, cols: number, laserGates: LaserGate[], scale: number): boolean {
+function isPathPossible(
+  grid: Cell[][],
+  rows: number,
+  cols: number,
+  laserGates: LaserGate[],
+  scale: number
+): boolean {
   // Convert grid coordinates to pixel coordinates
   const startRow = 0;
   const startCol = 0;
@@ -51,20 +54,32 @@ function isPathPossible(grid: Cell[][], rows: number, cols: number, laserGates: 
   return true;
 }
 
-// Basic BFS to check if there's a path from start to end
-function hasPath(grid: Cell[][], startRow: number, startCol: number, endRow: number, endCol: number): boolean {
+function hasPath(
+  grid: Cell[][],
+  startRow: number,
+  startCol: number,
+  endRow: number,
+  endCol: number
+): boolean {
   const rows = grid.length;
   const cols = grid[0].length;
 
   // Create a visited array
-  const visited: boolean[][] = Array(rows).fill(0).map(() => Array(cols).fill(false));
+  const visited: boolean[][] = Array(rows)
+    .fill(0)
+    .map(() => Array(cols).fill(false));
 
   // Queue for BFS
   const queue: [number, number][] = [[startRow, startCol]];
   visited[startRow][startCol] = true;
 
   // Directions: right, down, left, up
-  const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+  const directions = [
+    [0, 1],
+    [1, 0],
+    [0, -1],
+    [-1, 0],
+  ];
 
   while (queue.length > 0) {
     const [row, col] = queue.shift()!;
@@ -80,14 +95,20 @@ function hasPath(grid: Cell[][], startRow: number, startCol: number, endRow: num
       const newCol = col + directions[i][1];
 
       // Check if the new position is valid
-      if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols && !visited[newRow][newCol]) {
+      if (
+        newRow >= 0 &&
+        newRow < rows &&
+        newCol >= 0 &&
+        newCol < cols &&
+        !visited[newRow][newCol]
+      ) {
         // Check if there's a wall between the current cell and the new cell
         let canMove = false;
 
         if (i === 0 && !grid[row][col].walls.right) canMove = true; // Right
         if (i === 1 && !grid[row][col].walls.bottom) canMove = true; // Down
-        if (i === 2 && col > 0 && !grid[row][col-1].walls.right) canMove = true; // Left
-        if (i === 3 && row > 0 && !grid[row-1][col].walls.bottom) canMove = true; // Up
+        if (i === 2 && col > 0 && !grid[row][col - 1].walls.right) canMove = true; // Left
+        if (i === 3 && row > 0 && !grid[row - 1][col].walls.bottom) canMove = true; // Up
 
         if (canMove) {
           visited[newRow][newCol] = true;
@@ -133,71 +154,70 @@ function removeWall(current: Cell, next: Cell): void {
   const dx = current.x - next.x;
   const dy = current.y - next.y;
 
-  if (dx === 1) { // Moving left
+  if (dx === 1) {
+    // Moving left
     current.walls.left = false;
     next.walls.right = false;
-  } else if (dx === -1) { // Moving right
+  } else if (dx === -1) {
+    // Moving right
     current.walls.right = false;
     next.walls.left = false;
   }
 
-  if (dy === 1) { // Moving up
+  if (dy === 1) {
+    // Moving up
     current.walls.top = false;
     next.walls.bottom = false;
-  } else if (dy === -1) { // Moving down
+  } else if (dy === -1) {
+    // Moving down
     current.walls.bottom = false;
     next.walls.top = false;
   }
 }
 
-// Updated function to prevent duplicate walls
 function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number): Wall[] {
-    const walls: Wall[] = [];
-    const wallThicknessScaled = WALL_THICKNESS * scale;
-    const cellSizeScaled = CELL_SIZE * scale;
+  const walls: Wall[] = [];
+  const wallThicknessScaled = WALL_THICKNESS * scale;
+  const cellSizeScaled = CELL_SIZE * scale;
 
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            const cell = grid[y][x];
-            const cellX = x * cellSizeScaled;
-            const cellY = y * cellSizeScaled;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const cell = grid[y][x];
+      const cellX = x * cellSizeScaled;
+      const cellY = y * cellSizeScaled;
 
-            // Always add top wall for the first row
-            if (y === 0 && cell.walls.top) {
-                walls.push({ x: cellX, y: cellY, width: cellSizeScaled, height: wallThicknessScaled });
-            }
-            // Always add left wall for the first column
-            if (x === 0 && cell.walls.left) {
-                walls.push({ x: cellX, y: cellY, width: wallThicknessScaled, height: cellSizeScaled });
-            }
+      // Always add top wall for the first row
+      if (y === 0 && cell.walls.top) {
+        walls.push({ x: cellX, y: cellY, width: cellSizeScaled, height: wallThicknessScaled });
+      }
+      // Always add left wall for the first column
+      if (x === 0 && cell.walls.left) {
+        walls.push({ x: cellX, y: cellY, width: wallThicknessScaled, height: cellSizeScaled });
+      }
 
-            // Add bottom wall if it exists
-            if (cell.walls.bottom) {
-                walls.push({
-                  x: cellX,
-                  y: cellY + cellSizeScaled - wallThicknessScaled,
-                  width: cellSizeScaled,
-                  height: wallThicknessScaled
-                });
-            }
-            // Add right wall if it exists
-            if (cell.walls.right) {
-                walls.push({
-                  x: cellX + cellSizeScaled - wallThicknessScaled,
-                  y: cellY,
-                  width: wallThicknessScaled,
-                  height: cellSizeScaled
-                });
-            }
-        }
+      // Add bottom wall if it exists
+      if (cell.walls.bottom) {
+        walls.push({
+          x: cellX,
+          y: cellY + cellSizeScaled - wallThicknessScaled,
+          width: cellSizeScaled,
+          height: wallThicknessScaled,
+        });
+      }
+      // Add right wall if it exists
+      if (cell.walls.right) {
+        walls.push({
+          x: cellX + cellSizeScaled - wallThicknessScaled,
+          y: cellY,
+          width: wallThicknessScaled,
+          height: cellSizeScaled,
+        });
+      }
     }
-    return walls;
+  }
+  return walls;
 }
 
-
-// --- Main Generator Function ---
-// Note: Difficulty is capped at GAME.MAX_DIFFICULTY (currently set to 4) in GameScreen.tsx
-// Higher difficulty levels create more complex mazes with larger grid sizes
 
 export const generateMaze = (difficulty: number): Maze => {
   const gridSize = BASE_GRID_SIZE + (difficulty - 1) * GRID_INCREMENT;
@@ -269,7 +289,14 @@ export const generateMaze = (difficulty: number): Maze => {
     const numLasers = Math.min(difficulty, 4); // Cap at 4 lasers
 
     // Simplified approach - just create a few random laser gates
-    const corridors: {x1: number, y1: number, x2: number, y2: number, direction: 'horizontal' | 'vertical', length: number}[] = [];
+    const corridors: {
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      direction: 'horizontal' | 'vertical';
+      length: number;
+    }[] = [];
 
     // Create 2-3 horizontal corridors at different heights
     const numHorizontalCorridors = 1 + Math.floor(Math.random() * 2); // 1-2 horizontal corridors
@@ -281,11 +308,11 @@ export const generateMaze = (difficulty: number): Maze => {
       // Create a corridor that spans most of the width
       corridors.push({
         x1: 0,
-        y1: cellY + CELL_SIZE * scale / 2,
+        y1: cellY + (CELL_SIZE * scale) / 2,
         x2: MAZE_AREA_SIZE,
-        y2: cellY + CELL_SIZE * scale / 2,
+        y2: cellY + (CELL_SIZE * scale) / 2,
         direction: 'horizontal',
-        length: MAZE_AREA_SIZE
+        length: MAZE_AREA_SIZE,
       });
     }
 
@@ -298,12 +325,12 @@ export const generateMaze = (difficulty: number): Maze => {
 
       // Create a corridor that spans most of the height
       corridors.push({
-        x1: cellX + CELL_SIZE * scale / 2,
+        x1: cellX + (CELL_SIZE * scale) / 2,
         y1: 0,
-        x2: cellX + CELL_SIZE * scale / 2,
+        x2: cellX + (CELL_SIZE * scale) / 2,
         y2: MAZE_AREA_SIZE,
         direction: 'vertical',
-        length: MAZE_AREA_SIZE
+        length: MAZE_AREA_SIZE,
       });
     }
 
@@ -342,7 +369,7 @@ export const generateMaze = (difficulty: number): Maze => {
         const laserWidth = (corridor.x2 - corridor.x1) * widthFactor;
 
         // Center the laser in the corridor
-        const laserX = corridor.x1 + ((corridor.x2 - corridor.x1) - laserWidth) / 2;
+        const laserX = corridor.x1 + (corridor.x2 - corridor.x1 - laserWidth) / 2;
 
         // Ensure the laser gate has an off period (never 100% on)
         const onDuration = Math.min(0.4 + Math.random() * 0.2, 0.6); // Cap at 60% on time
@@ -356,9 +383,10 @@ export const generateMaze = (difficulty: number): Maze => {
           direction: 'horizontal',
           interval: 1000 + Math.random() * 1000, // Random interval between 1000-2000ms
           phase: Math.random(), // Random phase
-          onDuration: onDuration // 40-60% on duration
+          onDuration: onDuration, // 40-60% on duration
         });
-      } else { // vertical
+      } else {
+        // vertical
         // Create a vertical laser gate
         const laserX = corridor.x1 - laserThickness / 2;
 
@@ -368,7 +396,7 @@ export const generateMaze = (difficulty: number): Maze => {
         const laserHeight = (corridor.y2 - corridor.y1) * heightFactor;
 
         // Center the laser in the corridor
-        const laserY = corridor.y1 + ((corridor.y2 - corridor.y1) - laserHeight) / 2;
+        const laserY = corridor.y1 + (corridor.y2 - corridor.y1 - laserHeight) / 2;
 
         // Ensure the laser gate has an off period (never 100% on)
         const onDuration = Math.min(0.4 + Math.random() * 0.2, 0.6); // Cap at 60% on time
@@ -382,7 +410,7 @@ export const generateMaze = (difficulty: number): Maze => {
           direction: 'vertical',
           interval: 1000 + Math.random() * 1000, // Random interval between 1000-2000ms
           phase: Math.random(), // Random phase
-          onDuration: onDuration // 40-60% on duration
+          onDuration: onDuration, // 40-60% on duration
         });
       }
     }

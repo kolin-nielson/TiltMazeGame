@@ -1,4 +1,9 @@
 module.exports = {
+  env: {
+    node: true,
+    es2021: true,
+  },
+  ignorePatterns: ['babel.config.js', 'jest.config.js', '.eslintrc.js'],
   root: true,
   extends: [
     'eslint:recommended',
@@ -17,14 +22,16 @@ module.exports = {
   },
   plugins: ['react', 'react-hooks', '@typescript-eslint', 'prettier'],
   rules: {
+    '@typescript-eslint/no-unused-vars': 'warn',
+    'react/display-name': 'off',
+    '@typescript-eslint/no-empty-function': 'off',
     'prettier/prettier': 'error',
     'react/prop-types': 'off',
     'react/react-in-jsx-scope': 'off',
     'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'warn',
+    'react-hooks/exhaustive-deps': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    'max-len': ['warn', { code: 100, ignoreComments: true, ignoreStrings: true }],
+    'max-len': ['warn', { code: 120, ignoreComments: true, ignoreStrings: true }],
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
   settings: {

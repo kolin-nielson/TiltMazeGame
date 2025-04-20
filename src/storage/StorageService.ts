@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../config/constants';
-import { isDevelopment } from '../config/env';
+import { STORAGE_KEYS } from '@config/constants';
+import { isDevelopment } from '@config/env';
 
 class StorageService {
   async save<T>(key: string, value: T): Promise<void> {

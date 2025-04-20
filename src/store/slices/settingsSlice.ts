@@ -22,7 +22,6 @@ const initialState: SettingsState = {
   error: null,
 };
 
-// Async thunks
 export const loadSettings = createAsyncThunk(
   'settings/loadSettings',
   async (_, { rejectWithValue }) => {
@@ -44,10 +43,9 @@ export const saveSettings = createAsyncThunk(
     try {
       const state = getState() as { settings: SettingsState };
       const updatedSettings = { ...state.settings, ...settings };
-      
-      // Remove status and error before saving
+
       const { status, error, ...settingsToSave } = updatedSettings;
-      
+
       await AsyncStorage.setItem('settings', JSON.stringify(settingsToSave));
       return settings;
     } catch (error) {
@@ -65,14 +63,13 @@ const settingsSlice = createSlice({
     },
     resetSettings: () => initialState,
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
-      .addCase(loadSettings.pending, (state) => {
+      .addCase(loadSettings.pending, state => {
         state.status = 'loading';
       })
       .addCase(loadSettings.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        // Only update the state with the properties from the payload
         Object.assign(state, action.payload);
       })
       .addCase(loadSettings.rejected, (state, action) => {
@@ -80,7 +77,6 @@ const settingsSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(saveSettings.fulfilled, (state, action) => {
-        // Update state with saved settings
         Object.assign(state, action.payload);
       });
   },

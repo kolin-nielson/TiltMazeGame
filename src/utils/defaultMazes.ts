@@ -1,9 +1,5 @@
-import { Maze } from '../types';
+import { Maze } from '@types';
 
-// Maze grid size: 300x300
-// Wall thickness: 10
-// Ball diameter: ~15 (ball radius is now 7)
-// Ensure at least 20px clearance around start/end positions
 
 export const defaultMazes: Maze[] = [
   // --- Easy Mazes ---
@@ -22,7 +18,8 @@ export const defaultMazes: Maze[] = [
     laserGates: [],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'easy-2',
@@ -40,7 +37,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'easy-3',
@@ -58,7 +56,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'easy-4',
@@ -76,7 +75,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 260, y: 260 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'easy-5',
@@ -93,7 +93,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
 
   // --- Medium Mazes ---
@@ -114,7 +115,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 260, y: 260 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'medium-2',
@@ -134,7 +136,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 250, y: 250 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'medium-3',
@@ -160,8 +163,8 @@ export const defaultMazes: Maze[] = [
         height: 4,
         direction: 'horizontal',
         interval: 1200, // 1.2 seconds per cycle
-        phase: 0,      // Start at the beginning of the cycle
-        onDuration: 0.4 // On for 40% of the cycle
+        phase: 0, // Start at the beginning of the cycle
+        onDuration: 0.4, // On for 40% of the cycle
       },
       // Laser gate in the bottom path - goes from wall to wall
       {
@@ -172,13 +175,14 @@ export const defaultMazes: Maze[] = [
         height: 4,
         direction: 'horizontal',
         interval: 1500, // 1.5 seconds per cycle
-        phase: 0.5,    // Start at the middle of the cycle (opposite of the first laser)
-        onDuration: 0.4 // On for 40% of the cycle
-      }
+        phase: 0.5, // Start at the middle of the cycle (opposite of the first laser)
+        onDuration: 0.4, // On for 40% of the cycle
+      },
     ],
     startPosition: { x: 30, y: 150 },
     endPosition: { x: 270, y: 150 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'medium-4',
@@ -202,7 +206,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 270, y: 270 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'medium-5',
@@ -221,7 +226,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 30, y: 270 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
 
   // --- Hard Mazes ---
@@ -242,7 +248,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 265, y: 265 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'hard-2',
@@ -267,7 +274,8 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 150, y: 150 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'hard-3',
@@ -280,16 +288,29 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
       // Grid with much wider path through
-      { x: 40, y: 75, width: 35, height: 10 }, { x: 115, y: 75, width: 70, height: 10 }, { x: 225, y: 75, width: 35, height: 10 },
-      { x: 40, y: 150, width: 35, height: 10 }, { x: 115, y: 150, width: 70, height: 10 }, { x: 225, y: 150, width: 35, height: 10 },
-      { x: 40, y: 225, width: 35, height: 10 }, { x: 115, y: 225, width: 70, height: 10 }, { x: 225, y: 225, width: 35, height: 10 },
-      { x: 75, y: 40, width: 10, height: 35 }, { x: 75, y: 115, width: 10, height: 35 }, { x: 75, y: 185, width: 10, height: 40 },
-      { x: 150, y: 40, width: 10, height: 35 }, { x: 150, y: 115, width: 10, height: 35 }, { x: 150, y: 185, width: 10, height: 40 },
-      { x: 225, y: 40, width: 10, height: 35 }, { x: 225, y: 115, width: 10, height: 35 }, { x: 225, y: 185, width: 10, height: 40 },
+      { x: 40, y: 75, width: 35, height: 10 },
+      { x: 115, y: 75, width: 70, height: 10 },
+      { x: 225, y: 75, width: 35, height: 10 },
+      { x: 40, y: 150, width: 35, height: 10 },
+      { x: 115, y: 150, width: 70, height: 10 },
+      { x: 225, y: 150, width: 35, height: 10 },
+      { x: 40, y: 225, width: 35, height: 10 },
+      { x: 115, y: 225, width: 70, height: 10 },
+      { x: 225, y: 225, width: 35, height: 10 },
+      { x: 75, y: 40, width: 10, height: 35 },
+      { x: 75, y: 115, width: 10, height: 35 },
+      { x: 75, y: 185, width: 10, height: 40 },
+      { x: 150, y: 40, width: 10, height: 35 },
+      { x: 150, y: 115, width: 10, height: 35 },
+      { x: 150, y: 185, width: 10, height: 40 },
+      { x: 225, y: 40, width: 10, height: 35 },
+      { x: 225, y: 115, width: 10, height: 35 },
+      { x: 225, y: 185, width: 10, height: 40 },
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 265, y: 265 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'hard-4',
@@ -302,9 +323,12 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
       // Serpentine path with much wider openings
-      { x: 40, y: 60, width: 200, height: 10 }, { x: 230, y: 60, width: 10, height: 60 },
-      { x: 60, y: 120, width: 170, height: 10 }, { x: 60, y: 120, width: 10, height: 60 },
-      { x: 60, y: 180, width: 170, height: 10 }, { x: 230, y: 180, width: 10, height: 60 },
+      { x: 40, y: 60, width: 200, height: 10 },
+      { x: 230, y: 60, width: 10, height: 60 },
+      { x: 60, y: 120, width: 170, height: 10 },
+      { x: 60, y: 120, width: 10, height: 60 },
+      { x: 60, y: 180, width: 170, height: 10 },
+      { x: 230, y: 180, width: 10, height: 60 },
       { x: 40, y: 240, width: 200, height: 10 },
     ],
     laserGates: [
@@ -317,8 +341,8 @@ export const defaultMazes: Maze[] = [
         height: 30,
         direction: 'vertical',
         interval: 1300, // 1.3 seconds per cycle
-        phase: 0,      // Start at the beginning of the cycle
-        onDuration: 0.4 // On for 40% of the cycle
+        phase: 0, // Start at the beginning of the cycle
+        onDuration: 0.4, // On for 40% of the cycle
       },
       // Laser gate in the second corridor - spans the entire corridor
       {
@@ -329,8 +353,8 @@ export const defaultMazes: Maze[] = [
         height: 50,
         direction: 'vertical',
         interval: 1700, // 1.7 seconds per cycle
-        phase: 0.3,    // Offset phase
-        onDuration: 0.3 // On for 30% of the cycle
+        phase: 0.3, // Offset phase
+        onDuration: 0.3, // On for 30% of the cycle
       },
       // Laser gate in the third corridor - spans the entire corridor
       {
@@ -341,8 +365,8 @@ export const defaultMazes: Maze[] = [
         height: 50,
         direction: 'vertical',
         interval: 1500, // 1.5 seconds per cycle
-        phase: 0.6,    // Offset phase
-        onDuration: 0.35 // On for 35% of the cycle
+        phase: 0.6, // Offset phase
+        onDuration: 0.35, // On for 35% of the cycle
       },
       // Laser gate in the fourth corridor - spans the entire corridor
       {
@@ -353,13 +377,14 @@ export const defaultMazes: Maze[] = [
         height: 50,
         direction: 'vertical',
         interval: 2000, // 2 seconds per cycle
-        phase: 0.9,    // Offset phase
-        onDuration: 0.25 // On for 25% of the cycle
-      }
+        phase: 0.9, // Offset phase
+        onDuration: 0.25, // On for 25% of the cycle
+      },
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 260, y: 260 },
-    createdAt: 0, updatedAt: 0,
+    createdAt: 0,
+    updatedAt: 0,
   },
   {
     id: 'hard-5',
@@ -377,12 +402,18 @@ export const defaultMazes: Maze[] = [
       { x: 40, y: 180, width: 190, height: 10 },
       { x: 40, y: 240, width: 190, height: 10 },
       // Vertical connectors with very wide gaps
-      { x: 70, y: 40, width: 10, height: 20 }, { x: 70, y: 120, width: 10, height: 60 }, { x: 70, y: 240, width: 10, height: 50 },
-      { x: 150, y: 60, width: 10, height: 60 }, { x: 150, y: 180, width: 10, height: 60 },
-      { x: 230, y: 40, width: 10, height: 20 }, { x: 230, y: 120, width: 10, height: 60 }, { x: 230, y: 240, width: 10, height: 50 },
+      { x: 70, y: 40, width: 10, height: 20 },
+      { x: 70, y: 120, width: 10, height: 60 },
+      { x: 70, y: 240, width: 10, height: 50 },
+      { x: 150, y: 60, width: 10, height: 60 },
+      { x: 150, y: 180, width: 10, height: 60 },
+      { x: 230, y: 40, width: 10, height: 20 },
+      { x: 230, y: 120, width: 10, height: 60 },
+      { x: 230, y: 240, width: 10, height: 50 },
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 260, y: 260 },
-    createdAt: 0, updatedAt: 0,
-  }
+    createdAt: 0,
+    updatedAt: 0,
+  },
 ];

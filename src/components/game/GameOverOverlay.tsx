@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { Button, Card, Text } from 'react-native-paper';
-import { gameScreenStyles } from '../../styles/GameScreenStyles';
+import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAppSelector, RootState } from '../../store';
-import { ThemeColors } from '../../types';
+import { useAppSelector, RootState } from '@store';
+import { ThemeColors } from '@types';
 
 interface GameOverOverlayProps {
   score: number;
@@ -69,7 +69,12 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     buttonColor={mode === 'contained' ? colors.primary : undefined}
   >
     <View style={styles.iconContainer}>
-      <MaterialCommunityIcons name={icon as any} size={20} color={labelColor} style={styles.buttonIcon} />
+      <MaterialCommunityIcons
+        name={icon as any}
+        size={20}
+        color={labelColor}
+        style={styles.buttonIcon}
+      />
       <Text style={[styles.buttonLabel, { color: labelColor }]}>{label}</Text>
     </View>
   </Button>
@@ -88,51 +93,53 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
     <View style={styles.container}>
       <View style={styles.cardWrapper}>
         <Card style={styles.card}>
-          <View style={[styles.cardHeader, { backgroundColor: colors.error }]}>
-            <Text style={[styles.gameOverText, { color: colors.onError }]}>Game Over</Text>
-          </View>
-
-          <View style={[styles.cardContent, { backgroundColor: colors.surface }]}>
-            <View style={styles.scoreContainer}>
-              <ScoreRow
-                label="Your Score"
-                value={score}
-                style={[styles.scoreRow, { backgroundColor: colors.primaryContainer }]}
-                labelStyle={[styles.scoreLabel, { color: colors.onPrimaryContainer }]}
-                valueStyle={[styles.scoreValue, { color: colors.onPrimaryContainer }]}
-                showBadge={false}
-              />
-
-              <ScoreRow
-                label="Best Score"
-                value={bestScore}
-                style={[styles.scoreRow, { backgroundColor: colors.secondaryContainer }]}
-                labelStyle={[styles.scoreLabel, { color: colors.onSecondaryContainer }]}
-                valueStyle={[styles.scoreValue, { color: colors.onSecondaryContainer }]}
-                showBadge={isNewHighScore}
-              />
+          <View style={styles.cardInner}>
+            <View style={[styles.cardHeader, { backgroundColor: colors.error }]}>
+              <Text style={[styles.gameOverText, { color: colors.onError }]}>Game Over</Text>
             </View>
 
-            <View style={styles.buttonContainer}>
-              <ActionButton
-                mode="contained"
-                onPress={onPlayAgain}
-                style={styles.playAgainButton}
-                icon="refresh"
-                label="Play Again"
-                colors={colors}
-                labelColor={colors.onPrimary}
-              />
+            <View style={[styles.cardContent, { backgroundColor: colors.surface }]}>
+              <View style={styles.scoreContainer}>
+                <ScoreRow
+                  label="Your Score"
+                  value={score}
+                  style={[styles.scoreRow, { backgroundColor: colors.primaryContainer }]}
+                  labelStyle={[styles.scoreLabel, { color: colors.onPrimaryContainer }]}
+                  valueStyle={[styles.scoreValue, { color: colors.onPrimaryContainer }]}
+                  showBadge={false}
+                />
 
-              <ActionButton
-                mode="outlined"
-                onPress={onExit}
-                style={[styles.exitButton, { borderColor: colors.outline }]}
-                icon="exit-to-app"
-                label="Exit Game"
-                colors={colors}
-                labelColor={colors.error}
-              />
+                <ScoreRow
+                  label="Best Score"
+                  value={bestScore}
+                  style={[styles.scoreRow, { backgroundColor: colors.secondaryContainer }]}
+                  labelStyle={[styles.scoreLabel, { color: colors.onSecondaryContainer }]}
+                  valueStyle={[styles.scoreValue, { color: colors.onSecondaryContainer }]}
+                  showBadge={isNewHighScore}
+                />
+              </View>
+
+              <View style={styles.buttonContainer}>
+                <ActionButton
+                  mode="contained"
+                  onPress={onPlayAgain}
+                  style={styles.playAgainButton}
+                  icon="refresh"
+                  label="Play Again"
+                  colors={colors}
+                  labelColor={colors.onPrimary}
+                />
+
+                <ActionButton
+                  mode="outlined"
+                  onPress={onExit}
+                  style={[styles.exitButton, { borderColor: colors.outline }]}
+                  icon="exit-to-app"
+                  label="Exit Game"
+                  colors={colors}
+                  labelColor={colors.error}
+                />
+              </View>
             </View>
           </View>
         </Card>
@@ -154,8 +161,11 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 20,
     padding: 0,
-    overflow: 'hidden',
     elevation: 8,
+  },
+  cardInner: {
+    overflow: 'hidden',
+    borderRadius: 20,
   },
   cardHeader: {
     paddingVertical: 20,

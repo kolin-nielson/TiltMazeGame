@@ -14,5 +14,8 @@ export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeSta
 
 export type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 export type GameScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Game'>;
-export type SettingsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
+export type SettingsScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Settings'
+>;
 export type ThemeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Theme'>;

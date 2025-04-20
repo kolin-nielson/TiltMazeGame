@@ -1,6 +1,6 @@
 import React from 'react';
 import { Rect } from 'react-native-svg';
-import { Wall } from '../../types';
+import { Wall } from '@types';
 
 interface MazeWallProps {
   wall: Wall;
@@ -11,7 +11,7 @@ interface MazeWallProps {
 export const MazeWall: React.FC<MazeWallProps> = ({ wall, index, color }) => {
   return (
     <Rect
-        key={`wall-${index}`}
+      key={`wall-${index}`}
       x={wall.x}
       y={wall.y}
       width={wall.width}

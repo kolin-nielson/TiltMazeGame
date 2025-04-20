@@ -57,7 +57,50 @@ Then scan the QR code with the Expo Go app on your phone.
 
 ## Built With
 
-- React Native
-- Expo
-- React Native Paper (for Material Design)
-- Matter.js (for realistic physics)
+- **React Native**: Cross-platform mobile framework
+- **Expo**: Development platform for React Native
+- **Redux Toolkit**: State management
+- **React Navigation**: Screen navigation
+- **React Native Paper**: Material Design components
+- **React Native Reanimated**: Advanced animations
+- **Matter.js**: 2D physics engine
+- **TypeScript**: Type-safe JavaScript
+
+## Project Structure
+
+```bash
+src/
+├── components/       # UI components
+│   ├── common/       # Reusable UI components
+│   ├── game/         # Game-specific components
+│   ├── logo/         # Logo components
+│   └── maze/         # Maze rendering components
+├── config/           # Configuration constants
+├── hooks/            # Custom React hooks
+├── navigation/       # Navigation setup
+├── screens/          # App screens
+├── storage/          # Local storage utilities
+├── store/            # Redux store setup
+│   └── slices/       # Redux slices
+├── styles/           # Shared styles
+├── types/            # TypeScript type definitions
+└── utils/            # Utility functions
+```
+
+## Technical Implementation
+
+### State Management
+
+The game uses Redux Toolkit for centralized state management, with separate slices for settings, theme, maze, and game state. This provides a predictable state container and makes it easier to manage complex state interactions.
+
+### Physics Engine
+
+The ball movement is powered by a custom physics implementation that handles collisions with walls and other obstacles. The physics system is optimized for mobile devices and provides realistic ball movement based on device tilt.
+
+### Procedural Maze Generation
+
+Mazes are generated procedurally using a depth-first search algorithm, ensuring that every maze is solvable. The difficulty increases progressively by adding more complex paths and obstacles.
+
+### Responsive Design
+
+The game is designed to work on various screen sizes and aspect ratios, with a responsive layout that adapts to different devices.

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { Text } from 'react-native-paper';
-import { ThemeColors } from '../../types';
+import { ThemeColors } from '@types';
 
 interface LevelTransitionProps {
   level: number;

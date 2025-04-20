@@ -50,7 +50,6 @@ const Button: React.FC<ButtonProps> = ({
   onPress,
   ...rest
 }) => {
-  // Get theme colors from Redux store
   const themeColors = useAppSelector((state: RootState) => state.theme.colors);
 
   const getButtonStyle = (): ViewStyle => {

@@ -64,19 +64,15 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 }) => (
   <Button
     mode={mode}
+    icon={icon as any}
     onPress={onPress}
-    style={style}
     buttonColor={mode === 'contained' ? colors.primary : undefined}
+    textColor={labelColor}
+    style={style}
+    contentStyle={styles.buttonContent}
+    labelStyle={styles.buttonLabel}
   >
-    <View style={styles.iconContainer}>
-      <MaterialCommunityIcons
-        name={icon as any}
-        size={20}
-        color={labelColor}
-        style={styles.buttonIcon}
-      />
-      <Text style={[styles.buttonLabel, { color: labelColor }]}>{label}</Text>
-    </View>
+    {label}
   </Button>
 );
 
@@ -125,7 +121,7 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   onPress={onPlayAgain}
                   style={styles.playAgainButton}
                   icon="refresh"
-                  label="Play Again"
+                  label="Restart"
                   colors={colors}
                   labelColor={colors.onPrimary}
                 />
@@ -135,7 +131,7 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   onPress={onExit}
                   style={[styles.exitButton, { borderColor: colors.outline }]}
                   icon="exit-to-app"
-                  label="Exit Game"
+                  label="Exit"
                   colors={colors}
                   labelColor={colors.error}
                 />
@@ -220,33 +216,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     width: '100%',
-    marginTop: 8,
-    gap: 16,
+    paddingHorizontal: 24,
+    marginTop: 16,
   },
   playAgainButton: {
-    width: '100%',
-    borderRadius: 12,
-    paddingVertical: 6,
+    flex: 1,
+    marginRight: 8,
+    borderRadius: 24,
+    height: 48,
   },
   exitButton: {
-    width: '100%',
-    borderRadius: 12,
+    flex: 1,
+    marginLeft: 8,
+    borderRadius: 24,
     borderWidth: 2,
-    paddingVertical: 6,
+    height: 48,
+  },
+  buttonContent: {
+    height: 48,
+    justifyContent: 'center',
   },
   buttonLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
-    paddingVertical: 4,
-  },
-  iconContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonIcon: {
-    marginRight: 8,
+    fontWeight: '600',
   },
 });
 

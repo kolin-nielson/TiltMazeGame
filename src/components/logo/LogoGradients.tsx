@@ -18,7 +18,6 @@ interface LogoGradientsProps {
 }
 
 const LogoGradients: React.FC<LogoGradientsProps> = ({ colors, size }) => {
-  // Get shadow color based on theme
   const shadowColor = colors?.onBackground || '#000000';
 
   return (

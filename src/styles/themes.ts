@@ -29,7 +29,7 @@ export const lightTheme: ThemeColors = {
   surfaceDisabled: '#C4C7C5',
   onSurfaceDisabled: '#484848',
   backdrop: 'rgba(0, 0, 0, 0.5)',
-  // Maze element colors
+
   walls: MD3LightTheme.colors.onSurfaceVariant,
   ball: MD3LightTheme.colors.primary,
   laser: MD3LightTheme.colors.error,
@@ -64,7 +64,7 @@ export const darkTheme: ThemeColors = {
   surfaceDisabled: '#232323',
   onSurfaceDisabled: '#AAAAAA',
   backdrop: 'rgba(0, 0, 0, 0.8)',
-  // Maze element colors
+
   walls: MD3DarkTheme.colors.onSurfaceVariant,
   ball: MD3DarkTheme.colors.primary,
   laser: MD3DarkTheme.colors.error,

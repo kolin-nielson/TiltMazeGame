@@ -1,20 +1,17 @@
 import { Maze } from '@types';
 
-
 export const defaultMazes: Maze[] = [
-  // --- Easy Mazes ---
   {
     id: 'easy-1',
     name: 'Open Field',
     difficulty: 'easy',
     walls: [
-      // Outer walls only
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
     ],
-    // No laser gates in the first maze for tutorial purposes
+
     laserGates: [],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
@@ -26,12 +23,11 @@ export const defaultMazes: Maze[] = [
     name: 'Simple Path',
     difficulty: 'easy',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Central divider with wide opening
+
       { x: 10, y: 150, width: 90, height: 10 },
       { x: 200, y: 150, width: 90, height: 10 },
     ],
@@ -45,12 +41,11 @@ export const defaultMazes: Maze[] = [
     name: 'Corner Turn',
     difficulty: 'easy',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Corner guide (moved away from start/end)
+
       { x: 150, y: 10, width: 10, height: 120 },
       { x: 10, y: 150, width: 120, height: 10 },
     ],
@@ -64,12 +59,11 @@ export const defaultMazes: Maze[] = [
     name: 'Corridor',
     difficulty: 'easy',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Corridor walls with 80px gap (adjusted to be away from start/end)
+
       { x: 10, y: 100, width: 200, height: 10 },
       { x: 90, y: 190, width: 200, height: 10 },
     ],
@@ -83,12 +77,11 @@ export const defaultMazes: Maze[] = [
     name: 'Central Obstacle',
     difficulty: 'easy',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Central obstacle (smaller and centered)
+
       { x: 135, y: 135, width: 30, height: 30 },
     ],
     startPosition: { x: 40, y: 40 },
@@ -97,18 +90,16 @@ export const defaultMazes: Maze[] = [
     updatedAt: 0,
   },
 
-  // --- Medium Mazes ---
   {
     id: 'medium-1',
     name: 'Zigzag',
     difficulty: 'medium',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Zigzag pattern with wider openings
+
       { x: 10, y: 80, width: 180, height: 10 },
       { x: 110, y: 160, width: 180, height: 10 },
       { x: 10, y: 240, width: 180, height: 10 },
@@ -123,16 +114,15 @@ export const defaultMazes: Maze[] = [
     name: 'Spiral',
     difficulty: 'medium',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Spiral with clear gaps (pulled away from start/end)
+
       { x: 60, y: 60, width: 180, height: 10 },
       { x: 60, y: 60, width: 10, height: 180 },
-      { x: 60, y: 230, width: 150, height: 10 }, // Gap at right end
-      { x: 230, y: 60, width: 10, height: 150 }, // Gap at bottom end
+      { x: 60, y: 230, width: 150, height: 10 },
+      { x: 230, y: 60, width: 10, height: 150 },
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 250, y: 250 },
@@ -144,17 +134,15 @@ export const defaultMazes: Maze[] = [
     name: 'Two Paths',
     difficulty: 'medium',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Central barrier with two routes (shortened)
+
       { x: 150, y: 30, width: 10, height: 100 },
       { x: 150, y: 170, width: 10, height: 100 },
     ],
     laserGates: [
-      // Laser gate in the top path - goes from wall to wall
       {
         id: 'laser-1',
         x: 10,
@@ -162,11 +150,11 @@ export const defaultMazes: Maze[] = [
         width: 140,
         height: 4,
         direction: 'horizontal',
-        interval: 1200, // 1.2 seconds per cycle
-        phase: 0, // Start at the beginning of the cycle
-        onDuration: 0.4, // On for 40% of the cycle
+        interval: 1200,
+        phase: 0,
+        onDuration: 0.4,
       },
-      // Laser gate in the bottom path - goes from wall to wall
+
       {
         id: 'laser-2',
         x: 160,
@@ -174,9 +162,9 @@ export const defaultMazes: Maze[] = [
         width: 130,
         height: 4,
         direction: 'horizontal',
-        interval: 1500, // 1.5 seconds per cycle
-        phase: 0.5, // Start at the middle of the cycle (opposite of the first laser)
-        onDuration: 0.4, // On for 40% of the cycle
+        interval: 1500,
+        phase: 0.5,
+        onDuration: 0.4,
       },
     ],
     startPosition: { x: 30, y: 150 },
@@ -189,12 +177,11 @@ export const defaultMazes: Maze[] = [
     name: 'Crossroads',
     difficulty: 'medium',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Cross pattern with much wider openings
+
       { x: 10, y: 120, width: 80, height: 10 },
       { x: 210, y: 120, width: 80, height: 10 },
       { x: 10, y: 180, width: 80, height: 10 },
@@ -214,12 +201,11 @@ export const defaultMazes: Maze[] = [
     name: 'Switchback',
     difficulty: 'medium',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Switchback pattern with clearer passage
+
       { x: 10, y: 80, width: 200, height: 10 },
       { x: 90, y: 160, width: 200, height: 10 },
       { x: 10, y: 240, width: 200, height: 10 },
@@ -230,18 +216,16 @@ export const defaultMazes: Maze[] = [
     updatedAt: 0,
   },
 
-  // --- Hard Mazes ---
   {
     id: 'hard-1',
     name: 'Corridors',
     difficulty: 'hard',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Vertical barriers with wider gaps
+
       { x: 75, y: 40, width: 10, height: 200 },
       { x: 150, y: 60, width: 10, height: 180 },
       { x: 225, y: 40, width: 10, height: 200 },
@@ -256,21 +240,20 @@ export const defaultMazes: Maze[] = [
     name: 'Concentric',
     difficulty: 'hard',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Outer ring with entrance (adjusted)
+
       { x: 60, y: 60, width: 180, height: 10 },
       { x: 60, y: 60, width: 10, height: 180 },
-      { x: 60, y: 230, width: 140, height: 10 }, // Gap on right
-      { x: 230, y: 60, width: 10, height: 140 }, // Gap on bottom
-      // Inner ring with entrance (smaller)
+      { x: 60, y: 230, width: 140, height: 10 },
+      { x: 230, y: 60, width: 10, height: 140 },
+
       { x: 110, y: 110, width: 80, height: 10 },
       { x: 110, y: 110, width: 10, height: 80 },
-      { x: 110, y: 180, width: 40, height: 10 }, // Gap on right
-      { x: 180, y: 110, width: 10, height: 40 }, // Gap on bottom
+      { x: 110, y: 180, width: 40, height: 10 },
+      { x: 180, y: 110, width: 10, height: 40 },
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 150, y: 150 },
@@ -282,12 +265,11 @@ export const defaultMazes: Maze[] = [
     name: 'Grid',
     difficulty: 'hard',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Grid with much wider path through
+
       { x: 40, y: 75, width: 35, height: 10 },
       { x: 115, y: 75, width: 70, height: 10 },
       { x: 225, y: 75, width: 35, height: 10 },
@@ -317,12 +299,11 @@ export const defaultMazes: Maze[] = [
     name: 'Serpentine',
     difficulty: 'hard',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Serpentine path with much wider openings
+
       { x: 40, y: 60, width: 200, height: 10 },
       { x: 230, y: 60, width: 10, height: 60 },
       { x: 60, y: 120, width: 170, height: 10 },
@@ -332,7 +313,6 @@ export const defaultMazes: Maze[] = [
       { x: 40, y: 240, width: 200, height: 10 },
     ],
     laserGates: [
-      // Laser gate in the first corridor - spans the entire corridor
       {
         id: 'laser-3',
         x: 85,
@@ -340,11 +320,11 @@ export const defaultMazes: Maze[] = [
         width: 4,
         height: 30,
         direction: 'vertical',
-        interval: 1300, // 1.3 seconds per cycle
-        phase: 0, // Start at the beginning of the cycle
-        onDuration: 0.4, // On for 40% of the cycle
+        interval: 1300,
+        phase: 0,
+        onDuration: 0.4,
       },
-      // Laser gate in the second corridor - spans the entire corridor
+
       {
         id: 'laser-4',
         x: 160,
@@ -352,11 +332,11 @@ export const defaultMazes: Maze[] = [
         width: 4,
         height: 50,
         direction: 'vertical',
-        interval: 1700, // 1.7 seconds per cycle
-        phase: 0.3, // Offset phase
-        onDuration: 0.3, // On for 30% of the cycle
+        interval: 1700,
+        phase: 0.3,
+        onDuration: 0.3,
       },
-      // Laser gate in the third corridor - spans the entire corridor
+
       {
         id: 'laser-5',
         x: 85,
@@ -364,11 +344,11 @@ export const defaultMazes: Maze[] = [
         width: 4,
         height: 50,
         direction: 'vertical',
-        interval: 1500, // 1.5 seconds per cycle
-        phase: 0.6, // Offset phase
-        onDuration: 0.35, // On for 35% of the cycle
+        interval: 1500,
+        phase: 0.6,
+        onDuration: 0.35,
       },
-      // Laser gate in the fourth corridor - spans the entire corridor
+
       {
         id: 'laser-6',
         x: 160,
@@ -376,9 +356,9 @@ export const defaultMazes: Maze[] = [
         width: 4,
         height: 50,
         direction: 'vertical',
-        interval: 2000, // 2 seconds per cycle
-        phase: 0.9, // Offset phase
-        onDuration: 0.25, // On for 25% of the cycle
+        interval: 2000,
+        phase: 0.9,
+        onDuration: 0.25,
       },
     ],
     startPosition: { x: 30, y: 30 },
@@ -391,17 +371,16 @@ export const defaultMazes: Maze[] = [
     name: 'The Weave',
     difficulty: 'hard',
     walls: [
-      // Outer walls
       { x: 0, y: 0, width: 300, height: 10 },
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-      // Horizontal lines with very wide gaps
+
       { x: 40, y: 60, width: 190, height: 10 },
       { x: 40, y: 120, width: 190, height: 10 },
       { x: 40, y: 180, width: 190, height: 10 },
       { x: 40, y: 240, width: 190, height: 10 },
-      // Vertical connectors with very wide gaps
+
       { x: 70, y: 40, width: 10, height: 20 },
       { x: 70, y: 120, width: 10, height: 60 },
       { x: 70, y: 240, width: 10, height: 50 },

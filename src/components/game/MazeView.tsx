@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
-import { MazeElements } from '@components/maze/MazeElements';
+import { Surface } from 'react-native-paper';
+import MazeRenderer from '@components/maze/MazeRenderer';
 import { Maze, ThemeColors } from '@types';
 import Animated from 'react-native-reanimated';
 
@@ -24,23 +25,20 @@ const MazeView: React.FC<MazeViewProps> = ({
   gameState,
 }) => {
   return (
-    <View
-      style={{
-        width: RENDER_SIZE,
-        height: RENDER_SIZE,
-        backgroundColor: colors?.surface ?? '#fff',
-        borderRadius: 12,
-        overflow: 'hidden',
-      }}
-    >
-      <MazeElements
-        maze={maze}
-        ballPositionX={ballPositionX}
-        ballPositionY={ballPositionY}
-        ballRadius={ballRadius}
-        colors={colors}
-        gameState={gameState}
-      />
+    <View style={{ width: RENDER_SIZE, height: RENDER_SIZE }}>
+      <Surface
+        style={{ flex: 1, backgroundColor: colors?.surface ?? '#fff', borderRadius: 12 }}
+        elevation={4}
+      >
+        <MazeRenderer
+          maze={maze}
+          ballPositionX={ballPositionX}
+          ballPositionY={ballPositionY}
+          ballRadius={ballRadius}
+          colors={colors}
+          gameState={gameState}
+        />
+      </Surface>
     </View>
   );
 };

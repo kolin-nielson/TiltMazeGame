@@ -76,19 +76,16 @@ const SettingsScreen: React.FC = () => {
   const [sliderValue, setSliderValue] = useState<number>(settings.sensitivity);
   const [isSliding, setIsSliding] = useState<boolean>(false);
 
-  // Update local state when settings change from outside
   useEffect(() => {
     if (!isSliding) {
       setSliderValue(settings.sensitivity);
     }
   }, [settings.sensitivity, isSliding]);
 
-  // Debounced sensitivity change handler
   const handleSensitivityChange = useCallback((value: number) => {
     setSliderValue(value);
   }, []);
 
-  // Only update actual settings when sliding completes
   const handleSlidingComplete = useCallback(
     (value: number) => {
       setIsSliding(false);
@@ -98,7 +95,6 @@ const SettingsScreen: React.FC = () => {
     [dispatch]
   );
 
-  // Track when sliding starts
   const handleSlidingStart = useCallback(() => {
     setIsSliding(true);
   }, []);
@@ -142,9 +138,9 @@ const SettingsScreen: React.FC = () => {
           <View style={styles.sliderContainer}>
             <Slider
               style={styles.slider}
-              minimumValue={0.2}
-              maximumValue={2.5}
-              step={0.1}
+              minimumValue={1}
+              maximumValue={10}
+              step={0.5}
               value={sliderValue}
               onValueChange={handleSensitivityChange}
               onSlidingStart={handleSlidingStart}

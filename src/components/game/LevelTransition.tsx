@@ -22,14 +22,11 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
 
   useEffect(() => {
     if (visible) {
-      // Reset animation values
       opacity.setValue(0);
       scale.setValue(0.5);
       textOpacity.setValue(0);
 
-      // Sequence of animations
       Animated.sequence([
-        // Fade in and scale up
         Animated.parallel([
           Animated.timing(opacity, {
             toValue: 0.9,
@@ -45,17 +42,14 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
           }),
         ]),
 
-        // Show text
         Animated.timing(textOpacity, {
           toValue: 1,
           duration: 200,
           useNativeDriver: true,
         }),
 
-        // Hold for a moment
         Animated.delay(800),
 
-        // Fade out
         Animated.parallel([
           Animated.timing(opacity, {
             toValue: 0,

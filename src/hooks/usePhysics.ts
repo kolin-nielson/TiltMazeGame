@@ -72,8 +72,8 @@ interface PhysicsWorld {
   setQualityLevel: (level: 'low' | 'medium' | 'high') => void;
 }
 
-const FIXED_TIME_STEP = 1000 / 240;  // High frequency physics (4.17ms)
-const LOW_QUALITY_TIME_STEP = 1000 / 120;  // 120Hz for low-end
+const FIXED_TIME_STEP = 1000 / 240;
+const LOW_QUALITY_TIME_STEP = 1000 / 120;
 
 const isLowEndDevice = () => {
   const { width, height } = Dimensions.get('window');
@@ -158,8 +158,8 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       gravity: { x: 0, y: 0, scale: 1 },
       enableSleeping: false,
       constraintIterations: qualitySettings.constraintIterations,
-      positionIterations: Math.max(8, qualitySettings.positionIterations), // Increase for better collision resolution
-      velocityIterations: Math.max(8, qualitySettings.velocityIterations), // Increase for better collision resolution
+      positionIterations: Math.max(8, qualitySettings.positionIterations),
+      velocityIterations: Math.max(8, qualitySettings.velocityIterations),
     });
 
     engine.timing.timeScale = 1;
@@ -175,7 +175,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       frictionStatic: 0.003,
       density: 0.15,
       inertia: Infinity,
-      slop: 0, // no collision slop
+      slop: 0,
       render: {
         fillStyle: '#FF4081',
       },
@@ -197,7 +197,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           isStatic: true,
           friction: 0.2,
           restitution: 0.01,
-          slop: 0, // ensure exact collision
+          slop: 0,
           collisionFilter: {
             category: 0x0001,
             mask: 0x0002,
@@ -295,7 +295,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     gameOverTriggeredRef.current = false;
 
     const currentEngine = engine;
-    // Register collision events on this engine instance
+
     Matter.Events.on(currentEngine, 'collisionStart', event => {
       const pairs = event.pairs;
 
@@ -400,18 +400,15 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         const timeStep = qualitySettings.timeStep;
 
         while (accumulatorRef.current >= timeStep) {
-          // Record previous position for continuous collision detection
           const prevPos = { x: ballRef.current!.position.x, y: ballRef.current!.position.y };
 
           Matter.Engine.update(engineRef.current!, timeStep);
           accumulatorRef.current -= timeStep;
 
-          // Raycast walls to prevent tunneling through thin walls
           if (ballRef.current) {
             const newPos = { x: ballRef.current.position.x, y: ballRef.current.position.y };
             const collisions = Matter.Query.ray(wallsRef.current, prevPos, newPos);
             if (collisions.length > 0) {
-              // Move ball back to pre-collision position and apply a bounce
               Matter.Body.setPosition(ballRef.current, prevPos);
               const vel = ballRef.current.velocity;
               Matter.Body.setVelocity(ballRef.current, { x: -vel.x * 0.5, y: -vel.y * 0.5 });
@@ -449,7 +446,6 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       laserGatesRef.current = [];
       goalRef.current = undefined;
 
-      // Deregister previous collision handlers to avoid duplicates
       Matter.Events.off(currentEngine, 'collisionStart');
       Matter.Events.off(currentEngine, 'collisionActive');
     };
@@ -497,28 +493,23 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     (tiltX: number, tiltY: number) => {
       if (!engineRef.current || !ballRef.current) return;
 
-      // Adjust gravity magnitude based on quality level and current velocity
       let gravityMagnitude = 0.0025;
 
-      // Adjust for quality level
       if (qualityLevel === 'low') {
         gravityMagnitude = 0.003;
       } else if (qualityLevel === 'high') {
         gravityMagnitude = 0.0022;
       }
 
-      // Apply gravity with a slight bias toward the center when near edges
       const position = ballRef.current.position;
       const mazeSize = 300;
-      const centerBiasRange = 30; // Distance from edge where center bias starts
+      const centerBiasRange = 30;
 
-      // Calculate distance from edges
       const distFromLeftEdge = position.x;
       const distFromRightEdge = mazeSize - position.x;
       const distFromTopEdge = position.y;
       const distFromBottomEdge = mazeSize - position.y;
 
-      // Calculate center bias factors (0 at center, up to 0.3 near edges)
       let horizontalBias = 0;
       let verticalBias = 0;
 
@@ -534,7 +525,6 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         verticalBias = -0.3 * (1 - distFromBottomEdge / centerBiasRange);
       }
 
-      // Apply gravity with center bias
       engineRef.current.gravity.x = (tiltX + horizontalBias) * gravityMagnitude;
       engineRef.current.gravity.y = (tiltY + verticalBias) * gravityMagnitude;
 
@@ -547,26 +537,20 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       const currentSpeed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
 
       if (currentSpeed > 0) {
-        // Calculate a dynamic speed factor based on current speed
         let speedFactor = 1.0;
 
         if (currentSpeed > maxVelocity) {
-          // Hard cap at max velocity with smooth transition
           const ratio = currentSpeed / maxVelocity;
-          speedFactor = 1 / (ratio * 1.05); // Slightly stronger than linear reduction
+          speedFactor = 1 / (ratio * 1.05);
         } else if (currentSpeed > maxVelocity * 0.75) {
-          // Progressive soft cap when approaching max velocity
           const excess = (currentSpeed - maxVelocity * 0.75) / (maxVelocity * 0.25);
-          speedFactor = 1.0 - excess * 0.35; // Gradually reduce by up to 35%
+          speedFactor = 1.0 - excess * 0.35;
         }
 
-        // Apply velocity capping with additional friction for more natural deceleration
         if (speedFactor < 1.0) {
-          // Calculate new velocity with capping
           const newVelX = velocity.x * speedFactor;
           const newVelY = velocity.y * speedFactor;
 
-          // Apply additional friction when moving fast for more natural feel
           const frictionFactor = Math.min(0.98, 1.0 - (currentSpeed / maxVelocity) * 0.05);
 
           Matter.Body.setVelocity(ballRef.current, {
@@ -576,27 +560,21 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         }
       }
 
-      // Handle boundary collisions with improved bounce physics
       const radius = ballRadius;
 
-      // Boundary collision handling with progressive bounce dampening
-      // The faster the ball is moving, the more energy it loses on collision
       if (position.x < radius) {
-        // Left wall collision
         Matter.Body.setPosition(ballRef.current, {
           x: radius,
           y: position.y,
         });
 
-        // Calculate bounce dampening based on speed
         const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.x) * 0.1);
 
         Matter.Body.setVelocity(ballRef.current, {
-          x: Math.abs(velocity.x) * -0.2, // Slight bounce back
+          x: Math.abs(velocity.x) * -0.2,
           y: velocity.y * dampening,
         });
       } else if (position.x > mazeSize - radius) {
-        // Right wall collision
         Matter.Body.setPosition(ballRef.current, {
           x: mazeSize - radius,
           y: position.y,
@@ -605,13 +583,12 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.x) * 0.1);
 
         Matter.Body.setVelocity(ballRef.current, {
-          x: Math.abs(velocity.x) * -0.2, // Slight bounce back
+          x: Math.abs(velocity.x) * -0.2,
           y: velocity.y * dampening,
         });
       }
 
       if (position.y < radius) {
-        // Top wall collision
         Matter.Body.setPosition(ballRef.current, {
           x: position.x,
           y: radius,
@@ -621,10 +598,9 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
         Matter.Body.setVelocity(ballRef.current, {
           x: velocity.x * dampening,
-          y: Math.abs(velocity.y) * -0.2, // Slight bounce back
+          y: Math.abs(velocity.y) * -0.2,
         });
       } else if (position.y > mazeSize - radius) {
-        // Bottom wall collision
         Matter.Body.setPosition(ballRef.current, {
           x: position.x,
           y: mazeSize - radius,
@@ -634,7 +610,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
         Matter.Body.setVelocity(ballRef.current, {
           x: velocity.x * dampening,
-          y: Math.abs(velocity.y) * -0.2, // Slight bounce back
+          y: Math.abs(velocity.y) * -0.2,
         });
       }
 
@@ -646,7 +622,6 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
         const bounds = wall.bounds;
 
-        // Increase safe radius for better collision prediction
         const safeRadius = radius * 1.5;
 
         return (
@@ -657,31 +632,23 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         );
       });
 
-      // Implement continuous collision detection for high-speed movements
       if (ballRef.current && currentSpeed > 0) {
-        // Calculate the predicted position after multiple time steps
-        const timeSteps = 3; // Look ahead multiple steps
-        const dt = 1 / 60; // Assuming 60fps
+        const timeSteps = 3;
+        const dt = 1 / 60;
 
-        // Current position and velocity
         const pos = { x: position.x, y: position.y };
         const vel = { x: velocity.x, y: velocity.y };
 
-        // Predict future position
         const futurePos = {
           x: pos.x + vel.x * dt * timeSteps,
           y: pos.y + vel.y * dt * timeSteps,
         };
 
-        // Check if the path between current and future position intersects any wall
         const willCollide = potentialCollisions.some(wall => {
-          // Simple line-rectangle intersection test
           if (!wall.bounds) return false;
 
-          // Create a line segment from current to future position
           const line = { x1: pos.x, y1: pos.y, x2: futurePos.x, y2: futurePos.y };
 
-          // Check if line intersects with wall bounds
           return lineIntersectsRectangle(
             line,
             wall.bounds.min.x,
@@ -691,23 +658,19 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           );
         });
 
-        // If collision is predicted, apply preventive measures
         if (willCollide) {
-          // Reduce velocity more aggressively
           const reductionFactor = Math.min(0.5, 1.0 / (currentSpeed + 0.1));
           Matter.Body.setVelocity(ballRef.current, {
             x: velocity.x * reductionFactor,
             y: velocity.y * reductionFactor,
           });
 
-          // Apply repulsion forces from nearby walls
           potentialCollisions.forEach(wall => {
             const dirX = position.x - wall.position.x;
             const dirY = position.y - wall.position.y;
             const distance = Math.sqrt(dirX * dirX + dirY * dirY);
 
             if (distance > 0) {
-              // Stronger repulsion for predicted collisions
               const repulsionForce = 0.002 / Math.max(distance, 0.5);
               Matter.Body.applyForce(ballRef.current!, position, {
                 x: (dirX / distance) * repulsionForce,
@@ -716,7 +679,6 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
             }
           });
         } else if (potentialCollisions.length > 0 && currentSpeed > 0.3) {
-          // Standard collision prevention for non-critical cases
           Matter.Body.setVelocity(ballRef.current, {
             x: velocity.x * 0.7,
             y: velocity.y * 0.7,
@@ -745,7 +707,6 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     setQualityLevel(level);
   };
 
-  // Memoize the returned object
   const physicsWorld = useMemo(
     () => ({
       engine: engineRef.current!,

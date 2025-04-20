@@ -1,5 +1,12 @@
 import React, { useEffect } from 'react';
-import { Canvas, Rect as SkiaRect, Circle, useValue, useSharedValueEffect, Group } from '@shopify/react-native-skia';
+import {
+  Canvas,
+  Rect as SkiaRect,
+  Circle,
+  useValue,
+  useSharedValueEffect,
+  Group,
+} from '@shopify/react-native-skia';
 import Animated from 'react-native-reanimated';
 import { Maze, ThemeColors } from '@types';
 
@@ -20,11 +27,9 @@ const SkiaMazeRenderer: React.FC<SkiaMazeRendererProps> = ({
   colors,
   gameState = 'playing',
 }) => {
-  // Skia values for ball position
   const x = useValue(ballPositionX.value);
   const y = useValue(ballPositionY.value);
 
-  // Sync reanimated shared values to Skia values
   useSharedValueEffect(() => {
     x.current = ballPositionX.value;
   }, ballPositionX);
@@ -48,14 +53,9 @@ const SkiaMazeRenderer: React.FC<SkiaMazeRendererProps> = ({
         ))}
       </Group>
 
-      <Circle
-        cx={x}
-        cy={y}
-        r={ballRadius}
-        color={colors.ball}
-      />
+      <Circle cx={x} cy={y} r={ballRadius} color={colors.ball} />
     </Canvas>
   );
 };
 
-export default React.memo(SkiaMazeRenderer); 
+export default React.memo(SkiaMazeRenderer);

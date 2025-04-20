@@ -171,26 +171,22 @@ export const useGyroscope = (enabled = true) => {
 
           const baseSmoothingFactor = SMOOTHING_FACTOR + deviceSettings.smoothingAdjustment;
 
-          // More adaptive smoothing - less smoothing for faster movements
           const adaptiveSmoothingFactor = Math.max(
             0.35,
             baseSmoothingFactor - movementMagnitude * 0.3
           );
 
-          // Calculate velocity for momentum effect
           velocityRef.current = {
             x: relativeData.x - prevDataRef.current.x,
             y: relativeData.y - prevDataRef.current.y,
             z: relativeData.z - prevDataRef.current.z,
           };
 
-          // Apply velocity damping
           const velocityDamping = 0.85;
           velocityRef.current.x *= velocityDamping;
           velocityRef.current.y *= velocityDamping;
           velocityRef.current.z *= velocityDamping;
 
-          // Apply exponential moving average with adaptive factor
           const smoothedData = {
             x:
               prevDataRef.current.x * adaptiveSmoothingFactor +
@@ -203,12 +199,10 @@ export const useGyroscope = (enabled = true) => {
               relativeData.z * (1 - baseSmoothingFactor),
           };
 
-          // Apply momentum for more natural feel
           const momentumFactor = deviceType === 'pixel' ? 0.25 : 0.15;
           smoothedData.x += velocityRef.current.x * momentumFactor;
           smoothedData.y += velocityRef.current.y * momentumFactor;
 
-          // Apply device-specific sensitivity adjustment
           const adjustedSensitivity = settings.sensitivity * deviceSettings.sensitivityMultiplier;
 
           const sensitizedData = {
@@ -242,23 +236,18 @@ export const useGyroscope = (enabled = true) => {
       rawGyroDataRef.current.y !== 0 ||
       rawGyroDataRef.current.z !== 0
     ) {
-      // Start collecting samples for better calibration
       calibrationSamples = [];
 
-      // Take initial sample
       const initialSample = { ...rawGyroDataRef.current };
       calibrationSamples.push(initialSample);
 
-      // Set initial calibration immediately for responsiveness
       globalCalibrationOffset = { ...initialSample };
 
-      // Schedule additional samples for more accurate calibration
       const sampleInterval = deviceType === 'pixel' ? 80 : 50;
       const numSamples = deviceType === 'pixel' ? 5 : 3;
 
       const takeSample = (sampleIndex: number) => {
         if (sampleIndex >= numSamples) {
-          // Calculate average from all samples
           const avgX =
             calibrationSamples.reduce((sum, sample) => sum + sample.x, 0) /
             calibrationSamples.length;
@@ -279,10 +268,8 @@ export const useGyroscope = (enabled = true) => {
         }, sampleInterval);
       };
 
-      // Start taking additional samples
       takeSample(1);
 
-      // Reset all state
       lastRawData = { ...rawGyroDataRef.current };
       setData({ x: 0, y: 0, z: 0 });
       prevDataRef.current = { x: 0, y: 0, z: 0 };
@@ -295,7 +282,6 @@ export const useGyroscope = (enabled = true) => {
   const hasDeviceMovedSignificantly = useCallback(() => {
     if (!lastRawData || !globalCalibrationOffset) return false;
 
-    // Adaptive threshold based on device type
     const baseThreshold = Platform.OS === 'android' ? 0.18 : 0.12;
     const deviceSettings = DEVICE_ADJUSTMENTS[deviceType] || DEVICE_ADJUSTMENTS.default;
     const threshold = baseThreshold * deviceSettings.deadZoneMultiplier;
@@ -303,14 +289,12 @@ export const useGyroscope = (enabled = true) => {
     const dx = Math.abs(lastRawData.x - globalCalibrationOffset.x);
     const dy = Math.abs(lastRawData.y - globalCalibrationOffset.y);
 
-    // Weighted check - more sensitive to sustained movement
     const timeSinceCalibration = Date.now() - calibrationTimestamp;
-    const timeWeight = Math.min(1, timeSinceCalibration / 10000); // Full weight after 10 seconds
+    const timeWeight = Math.min(1, timeSinceCalibration / 10000);
 
     return (dx > threshold || dy > threshold) && timeWeight > 0.5;
   }, []);
 
-  // Return additional flags and functions to help components manage calibration
   return {
     data,
     available,

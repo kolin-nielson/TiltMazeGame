@@ -71,7 +71,6 @@ const GameScreen: React.FC = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const recalibrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // In-game sensitivity slider state
   const [sliderValue, setSliderValue] = useState<number>(settings.sensitivity);
   const [isSliding, setIsSliding] = useState<boolean>(false);
 
@@ -89,11 +88,14 @@ const GameScreen: React.FC = () => {
     setIsSliding(true);
   }, []);
 
-  const handleSlidingComplete = useCallback((value: number) => {
-    setIsSliding(false);
-    dispatch(updateSettings({ sensitivity: value }));
-    dispatch(saveSettings({ sensitivity: value }));
-  }, [dispatch]);
+  const handleSlidingComplete = useCallback(
+    (value: number) => {
+      setIsSliding(false);
+      dispatch(updateSettings({ sensitivity: value }));
+      dispatch(saveSettings({ sensitivity: value }));
+    },
+    [dispatch]
+  );
 
   const physicsOptions = {
     width,
@@ -120,7 +122,6 @@ const GameScreen: React.FC = () => {
     hasDeviceMovedSignificantly,
   } = useGyroscope(true);
 
-  // Tilt → physics update via expo-sensors data on JS thread
   useEffect(() => {
     if (gameState === 'playing' && gyroscopeAvailable) {
       update(gyroData.x, gyroData.y);
@@ -259,7 +260,6 @@ const GameScreen: React.FC = () => {
   const handleLevelTransitionComplete = useCallback(() => {
     dispatch(setShowLevelTransition(false));
 
-    // Now actually change the level
     const nextDifficulty = Math.min(difficulty + 1, GAME.MAX_DIFFICULTY);
     const nextMaze = generateMaze(nextDifficulty);
 
@@ -289,7 +289,6 @@ const GameScreen: React.FC = () => {
   }, []);
 
   const handleCalibrationComplete = useCallback(() => {
-    // Only reset the gyroscope, don't regenerate the maze
     resetGyroscope();
     dispatch(setGyroscopeCalibrated(true));
     dispatch(setShowCalibrationOverlay(false));
@@ -321,7 +320,7 @@ const GameScreen: React.FC = () => {
   }
 
   return (
-    <View style={[gameScreenStyles.screen, { backgroundColor: colors?.background ?? '#fff' }]}>
+    <View key={currentMaze?.id ?? 'new'} style={[gameScreenStyles.screen, { backgroundColor: colors?.background ?? '#fff' }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <GameHeader
@@ -331,7 +330,6 @@ const GameScreen: React.FC = () => {
         colors={colors}
       />
 
-      {/* In-game sensitivity slider */}
       <View
         style={{
           backgroundColor: colors?.surface,
@@ -358,9 +356,9 @@ const GameScreen: React.FC = () => {
         </Text>
         <Slider
           style={{ width: '100%', height: 40 }}
-          minimumValue={0.2}
-          maximumValue={5}
-          step={0.1}
+          minimumValue={1}
+          maximumValue={10}
+          step={0.5}
           value={sliderValue}
           onValueChange={handleSensitivityChange}
           onSlidingStart={handleSlidingStart}
@@ -373,7 +371,7 @@ const GameScreen: React.FC = () => {
 
       <View style={gameScreenStyles.mazeContainer}>
         <View style={{ width: MAZE_AREA_SIZE, height: MAZE_AREA_SIZE }}>
-          <MazeView
+          <MazeView key={currentMaze?.id}
             maze={currentMaze}
             ballPositionX={ballPositionX}
             ballPositionY={ballPositionY}

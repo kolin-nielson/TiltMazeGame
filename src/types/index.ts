@@ -24,9 +24,9 @@ export interface LaserGate {
   width: number;
   height: number;
   direction: 'horizontal' | 'vertical';
-  interval: number; // Time in milliseconds for one complete on/off cycle
-  phase: number; // Initial phase offset (0-1)
-  onDuration: number; // Percentage of the interval that the laser is on (0-1)
+  interval: number;
+  phase: number;
+  onDuration: number;
 }
 
 export interface Position {
@@ -40,7 +40,6 @@ export interface Ball {
 }
 
 export interface ThemeColors {
-  // Material Design 3 base colors
   primary: string;
   onPrimary: string;
   primaryContainer: string;
@@ -74,7 +73,6 @@ export interface ThemeColors {
   onSurfaceDisabled: string;
   backdrop: string;
 
-  // Game-specific colors
   walls?: string;
   ball?: string;
   goal?: string;

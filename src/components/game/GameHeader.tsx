@@ -13,7 +13,10 @@ interface GameHeaderProps {
 
 const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, onCalibrate, colors }) => {
   return (
-    <Appbar.Header style={[styles.header, { backgroundColor: colors.surface }]} mode="center-aligned">
+    <Appbar.Header
+      style={[styles.header, { backgroundColor: colors.surface }]}
+      mode="center-aligned"
+    >
       <IconButton
         icon="exit-to-app"
         size={24}

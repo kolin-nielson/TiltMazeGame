@@ -28,11 +28,9 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
   useEffect(() => {
     let animationRef: Animated.CompositeAnimation | null = null;
 
-    // Start with a short delay to let the user stabilize
     setTimeout(() => {
       setCalibrationPhase('calibrating');
 
-      // Provide initial haptic feedback
       if (vibrationEnabled) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
@@ -47,12 +45,10 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
         if (finished) {
           setCalibrationPhase('complete');
 
-          // Provide completion haptic feedback
           if (vibrationEnabled) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           }
 
-          // Short delay before dismissing the overlay
           setTimeout(() => {
             onCalibrationComplete();
           }, 300);
@@ -64,12 +60,10 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       animatedValue.addListener(({ value }) => {
         setProgress(value);
 
-        // Provide haptic feedback at certain progress points
         if (vibrationEnabled && value > 0) {
           const progressStep = Math.floor(value / 25);
           const now = Date.now();
 
-          // Only trigger haptic feedback once per step and not too frequently
           if (
             progressStep > Math.floor(lastHapticRef.current / 25) &&
             now - lastHapticRef.current > 300
@@ -95,7 +89,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
     outputRange: ['0%', '100%'],
   });
 
-  // Determine icon and text based on calibration phase
   const getPhaseContent = () => {
     switch (calibrationPhase) {
       case 'hold':
@@ -127,7 +120,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
 
   const { icon, title, subtitle } = getPhaseContent();
 
-  // Add a subtle animation to the container
   const containerScale = useRef(new Animated.Value(0.95)).current;
 
   useEffect(() => {

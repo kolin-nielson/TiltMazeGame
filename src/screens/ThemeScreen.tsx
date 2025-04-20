@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const themes: Record<ThemeName, ThemeColors> = {
   light: lightTheme,
   dark: darkTheme,
-  system: lightTheme, // Default to light for preview
+  system: lightTheme,
 };
 
 const ThemeScreen: React.FC = () => {
@@ -36,7 +36,6 @@ const ThemeScreen: React.FC = () => {
   };
 
   const renderThemeOption = (name: ThemeName, label: string) => {
-    // Skip system theme in the UI options
     if (name === 'system') return null;
 
     const themeOptionColors = themes[name];

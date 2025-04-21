@@ -195,8 +195,8 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
 }
 
 export const generateMaze = (difficulty: number): Maze => {
-  const mazeStructureDifficulty = Math.min(difficulty, 4);
-  const gridSize = BASE_GRID_SIZE + (mazeStructureDifficulty - 1) * GRID_INCREMENT;
+  const structureDifficulty = Math.min(difficulty, 4);
+  const gridSize = BASE_GRID_SIZE + (structureDifficulty - 1) * GRID_INCREMENT;
   const rows = gridSize;
   const cols = gridSize;
 
@@ -240,20 +240,20 @@ export const generateMaze = (difficulty: number): Maze => {
   };
 
   let difficultyLevel: 'easy' | 'medium' | 'hard';
-  if (difficulty <= 5) {
+  if (structureDifficulty <= 2) {
     difficultyLevel = 'easy';
-  } else if (difficulty <= 10) {
+  } else if (structureDifficulty <= 3) {
     difficultyLevel = 'medium';
   } else {
     difficultyLevel = 'hard';
   }
 
   const laserGates: LaserGate[] = [];
-  const maxPossibleLasers = 8; // Increased from 4
+  const maxPossibleLasers = 8;
 
   if (difficulty > 3) {
     const laserThickness = 4;
-    const numLasers = Math.max(1, Math.min(maxPossibleLasers, 1 + Math.floor((difficulty - 1) / 5))); // Adjusted scaling
+    const numLasers = Math.max(1, Math.min(maxPossibleLasers, 1 + Math.floor((difficulty - 1) / 5)));
 
     const corridors: {
       x1: number;

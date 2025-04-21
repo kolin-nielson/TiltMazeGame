@@ -23,19 +23,19 @@ const MazeView: React.FC<MazeViewProps> = ({
   gameState,
 }) => {
   return (
-    <Surface
+      <Surface
       style={{ width: '100%', height: '100%', backgroundColor: colors?.surface ?? '#fff', borderRadius: 12 }}
-      elevation={4}
-    >
-      <MazeRenderer
-        maze={maze}
-        ballPositionX={ballPositionX}
-        ballPositionY={ballPositionY}
-        ballRadius={ballRadius}
-        colors={colors}
-        gameState={gameState}
-      />
-    </Surface>
+        elevation={4}
+      >
+        <MazeRenderer
+          maze={maze}
+          ballPositionX={ballPositionX}
+          ballPositionY={ballPositionY}
+          ballRadius={ballRadius}
+          colors={colors}
+          gameState={gameState}
+        />
+      </Surface>
   );
 };
 

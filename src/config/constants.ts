@@ -38,7 +38,11 @@ export const SCREENS = {
 };
 
 export const GAME = {
-  MAX_DIFFICULTY: 4,
+  INITIAL_LIVES: 3,
+  POINTS_PER_COIN: 10,
+  MAX_DIFFICULTY: 50,
+  MAZE_AREA_SIZE: 300,
+  CELL_SIZE: 20,
 };
 
 export const DEFAULT_SETTINGS = {

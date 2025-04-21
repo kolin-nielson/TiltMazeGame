@@ -71,7 +71,7 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
   ballRadius,
 }) => {
   useEffect(() => {
-    update(gameState === 'playing' ? gyroX : 0, gameState === 'playing' ? gyroY : 0);
+       update(gameState === 'playing' ? gyroX : 0, gameState === 'playing' ? gyroY : 0);
   }, [gyroX, gyroY, gameState, update]);
 
   return (
@@ -409,45 +409,45 @@ const GameScreen: React.FC = () => {
           colors={colors}
         />
 
-        {gameState === 'game_over' && (
-          <Portal>
-            <GameOverOverlay
-              score={levelsCompleted}
-              bestScore={settings.highestScore ?? 0}
-              onPlayAgain={handlePlayAgain}
-              onExit={handleExit}
-            />
-          </Portal>
-        )}
-
-        {showCalibrationOverlay && (
-          <Portal>
-            <TiltCalibrationOverlay
-              onCalibrationComplete={handleCalibrationComplete}
-              colors={colors}
-              duration={2000}
-              vibrationEnabled={settings.vibrationEnabled}
-            />
-          </Portal>
-        )}
-
-        {showLevelTransition && (
-          <Portal>
-            <LevelTransition
-              level={difficulty}
-              visible={showLevelTransition}
-              onTransitionComplete={handleLevelTransitionComplete}
-              colors={colors}
-            />
-          </Portal>
-        )}
-
+      {gameState === 'game_over' && (
         <Portal>
-          <SimpleDeathScreen
-            visible={showDeathAnimation}
-            onAnimationComplete={handleDeathAnimationComplete}
+          <GameOverOverlay
+            score={levelsCompleted}
+            bestScore={settings.highestScore ?? 0}
+            onPlayAgain={handlePlayAgain}
+            onExit={handleExit}
+          />
+        </Portal>
+      )}
+
+      {showCalibrationOverlay && (
+        <Portal>
+          <TiltCalibrationOverlay
+            onCalibrationComplete={handleCalibrationComplete}
+            colors={colors}
+            duration={2000}
+            vibrationEnabled={settings.vibrationEnabled}
+          />
+        </Portal>
+      )}
+
+      {showLevelTransition && (
+        <Portal>
+          <LevelTransition
+            level={difficulty}
+            visible={showLevelTransition}
+            onTransitionComplete={handleLevelTransitionComplete}
             colors={colors}
           />
+        </Portal>
+      )}
+
+        <Portal>
+      <SimpleDeathScreen
+        visible={showDeathAnimation}
+        onAnimationComplete={handleDeathAnimationComplete}
+        colors={colors}
+      />
         </Portal>
 
         <Snackbar

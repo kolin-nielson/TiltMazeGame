@@ -195,7 +195,8 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
 }
 
 export const generateMaze = (difficulty: number): Maze => {
-  const gridSize = BASE_GRID_SIZE + (difficulty - 1) * GRID_INCREMENT;
+  const mazeStructureDifficulty = Math.min(difficulty, 4);
+  const gridSize = BASE_GRID_SIZE + (mazeStructureDifficulty - 1) * GRID_INCREMENT;
   const rows = gridSize;
   const cols = gridSize;
 
@@ -248,10 +249,11 @@ export const generateMaze = (difficulty: number): Maze => {
   }
 
   const laserGates: LaserGate[] = [];
+  const maxPossibleLasers = 8; // Increased from 4
 
-  if (difficulty >= 2) {
+  if (difficulty > 3) {
     const laserThickness = 4;
-    const numLasers = Math.min(difficulty, 4);
+    const numLasers = Math.max(1, Math.min(maxPossibleLasers, 1 + Math.floor((difficulty - 1) / 5))); // Adjusted scaling
 
     const corridors: {
       x1: number;
@@ -297,26 +299,20 @@ export const generateMaze = (difficulty: number): Maze => {
       [corridors[i], corridors[j]] = [corridors[j], corridors[i]];
     }
 
-    const startX = startPosition.x;
-    const startY = startPosition.y;
-    const endX = endPosition.x;
-    const endY = endPosition.y;
-    const safeDistance = CELL_SIZE * scale * 1.5;
-
-    const maxLasers = Math.min(difficulty, corridors.length);
+    const actualNumLasers = Math.min(numLasers, corridors.length);
 
     const tempLaserGates: LaserGate[] = [];
 
-    for (let i = 0; i < maxLasers; i++) {
+    for (let i = 0; i < actualNumLasers; i++) {
       const corridor = corridors[i];
 
       if (corridor.direction === 'horizontal') {
         const laserY = corridor.y1 - laserThickness / 2;
 
         const widthFactor = 0.6 + Math.random() * 0.2;
-        const laserWidth = (corridor.x2 - corridor.x1) * widthFactor;
+        const laserWidth = corridor.length * widthFactor;
 
-        const laserX = corridor.x1 + (corridor.x2 - corridor.x1 - laserWidth) / 2;
+        const laserX = corridor.x1 + (corridor.length - laserWidth) / 2;
 
         tempLaserGates.push({
           id: `laser-h-${id}-${i}`,
@@ -325,17 +321,17 @@ export const generateMaze = (difficulty: number): Maze => {
           width: laserWidth,
           height: laserThickness,
           direction: 'horizontal',
-          interval: 2000 + Math.random() * 2000,
+          interval: 2500 + Math.random() * 1500,
           phase: Math.random(),
-          onDuration: 0.6 + Math.random() * 0.2,
+          onDuration: 0.5,
         });
       } else {
         const laserX = corridor.x1 - laserThickness / 2;
 
         const heightFactor = 0.6 + Math.random() * 0.2;
-        const laserHeight = (corridor.y2 - corridor.y1) * heightFactor;
+        const laserHeight = corridor.length * heightFactor;
 
-        const laserY = corridor.y1 + (corridor.y2 - corridor.y1 - laserHeight) / 2;
+        const laserY = corridor.y1 + (corridor.length - laserHeight) / 2;
 
         tempLaserGates.push({
           id: `laser-v-${id}-${i}`,
@@ -344,9 +340,9 @@ export const generateMaze = (difficulty: number): Maze => {
           width: laserThickness,
           height: laserHeight,
           direction: 'vertical',
-          interval: 2000 + Math.random() * 2000,
+          interval: 2500 + Math.random() * 1500,
           phase: Math.random(),
-          onDuration: 0.6 + Math.random() * 0.2,
+          onDuration: 0.5,
         });
       }
     }
@@ -356,10 +352,14 @@ export const generateMaze = (difficulty: number): Maze => {
       console.log(`Added ${tempLaserGates.length} laser gates - maze is solvable`);
     } else {
       if (tempLaserGates.length > 0) {
-        laserGates.push(tempLaserGates[0]);
-        console.log('Added only one laser gate to ensure maze is solvable');
+        if (isPathPossible(grid, rows, cols, [tempLaserGates[0]], scale)) {
+          laserGates.push(tempLaserGates[0]);
+          console.log('Added only one laser gate to ensure maze is solvable');
+        } else {
+          console.log('Even one laser gate makes it unsolvable, adding none.');
+        }
       } else {
-        console.log('No laser gates added - maze would be unsolvable');
+        console.log('No laser gates generated.');
       }
     }
   }

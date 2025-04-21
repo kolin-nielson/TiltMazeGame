@@ -7,20 +7,21 @@ module.exports = {
   root: true,
   extends: [
     'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
+    'plugin:import/errors',
+    'plugin:import/warnings',
+    'plugin:import/typescript',
+    'prettier'
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaFeatures: {
-      jsx: true,
-    },
-    ecmaVersion: 2021,
-    sourceType: 'module',
+    project: './tsconfig.json',
+    tsconfigRootDir: __dirname,
+    ecmaFeatures: { jsx: true }
   },
-  plugins: ['react', 'react-hooks', '@typescript-eslint', 'prettier'],
+  plugins: ['@typescript-eslint', 'import', 'react', 'react-hooks'],
   rules: {
     '@typescript-eslint/no-unused-vars': 'warn',
     'react/display-name': 'off',
@@ -33,10 +34,12 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     'max-len': ['warn', { code: 120, ignoreComments: true, ignoreStrings: true }],
     'no-console': ['warn', { allow: ['warn', 'error'] }],
+    'import/no-unresolved': 'off',
   },
   settings: {
-    react: {
-      version: 'detect',
-    },
+    react: { version: 'detect' },
+    'import/resolver': {
+      typescript: { project: './tsconfig.json' }
+    }
   },
 };

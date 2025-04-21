@@ -16,13 +16,13 @@ export const gameScreenStyles = StyleSheet.create({
     padding: 20,
   },
   mazeSurface: {
-    aspectRatio: 1,
     width: '100%',
+    aspectRatio: 1,
     maxWidth: 500,
     maxHeight: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 12,
   },
   timerContainer: {
     marginBottom: 15,

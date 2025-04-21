@@ -318,8 +318,6 @@ export const generateMaze = (difficulty: number): Maze => {
 
         const laserX = corridor.x1 + (corridor.x2 - corridor.x1 - laserWidth) / 2;
 
-        const onDuration = Math.min(0.4 + Math.random() * 0.2, 0.6);
-
         tempLaserGates.push({
           id: `laser-h-${id}-${i}`,
           x: laserX,
@@ -327,9 +325,9 @@ export const generateMaze = (difficulty: number): Maze => {
           width: laserWidth,
           height: laserThickness,
           direction: 'horizontal',
-          interval: 1000 + Math.random() * 1000,
+          interval: 2000 + Math.random() * 2000,
           phase: Math.random(),
-          onDuration: onDuration,
+          onDuration: 0.6 + Math.random() * 0.2,
         });
       } else {
         const laserX = corridor.x1 - laserThickness / 2;
@@ -339,8 +337,6 @@ export const generateMaze = (difficulty: number): Maze => {
 
         const laserY = corridor.y1 + (corridor.y2 - corridor.y1 - laserHeight) / 2;
 
-        const onDuration = Math.min(0.4 + Math.random() * 0.2, 0.6);
-
         tempLaserGates.push({
           id: `laser-v-${id}-${i}`,
           x: laserX,
@@ -348,9 +344,9 @@ export const generateMaze = (difficulty: number): Maze => {
           width: laserThickness,
           height: laserHeight,
           direction: 'vertical',
-          interval: 1000 + Math.random() * 1000,
+          interval: 2000 + Math.random() * 2000,
           phase: Math.random(),
-          onDuration: onDuration,
+          onDuration: 0.6 + Math.random() * 0.2,
         });
       }
     }

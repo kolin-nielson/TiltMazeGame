@@ -4,7 +4,7 @@ import { Platform, Dimensions } from 'react-native';
 import Animated, { useSharedValue, runOnJS } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
-import { Maze, LaserGate } from '@types';
+import { Maze, LaserGate, Wall } from '../types';
 
 const lineIntersectsLine = (
   x1: number,
@@ -46,7 +46,7 @@ const lineIntersectsRectangle = (
   );
 };
 
-interface PhysicsOptions {
+export interface PhysicsOptions {
   width: number;
   height: number;
   gravityScale?: number;
@@ -187,7 +187,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
     const wallSimplificationFactor = 1.0;
 
-    const walls = maze.walls.map(wall =>
+    const walls: Matter.Body[] = maze.walls.map((wall: Wall) =>
       Matter.Bodies.rectangle(
         wall.x + wall.width / 2,
         wall.y + wall.height / 2,
@@ -264,7 +264,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
     const laserGates: Matter.Body[] = [];
     if (maze.laserGates && maze.laserGates.length > 0) {
-      maze.laserGates.forEach(laserGate => {
+      maze.laserGates.forEach((laserGate: LaserGate) => {
         const laserBody = Matter.Bodies.rectangle(
           laserGate.x + laserGate.width / 2,
           laserGate.y + laserGate.height / 2,
@@ -721,6 +721,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       goalReached,
       gameOver,
       setQualityLevel: changeQualityLevel,
+      laserGates: laserGatesRef.current.map(lg => lg.plugin?.laserGate as LaserGate),
     }),
     [reset, update, ballPositionX, ballPositionY, goalReached, gameOver, changeQualityLevel]
   );

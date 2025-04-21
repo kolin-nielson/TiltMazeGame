@@ -14,8 +14,6 @@ interface MazeViewProps {
   gameState: string;
 }
 
-const RENDER_SIZE = 300;
-
 const MazeView: React.FC<MazeViewProps> = ({
   maze,
   ballPositionX,
@@ -25,21 +23,19 @@ const MazeView: React.FC<MazeViewProps> = ({
   gameState,
 }) => {
   return (
-    <View style={{ width: RENDER_SIZE, height: RENDER_SIZE }}>
-      <Surface
-        style={{ flex: 1, backgroundColor: colors?.surface ?? '#fff', borderRadius: 12 }}
-        elevation={4}
-      >
-        <MazeRenderer
-          maze={maze}
-          ballPositionX={ballPositionX}
-          ballPositionY={ballPositionY}
-          ballRadius={ballRadius}
-          colors={colors}
-          gameState={gameState}
-        />
-      </Surface>
-    </View>
+    <Surface
+      style={{ width: '100%', height: '100%', backgroundColor: colors?.surface ?? '#fff', borderRadius: 12 }}
+      elevation={4}
+    >
+      <MazeRenderer
+        maze={maze}
+        ballPositionX={ballPositionX}
+        ballPositionY={ballPositionY}
+        ballRadius={ballRadius}
+        colors={colors}
+        gameState={gameState}
+      />
+    </Surface>
   );
 };
 

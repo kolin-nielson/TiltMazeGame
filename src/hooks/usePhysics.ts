@@ -4,7 +4,9 @@ import { Platform, Dimensions } from 'react-native';
 import Animated, { useSharedValue, runOnJS } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
-import { Maze, LaserGate, Wall } from '../types';
+import { Maze, LaserGate, Wall, Coin } from '../types';
+import { useAppDispatch } from '@store';
+import { collectCoin } from '@store/slices/shopSlice';
 
 const lineIntersectsLine = (
   x1: number,

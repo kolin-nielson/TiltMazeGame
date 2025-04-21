@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Game: undefined;
   Settings: undefined;
   Theme: undefined;
+  Shop: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<
@@ -19,3 +20,4 @@ export type SettingsScreenNavigationProp = NativeStackNavigationProp<
   'Settings'
 >;
 export type ThemeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Theme'>;
+export type ShopScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Shop'>;

@@ -6,6 +6,7 @@ import settingsReducer from './slices/settingsSlice';
 import mazeReducer from './slices/mazeSlice';
 import gameReducer from './slices/gameSlice';
 import themeReducer from './slices/themeSlice';
+import shopReducer from './slices/shopSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     maze: mazeReducer,
     game: gameReducer,
     theme: themeReducer,
+    shop: shopReducer,
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({

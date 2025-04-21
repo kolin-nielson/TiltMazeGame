@@ -8,6 +8,7 @@ export interface Maze {
   createdAt: number;
   updatedAt: number;
   difficulty: 'easy' | 'medium' | 'hard';
+  coins?: Coin[];
 }
 
 export interface Wall {
@@ -32,6 +33,11 @@ export interface LaserGate {
 export interface Position {
   x: number;
   y: number;
+}
+
+export interface Coin {
+  id: string;
+  position: Position;
 }
 
 export interface Ball {

@@ -1,4 +1,4 @@
-import { Maze, Wall, Position, LaserGate } from '@types';
+import { Maze, Wall, Position, LaserGate, Coin } from '@types';
 import { GAME } from '@config/constants';
 
 const BASE_GRID_SIZE = 5;
@@ -364,6 +364,33 @@ export const generateMaze = (difficulty: number): Maze => {
     }
   }
 
+  // generate random coin positions
+  const maxCoins = Math.min(20, difficulty * 5);
+  const flatCells: Position[] = [];
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const pos: Position = {
+        x: (x * CELL_SIZE + CELL_SIZE / 2) * scale,
+        y: (y * CELL_SIZE + CELL_SIZE / 2) * scale,
+      };
+      // skip start and end positions
+      if (
+        (pos.x === startPosition.x && pos.y === startPosition.y) ||
+        (pos.x === endPosition.x && pos.y === endPosition.y)
+      ) {
+        continue;
+      }
+      flatCells.push(pos);
+    }
+  }
+  // shuffle the cells
+  for (let i = flatCells.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [flatCells[i], flatCells[j]] = [flatCells[j], flatCells[i]];
+  }
+  const coinPositions = flatCells.slice(0, maxCoins);
+  const coins: Coin[] = coinPositions.map((pos, idx) => ({ id: `${id}-coin-${idx}`, position: pos }));
+
   return {
     id,
     name,
@@ -371,6 +398,7 @@ export const generateMaze = (difficulty: number): Maze => {
     laserGates: laserGates.length > 0 ? laserGates : undefined,
     startPosition,
     endPosition,
+    coins,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     difficulty: difficultyLevel,

@@ -3,6 +3,8 @@ import { Appbar, IconButton } from 'react-native-paper';
 import { View, StyleSheet } from 'react-native';
 import { ThemeColors } from '@types';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
+import { useAppSelector } from '@store';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface GameHeaderProps {
   score: number;
@@ -12,6 +14,9 @@ interface GameHeaderProps {
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, onCalibrate, colors }) => {
+  // Get coins from the shop state
+  const coins = useAppSelector(state => state.shop.coins);
+  
   return (
     <Appbar.Header
       style={[styles.header, { backgroundColor: colors.surface }]}
@@ -26,13 +31,23 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, onCalibrate, col
         accessibilityHint="Opens a confirmation dialog to quit the game"
         style={styles.iconButton}
       />
-      <Appbar.Content
-        title={String(score)}
-        subtitle="Score"
-        titleStyle={[gameScreenStyles.appbarTitle, { color: colors.onSurface, fontSize: 20 }]}
-        subtitleStyle={{ color: colors.onSurfaceVariant, fontSize: 12 }}
-        style={styles.content}
-      />
+      <View style={styles.content}>
+        <Appbar.Content
+          title={String(score)}
+          subtitle="Score"
+          titleStyle={[gameScreenStyles.appbarTitle, { color: colors.onSurface, fontSize: 20 }]}
+          subtitleStyle={{ color: colors.onSurfaceVariant, fontSize: 12 }}
+          style={styles.scoreContent}
+        />
+        <Appbar.Content
+          title={String(coins)}
+          subtitle="Coins"
+          titleStyle={[gameScreenStyles.appbarTitle, { color: colors.secondary, fontSize: 20 }]}
+          subtitleStyle={{ color: colors.onSurfaceVariant, fontSize: 12 }}
+          style={styles.scoreContent}
+          left={() => <MaterialIcons name="monetization-on" size={20} color="#FFD700" style={{ marginLeft: 8 }} />}
+        />
+      </View>
       <IconButton
         icon="cellphone-settings"
         size={24}
@@ -56,6 +71,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   content: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  scoreContent: {
     alignItems: 'center',
   },
   iconButton: {

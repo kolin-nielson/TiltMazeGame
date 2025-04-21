@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useState, useEffect } from 'react';
 import { View } from 'react-native';
-import Svg from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import { Maze, Position, Wall, LaserGate } from '@types';
 import { MazeWall } from './MazeWall';
 import { MazeGoal } from './MazeGoal';
@@ -9,6 +9,7 @@ import { MazeLaserGate } from './MazeLaserGate';
 import { mazeRendererStyles } from '@styles/MazeRendererStyles';
 import { ThemeColors } from '@types';
 import Animated from 'react-native-reanimated';
+import { useAppSelector, RootState } from '@store';
 
 interface MazeElementsProps {
   maze: Maze;
@@ -81,6 +82,27 @@ export const MazeElements: React.FC<MazeElementsProps> = memo(
             />
           )}
 
+          {maze.coins?.map(coin => (
+            <React.Fragment key={coin.id}>
+              {/* Glow effect */}
+              <Circle
+                cx={coin.position.x}
+                cy={coin.position.y}
+                r={ballRadius * 0.8}
+                fill="#FFDF0040"
+              />
+              {/* Coin body */}
+              <Circle
+                cx={coin.position.x}
+                cy={coin.position.y}
+                r={ballRadius * 0.6}
+                fill="#FFD700"
+                stroke="#FFA500"
+                strokeWidth={1}
+              />
+            </React.Fragment>
+          ))}
+
           <MazeBall
             ballPositionX={ballPositionX}
             ballPositionY={ballPositionY}
@@ -90,17 +112,7 @@ export const MazeElements: React.FC<MazeElementsProps> = memo(
         </Svg>
       </View>
     );
-  },
-  (prevProps, nextProps) => {
-    const mazeChanged = prevProps.maze.id !== nextProps.maze.id;
-    const radiusChanged = prevProps.ballRadius !== nextProps.ballRadius;
-    const gameStateChanged = prevProps.gameState !== nextProps.gameState;
-    const colorsChanged =
-      prevProps.colors?.goal !== nextProps.colors?.goal ||
-      prevProps.colors?.walls !== nextProps.colors?.walls ||
-      prevProps.colors?.ball !== nextProps.colors?.ball ||
-      prevProps.colors?.laser !== nextProps.colors?.laser;
-
-    return !(mazeChanged || radiusChanged || colorsChanged || gameStateChanged);
   }
 );
+
+export default MazeElements;

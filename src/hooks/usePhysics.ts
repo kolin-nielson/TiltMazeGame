@@ -6,7 +6,8 @@ import * as Haptics from 'expo-haptics';
 
 import { Maze, LaserGate, Wall, Coin } from '../types';
 import { useAppDispatch } from '@store';
-import { collectCoin } from '@store/slices/shopSlice';
+import { collectCoin, saveShopData } from '@store/slices/shopSlice';
+import { removeCoin } from '@store/slices/mazeSlice';
 
 const lineIntersectsLine = (
   x1: number,
@@ -98,6 +99,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     vibrationEnabled = true,
   } = options;
 
+  const dispatch = useAppDispatch();
   const [qualityLevel, setQualityLevel] = useState<'low' | 'medium' | 'high'>(initialQualityLevel);
 
   const engineRef = useRef<Matter.Engine>();
@@ -183,7 +185,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       },
       collisionFilter: {
         category: 0x0002,
-        mask: 0x0001 | 0x0004,
+        mask: 0x0001 | 0x0004 | 0x0008,
       },
     });
 
@@ -294,6 +296,25 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       });
     }
 
+    const coinBodies: Matter.Body[] = [];
+    if (maze.coins && maze.coins.length > 0) {
+      maze.coins.forEach((coin: Coin) => {
+        const coinBody = Matter.Bodies.circle(
+          coin.position.x,
+          coin.position.y,
+          ballRadius * 0.6,
+          {
+            isStatic: true,
+            isSensor: true,
+            label: `coin-${coin.id}`,
+            render: { fillStyle: '#FFD700' },
+            collisionFilter: { category: 0x0008, mask: 0x0002 },
+          }
+        );
+        coinBodies.push(coinBody);
+      });
+    }
+
     gameOverTriggeredRef.current = false;
 
     const currentEngine = engine;
@@ -338,6 +359,22 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
             break;
           }
         }
+
+        if (
+          (bodyA.label === 'ball' && bodyB.label?.startsWith('coin-')) ||
+          (bodyA.label?.startsWith('coin-') && bodyB.label === 'ball')
+        ) {
+          const coinBody = bodyA.label?.startsWith('coin-') ? bodyA : bodyB;
+          const coinId = coinBody.label.split('coin-')[1];
+          runOnJS(dispatch)(collectCoin());
+          runOnJS(dispatch)(removeCoin(coinId));
+          runOnJS(dispatch)(saveShopData());
+          if (vibrationEnabled) {
+            runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+          }
+          Matter.Composite.remove(world, coinBody);
+          continue;
+        }
       }
     });
 
@@ -374,7 +411,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       }
     });
 
-    Matter.Composite.add(world, [ball, ...walls, ...boundWalls, ...laserGates, goal]);
+    Matter.Composite.add(world, [ball, ...walls, ...boundWalls, ...laserGates, goal, ...coinBodies]);
 
     engineRef.current = engine;
     worldRef.current = world;
@@ -462,6 +499,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     getPhysicsQualitySettings,
     ballPositionX,
     ballPositionY,
+    dispatch,
   ]);
 
   const gameOverTriggeredRef = useRef(false);

@@ -1,5 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { GAME } from '@config/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAsyncThunk } from '@reduxjs/toolkit';
 
 export interface Skin {
   id: string;
@@ -30,6 +32,42 @@ const initialState: ShopState = {
   equippedSkin: 'default',
 };
 
+// Thunk to load shop data from AsyncStorage
+export const loadShopData = createAsyncThunk(
+  'shop/loadShopData',
+  async (_, { rejectWithValue }) => {
+    try {
+      const shopDataJson = await AsyncStorage.getItem('shopData');
+      if (shopDataJson) {
+        return JSON.parse(shopDataJson);
+      }
+      return { coins: 0, purchasedSkins: ['default'], equippedSkin: 'default' };
+    } catch (error) {
+      return rejectWithValue('Failed to load shop data');
+    }
+  }
+);
+
+// Thunk to save shop data to AsyncStorage
+export const saveShopData = createAsyncThunk(
+  'shop/saveShopData',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { shop: ShopState };
+      const { coins, purchasedSkins, equippedSkin } = state.shop;
+      
+      await AsyncStorage.setItem(
+        'shopData',
+        JSON.stringify({ coins, purchasedSkins, equippedSkin })
+      );
+      
+      return { coins, purchasedSkins, equippedSkin };
+    } catch (error) {
+      return rejectWithValue('Failed to save shop data');
+    }
+  }
+);
+
 const shopSlice = createSlice({
   name: 'shop',
   initialState,
@@ -52,6 +90,19 @@ const shopSlice = createSlice({
         state.equippedSkin = skinId;
       }
     },
+  },
+  extraReducers: builder => {
+    builder
+      .addCase(loadShopData.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.coins = action.payload.coins || 0;
+          state.purchasedSkins = action.payload.purchasedSkins || ['default'];
+          state.equippedSkin = action.payload.equippedSkin || 'default';
+        }
+      })
+      .addCase(saveShopData.fulfilled, () => {
+        // Nothing to do here, state is already updated
+      });
   },
 });
 

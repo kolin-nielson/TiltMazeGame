@@ -16,6 +16,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { store, useAppSelector, useAppDispatch } from '@store';
 import { loadSettings } from '@store/slices/settingsSlice';
 import { loadTheme, setIsDark } from '@store/slices/themeSlice';
+import { loadShopData } from '@store/slices/shopSlice';
 import AppNavigator from '@navigation/AppNavigator';
 import GameLogo from '@components/logo/GameLogo';
 import { View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
@@ -49,7 +50,11 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      await Promise.all([dispatch(loadSettings()), dispatch(loadTheme())]);
+      await Promise.all([
+        dispatch(loadSettings()), 
+        dispatch(loadTheme()), 
+        dispatch(loadShopData())
+      ]);
       setIsLoading(false);
     };
 

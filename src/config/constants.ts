@@ -40,6 +40,7 @@ export const SCREENS = {
 export const GAME = {
   INITIAL_LIVES: 3,
   POINTS_PER_COIN: 10,
+  COINS_PER_LEVEL: 5,
   MAX_DIFFICULTY: 50,
   MAZE_AREA_SIZE: 300,
   CELL_SIZE: 20,

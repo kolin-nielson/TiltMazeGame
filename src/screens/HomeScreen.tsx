@@ -87,6 +87,17 @@ const HomeScreen: React.FC = () => {
           >
             Settings
           </Button>
+
+          <Button
+            mode="outlined"
+            icon={({ size, color }) => <MaterialIcons name="store" size={size} color={color} />}
+            onPress={() => navigation.navigate('Shop')}
+            style={styles.menuButton}
+            contentStyle={styles.buttonContent}
+            labelStyle={styles.buttonLabel}
+          >
+            Shop
+          </Button>
         </View>
       </View>
     </SafeAreaView>

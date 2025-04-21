@@ -9,6 +9,7 @@ const HomeScreen = React.lazy(() => import('@screens/HomeScreen'));
 const GameScreen = React.lazy(() => import('@screens/GameScreen'));
 const SettingsScreen = React.lazy(() => import('@screens/SettingsScreen'));
 const ThemeScreen = React.lazy(() => import('@screens/ThemeScreen'));
+const ShopScreen = React.lazy(() => import('@screens/ShopScreen'));
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -83,6 +84,13 @@ const AppNavigator: React.FC = () => {
             component={ThemeScreen}
             options={{
               title: 'Theme Settings',
+            }}
+          />
+          <Stack.Screen
+            name="Shop"
+            component={ShopScreen}
+            options={{
+              title: 'Shop',
             }}
           />
         </Stack.Navigator>

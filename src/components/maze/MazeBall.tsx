@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Circle } from 'react-native-svg';
 import Animated, { useAnimatedProps } from 'react-native-reanimated';
+import { useAppSelector } from '@store';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -13,6 +14,11 @@ interface MazeBallProps {
 
 export const MazeBall: React.FC<MazeBallProps> = memo(
   ({ ballPositionX, ballPositionY, radius, color }) => {
+    // Get equipped skin color from shop state
+    const { skins, equippedSkin } = useAppSelector(state => state.shop);
+    const skin = skins.find(s => s.id === equippedSkin);
+    const ballColor = skin?.color || color;
+    
     const animatedProps = useAnimatedProps(() => {
       return {
         cx: ballPositionX.value,
@@ -20,7 +26,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       };
     });
 
-    return <AnimatedCircle animatedProps={animatedProps} r={radius} fill={color} />;
+    return <AnimatedCircle animatedProps={animatedProps} r={radius} fill={ballColor} />;
   }
 );
 

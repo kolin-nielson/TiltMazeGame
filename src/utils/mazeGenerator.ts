@@ -365,7 +365,7 @@ export const generateMaze = (difficulty: number): Maze => {
   }
 
   // generate random coin positions
-  const maxCoins = Math.min(20, difficulty * 5);
+  const maxCoins = Math.min(20, Math.ceil(GAME.COINS_PER_LEVEL * (1 + difficulty / 10)));
   const flatCells: Position[] = [];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {

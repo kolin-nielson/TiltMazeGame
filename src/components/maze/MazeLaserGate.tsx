@@ -17,7 +17,6 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
     let frameId: number;
     const updateVisibility = () => {
       const now = Date.now();
-      // match physics timing: phase + cycle position
       const cyclePos = ((now % laserGate.interval) / laserGate.interval + laserGate.phase) % 1;
       setVisible(cyclePos < laserGate.onDuration);
       frameId = requestAnimationFrame(updateVisibility);
@@ -49,7 +48,6 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
 
   return (
     <>
-      {/* Emitter glow behind circle */}
       <Circle
         cx={emitter1X}
         cy={emitter1Y}
@@ -57,7 +55,6 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
         fill={color}
         opacity={visible ? 0.15 : 0.05}
       />
-      {/* Emitters at wall edges */}
       <Circle
         cx={emitter1X}
         cy={emitter1Y}
@@ -68,7 +65,6 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
         opacity={visible ? 1 : 0.5}
       />
 
-      {/* Core beam (single) */}
       <Line
         x1={emitter1X}
         y1={emitter1Y}
@@ -80,7 +76,6 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
         opacity={visible ? 1 : 0.3}
       />
 
-      {/* Emitter at opposite wall */}
       <Circle
         cx={emitter2X}
         cy={emitter2Y}

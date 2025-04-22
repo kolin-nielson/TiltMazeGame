@@ -55,17 +55,4 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
   );
 };
 
-export default memo(MazeRenderer, (prevProps, nextProps) => {
-  const mazeChanged = prevProps.maze.id !== nextProps.maze.id;
-  const radiusChanged = prevProps.ballRadius !== nextProps.ballRadius;
-  const colorsChanged =
-    prevProps.colors?.surface !== nextProps.colors?.surface ||
-    prevProps.colors?.walls !== nextProps.colors?.walls ||
-    prevProps.colors?.ball !== nextProps.colors?.ball ||
-    prevProps.colors?.goal !== nextProps.colors?.goal ||
-    prevProps.colors?.laser !== nextProps.colors?.laser;
-
-  const gameStateChanged = prevProps.gameState !== nextProps.gameState;
-
-  return !(mazeChanged || radiusChanged || colorsChanged || gameStateChanged);
-});
+export default MazeRenderer;

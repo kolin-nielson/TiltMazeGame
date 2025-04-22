@@ -87,10 +87,11 @@ const mazeSlice = createSlice({
       }
     },
     removeCoin: (state, action: PayloadAction<string>) => {
-      if (state.currentMaze && state.currentMaze.coins) {
-        state.currentMaze.coins = state.currentMaze.coins.filter(
+      if (state.currentMaze?.coins) {
+        const updatedCoins = state.currentMaze.coins.filter(
           coin => coin.id !== action.payload
         );
+        state.currentMaze = { ...state.currentMaze, coins: updatedCoins };
       }
     },
   },

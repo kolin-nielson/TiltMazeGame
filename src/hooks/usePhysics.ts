@@ -6,8 +6,8 @@ import * as Haptics from 'expo-haptics';
 
 import { Maze, LaserGate, Wall, Coin } from '../types';
 import { useAppDispatch } from '@store';
-import { collectCoin, saveShopData } from '@store/slices/shopSlice';
-import { removeCoin } from '@store/slices/mazeSlice';
+import { collectCoinAndSave, removeCoin } from '@store/slices/shopSlice';
+import { removeCoin as mazeRemoveCoin } from '@store/slices/mazeSlice';
 
 const lineIntersectsLine = (
   x1: number,
@@ -365,12 +365,11 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           (bodyA.label?.startsWith('coin-') && bodyB.label === 'ball')
         ) {
           const coinBody = bodyA.label?.startsWith('coin-') ? bodyA : bodyB;
-          const coinId = coinBody.label.split('coin-')[1];
-          runOnJS(dispatch)(collectCoin());
-          runOnJS(dispatch)(removeCoin(coinId));
-          runOnJS(dispatch)(saveShopData());
+          const coinId = coinBody.label.replace(/^coin-/, '');
+          dispatch(collectCoinAndSave());
+          dispatch(mazeRemoveCoin(coinId));
           if (vibrationEnabled) {
-            runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
           Matter.Composite.remove(world, coinBody);
           continue;
@@ -489,7 +488,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       Matter.Events.off(currentEngine, 'collisionActive');
     };
   }, [
-    maze,
+    maze?.id,
     width,
     height,
     ballRadius,

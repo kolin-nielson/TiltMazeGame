@@ -29,6 +29,7 @@ import {
   setIsManualRecalibrating,
 } from '@store/slices/gameSlice';
 import { usePhysics } from '@hooks/usePhysics';
+import { collectCoinAndSave } from '@store/slices/shopSlice';
 
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { generateMaze } from '@utils/mazeGenerator';
@@ -47,23 +48,25 @@ import type { PhysicsOptions } from '@hooks/usePhysics';
 
 type GameState = 'loading' | 'playing' | 'game_over';
 
-interface PhysicsMazeProps {
+type PhysicsMazeProps = {
   maze: Maze;
   gyroX: number;
   gyroY: number;
   gameState: GameState;
+  isTransitioning: boolean;
   ballPositionX: Animated.SharedValue<number>;
   ballPositionY: Animated.SharedValue<number>;
   update: (gyroX: number, gyroY: number) => void;
   colors: any;
   ballRadius: number;
-}
+};
 
 const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
   maze,
   gyroX,
   gyroY,
   gameState,
+  isTransitioning,
   ballPositionX,
   ballPositionY,
   update,
@@ -71,8 +74,11 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
   ballRadius,
 }) => {
   useEffect(() => {
-       update(gameState === 'playing' ? gyroX : 0, gameState === 'playing' ? gyroY : 0);
-  }, [gyroX, gyroY, gameState, update]);
+    // Pause ball movement during level transitions or when not playing
+    const effectiveX = !isTransitioning && gameState === 'playing' ? gyroX : 0;
+    const effectiveY = !isTransitioning && gameState === 'playing' ? gyroY : 0;
+    update(effectiveX, effectiveY);
+  }, [gyroX, gyroY, gameState, isTransitioning, update]);
 
   return (
     <View style={gameScreenStyles.mazeContainer}>
@@ -202,6 +208,13 @@ const GameScreen: React.FC = () => {
       if (newLevelCount > (settings.highestScore || 0)) {
         dispatch(updateSettings({ highestScore: newLevelCount }));
         dispatch(saveSettings({ highestScore: newLevelCount }));
+      }
+
+      const bonusCoins = Math.floor(difficulty * 1.5);
+      if (bonusCoins > 0) {
+        for (let i = 0; i < bonusCoins; i++) {
+          dispatch(collectCoinAndSave());
+        }
       }
 
       dispatch(setShowLevelTransition(true));
@@ -394,6 +407,7 @@ const GameScreen: React.FC = () => {
         gyroX={gyroData.x}
         gyroY={gyroData.y}
         gameState={gameState}
+        isTransitioning={showLevelTransition}
         ballPositionX={ballPositionX}
         ballPositionY={ballPositionY}
         update={update}

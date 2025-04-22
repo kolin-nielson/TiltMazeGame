@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { Text } from 'react-native-paper';
 import { ThemeColors } from '@types';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useAppSelector } from '@store';
 
 interface LevelTransitionProps {
   level: number;
@@ -19,6 +21,9 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.5)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
+
+  // Calculate bonus coins from level
+  const bonusCoins = Math.floor(level * 1.5);
 
   useEffect(() => {
     if (visible) {
@@ -100,6 +105,27 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
         >
           {level}
         </Animated.Text>
+        <View style={styles.contentContainer}>
+          <Text style={[styles.levelCompleted, { color: colors?.onSurface }]}>
+            Level {level} Completed!
+          </Text>
+          <Text style={[styles.nextLevel, { color: colors?.onSurfaceVariant }]}>
+            Get ready for level {level + 1}
+          </Text>
+          
+          {/* Show bonus coins */}
+          <View style={styles.bonusContainer}>
+            <Text style={[styles.bonusText, { color: colors?.onSurfaceVariant }]}>
+              Bonus
+            </Text>
+            <View style={styles.coinRow}>
+              <MaterialIcons name="monetization-on" size={24} color="#FFD700" />
+              <Text style={[styles.bonusCoins, { color: colors?.secondary }]}>
+                +{bonusCoins}
+              </Text>
+            </View>
+          </View>
+        </View>
       </Animated.View>
     </Animated.View>
   );
@@ -118,7 +144,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 24,
   },
   levelText: {
     fontSize: 24,
@@ -129,6 +155,31 @@ const styles = StyleSheet.create({
     fontSize: 72,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  levelCompleted: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  nextLevel: {
+    fontSize: 16,
+  },
+  bonusContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  bonusText: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  coinRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bonusCoins: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
 

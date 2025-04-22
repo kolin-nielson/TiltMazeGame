@@ -7,7 +7,11 @@ export interface Skin {
   id: string;
   name: string;
   cost: number;
-  color: string;
+  type: 'solid' | 'gradient' | 'pattern';
+  colors: string[]; // For solid (1 color), gradient (2+ colors), pattern (multiple colors)
+  // Optional properties for gradients/patterns
+  gradientDirection?: 'linear' | 'radial';
+  patternType?: 'stripes' | 'dots';
 }
 
 export interface ShopState {
@@ -18,11 +22,15 @@ export interface ShopState {
 }
 
 const initialSkins: Skin[] = [
-  { id: 'default', name: 'Default', cost: 0, color: '#FF4081' },
-  { id: 'blue', name: 'Blue', cost: 50, color: '#2196F3' },
-  { id: 'green', name: 'Green', cost: 100, color: '#4CAF50' },
-  { id: 'yellow', name: 'Yellow', cost: 150, color: '#FFEB3B' },
-  { id: 'purple', name: 'Purple', cost: 200, color: '#9C27B0' },
+  { id: 'default', name: 'Steel', cost: 0, type: 'solid', colors: ['#B0BEC5'] },
+  { id: 'ocean-gradient', name: 'Ocean Wave', cost: 150, type: 'gradient', colors: ['#00C9FF', '#92FE9D'], gradientDirection: 'linear' },
+  { id: 'sunset-gradient', name: 'Sunset', cost: 200, type: 'gradient', colors: ['#FF7E5F', '#FEB47B'], gradientDirection: 'linear' },
+  { id: 'purple-haze', name: 'Purple Haze', cost: 250, type: 'gradient', colors: ['#7C4DFF', '#FF6EC7'], gradientDirection: 'radial' },
+  { id: 'cyber-dots', name: 'Cyber Dots', cost: 350, type: 'pattern', colors: ['#0A0A0A', '#00E5FF'], patternType: 'dots' },
+  { id: 'zebra', name: 'Zebra', cost: 400, type: 'pattern', colors: ['#FFFFFF', '#333333'], patternType: 'stripes' },
+  { id: 'gold', name: 'Pure Gold', cost: 600, type: 'gradient', colors: ['#FFD700', '#FFA500'], gradientDirection: 'radial' },
+  { id: 'lava', name: 'Lava Flow', cost: 750, type: 'gradient', colors: ['#FF3D00', '#FF7E5F', '#FEB47B'], gradientDirection: 'linear' },
+  { id: 'rainbow', name: 'Rainbow Swirl', cost: 1000, type: 'gradient', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], gradientDirection: 'radial' },
 ];
 
 const initialState: ShopState = {
@@ -107,4 +115,21 @@ const shopSlice = createSlice({
 });
 
 export const { collectCoin, purchaseSkin, equipSkin } = shopSlice.actions;
+
+// Create middleware-compatible thunk actions for automatic saving
+export const collectCoinAndSave = () => (dispatch: any) => {
+  dispatch(collectCoin());
+  dispatch(saveShopData());
+};
+
+export const purchaseSkinAndSave = (skinId: string) => (dispatch: any) => {
+  dispatch(purchaseSkin(skinId));
+  dispatch(saveShopData());
+};
+
+export const equipSkinAndSave = (skinId: string) => (dispatch: any) => {
+  dispatch(equipSkin(skinId));
+  dispatch(saveShopData());
+};
+
 export default shopSlice.reducer; 

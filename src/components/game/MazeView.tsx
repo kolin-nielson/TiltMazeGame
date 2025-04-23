@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Surface } from 'react-native-paper';
-import MazeRenderer from '@components/maze/MazeRenderer';
+import MazeElements from '@components/maze/MazeElements';
 import { Maze, ThemeColors } from '@types';
 import Animated from 'react-native-reanimated';
 
@@ -27,7 +27,7 @@ const MazeView: React.FC<MazeViewProps> = ({
       style={{ width: '100%', height: '100%', backgroundColor: colors?.surface ?? '#fff', borderRadius: 12 }}
         elevation={4}
       >
-        <MazeRenderer
+        <MazeElements
           maze={maze}
           ballPositionX={ballPositionX}
           ballPositionY={ballPositionY}

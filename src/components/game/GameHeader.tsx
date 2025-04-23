@@ -1,10 +1,10 @@
 import React from 'react';
-import { Appbar, IconButton, Badge } from 'react-native-paper';
+import { Appbar, IconButton, Text } from 'react-native-paper';
 import { View, StyleSheet } from 'react-native';
 import { ThemeColors } from '@types';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { useAppSelector } from '@store';
-import { MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 interface GameHeaderProps {
   score: number;
@@ -17,23 +17,20 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
   const coins = useAppSelector(state => state.shop.coins);
   
   return (
-    <Appbar.Header
-      style={[styles.header, { backgroundColor: colors.surface }]}
-      mode="center-aligned"
-    >
-      <Appbar.Action icon="exit-to-app" color={colors.primary} size={24} onPress={onQuit} />
-      <View style={styles.centerContent}>
-        <Appbar.Content
-          title={`Score ${score}`}
-          titleStyle={{ color: colors.onSurface, fontSize: 20, fontWeight: 'bold' }}
-          style={{ alignItems: 'center' }}
-        />
+    <Appbar.Header style={[styles.header, { backgroundColor: colors.surface }]}>
+      {/* Score display on the left */}
+      <View style={styles.scoreContainer}>
+        <Text style={[styles.scoreText, { color: colors.primary }]}>Score: </Text>
+        <Text style={[styles.scoreValue, { color: colors.onSurface }]}>{score}</Text>
       </View>
-      <View style={styles.coinsContainer}>
-        <Appbar.Action icon="monetization-on" color={colors.secondary} size={24} />
-        <Badge style={[styles.badge, { backgroundColor: colors.secondary, color: colors.onSecondary }]}>
-          {coins}
-        </Badge>
+
+      {/* Coins display and Quit action on the right */}
+      <View style={styles.rightActions}>
+        <View style={[styles.coinsDisplayContainer, { backgroundColor: colors.surfaceVariant }]}>
+          <FontAwesome5 name="coins" size={18} color="#FFD700" solid />
+          <Text style={[styles.coinsValue, { color: colors.primary }]}>{coins}</Text>
+        </View>
+        <Appbar.Action icon="logout" color={colors.primary} size={24} onPress={onQuit} />
       </View>
     </Appbar.Header>
   );
@@ -47,21 +44,38 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     paddingHorizontal: 16,
+    justifyContent: 'space-between',
   },
-  centerContent: {
+  scoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginLeft: 8,
+  },
+  scoreText: {
+    fontSize: 16,
+  },
+  scoreValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  rightActions: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
-  coinsContainer: {
-    position: 'relative',
-    marginRight: 16,
-    justifyContent: 'center',
+  coinsDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 16,
+    marginRight: 8,
   },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
+  coinsValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
 

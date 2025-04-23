@@ -8,7 +8,7 @@ import { purchaseSkinAndSave, equipSkinAndSave, Skin } from '@store/slices/shopS
 import { Text, Button, Card } from 'react-native-paper';
 import { ShopScreenNavigationProp } from '@navigation/types';
 import { useNavigation } from '@react-navigation/native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Stop, Pattern, Rect } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
 
@@ -107,7 +107,7 @@ const ShopScreen: React.FC = () => {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View style={styles.header}>
         <View style={[styles.coinsContainer, { backgroundColor: colors.surfaceVariant }]}>
-          <MaterialIcons name="monetization-on" size={24} color="#FFD700" />
+          <FontAwesome5 name="coins" size={24} color="#FFD700" solid />
           <Text style={[styles.coinsText, { color: colors.primary }]}>{coins}</Text>
         </View>
       </View>
@@ -131,7 +131,12 @@ const ShopScreen: React.FC = () => {
                   <Text style={[styles.skinName, { color: skin.type === 'solid' ? skin.colors[0] : colors.onSurface }]}>
                     {skin.name}
                   </Text>
-                  <Text style={[styles.skinCost, { color: skin.type === 'solid' ? skin.colors[0] : colors.onSurfaceVariant }]}>₹ {skin.cost}</Text>
+                  <View style={styles.costContainer}>
+                    <FontAwesome5 name="coins" size={14} color="#FFD700" solid />
+                    <Text style={[styles.skinCost, { color: skin.type === 'solid' ? skin.colors[0] : colors.onSurfaceVariant, marginLeft: 4 }]}>
+                      {skin.cost}
+                    </Text>
+                  </View>
                 </View>
                 {isEquipped ? (
                   <Button
@@ -238,6 +243,11 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: '100%',
+  },
+  costContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
 });
 

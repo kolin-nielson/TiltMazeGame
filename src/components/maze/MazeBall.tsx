@@ -9,15 +9,13 @@ interface MazeBallProps {
   ballPositionX: Animated.SharedValue<number>;
   ballPositionY: Animated.SharedValue<number>;
   radius: number;
-  // Color prop is now just a fallback
 }
 
 export const MazeBall: React.FC<MazeBallProps> = memo(
   ({ ballPositionX, ballPositionY, radius }) => {
-    // Get equipped skin color from shop state
     const { skins, equippedSkin } = useAppSelector(state => state.shop);
     const skin = skins.find(s => s.id === equippedSkin);
-    const defaultColor = '#B0BEC5'; // Use steel as default if skin not found
+    const defaultColor = '#B0BEC5';
     
     const animatedProps = useAnimatedProps(() => {
       return {
@@ -40,7 +38,6 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
 
     return (
       <>
-        {/* SVG Defs for gradients/patterns */}
         <Defs>
           {skin?.type === 'gradient' && (
             skin.gradientDirection === 'radial' ? (
@@ -70,7 +67,6 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
             </Pattern>
           )}
         </Defs>
-        {/* Shadow */}
         <AnimatedCircle 
           animatedProps={useAnimatedProps(() => ({
             cx: ballPositionX.value,
@@ -79,7 +75,6 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
           r={radius}
           fill="rgba(0,0,0,0.3)"
         />
-        {/* Ball */}
         <AnimatedCircle 
           animatedProps={animatedProps}
           r={radius}

@@ -1,7 +1,7 @@
-import React, { memo, useMemo, useState, useEffect } from 'react';
+import React, { memo, useMemo, useEffect } from 'react';
 import { View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import Animated, { FadeOut, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeOut, FadeIn, useSharedValue, useAnimatedProps, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { MazeWall } from './MazeWall';
 import { MazeGoal } from './MazeGoal';
 import { MazeBall } from './MazeBall';
@@ -10,7 +10,6 @@ import { mazeRendererStyles } from '@styles/MazeRendererStyles';
 import { ThemeColors } from '@types';
 import { useAppSelector, RootState } from '@store';
 
-// Create Animated Circle for entry/exit animations
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface MazeElementsProps {
@@ -57,58 +56,50 @@ const MemoizedLaserGates = memo(
   }
 );
 
-// Component for a single coin with animation
 const CoinCircle = memo(({ coin, ballRadius }: { coin: { id: string, position: Position }, ballRadius: number }) => {
-  const [animPhase, setAnimPhase] = useState(0);
-  
+  const anim = useSharedValue(0);
   useEffect(() => {
-    // Simple pulse animation
-    const interval = setInterval(() => {
-      setAnimPhase(prev => (prev + 1) % 60);
-    }, 50);
-    
-    return () => clearInterval(interval);
+    anim.value = withRepeat(
+      withTiming(1, { duration: 1000, easing: Easing.linear }),
+      -1,
+      true
+    );
   }, []);
-  
-  // Calculate pulse effect (subtle size change)
-  const pulseSize = (Math.sin(animPhase / 10) * 0.1) + 1;
-  const glowRadius = ballRadius * 0.8 * pulseSize;
-  const coinRadius = ballRadius * 0.6;
-  
+  const glowProps = useAnimatedProps(() => {
+    const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
+    return { r: ballRadius * 0.8 * scale };
+  });
+  const bodyProps = useAnimatedProps(() => {
+    const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
+    return { r: ballRadius * 0.6 * scale };
+  });
   return (
-    <React.Fragment>
-      {/* Glow effect */}
+    <>
       <AnimatedCircle
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(300)}
+        animatedProps={glowProps}
         cx={coin.position.x}
         cy={coin.position.y}
-        r={glowRadius}
         fill="#FFDF0040"
       />
-      {/* Coin body */}
       <AnimatedCircle
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(300)}
+        animatedProps={bodyProps}
         cx={coin.position.x}
         cy={coin.position.y}
-        r={coinRadius}
         fill="#FFD700"
         stroke="#FFA500"
         strokeWidth={1}
       />
-    </React.Fragment>
+    </>
   );
 });
 
 export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX, ballPositionY, ballRadius, colors, gameState = 'playing' }) => {
   const mazeBaseSize = 300;
-  // Subscribe to coins in Redux to ensure re-render on removal
   const coinsInMaze = useAppSelector((state: RootState) => state.maze.currentMaze?.coins || []);
-  // Log coin count for debugging
-  useEffect(() => {
-    console.log(`[MazeElements] Rendering with ${coinsInMaze.length} coins.`);
-  }, [coinsInMaze.length]);
 
   return (
     <View style={mazeRendererStyles.mazeElementsContainer}>

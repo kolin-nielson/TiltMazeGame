@@ -359,7 +359,6 @@ const GameScreen: React.FC = () => {
       <GameHeader
         score={levelsCompleted}
         onQuit={showQuitConfirm}
-        onCalibrate={handleResetTilt}
         colors={colors}
       />
 

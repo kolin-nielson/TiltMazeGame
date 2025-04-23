@@ -1,5 +1,5 @@
 import React from 'react';
-import { Appbar, IconButton } from 'react-native-paper';
+import { Appbar, IconButton, Badge } from 'react-native-paper';
 import { View, StyleSheet } from 'react-native';
 import { ThemeColors } from '@types';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
@@ -9,11 +9,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 interface GameHeaderProps {
   score: number;
   onQuit: () => void;
-  onCalibrate: () => void;
   colors: ThemeColors;
 }
 
-const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, onCalibrate, colors }) => {
+const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
   // Get coins from the shop state
   const coins = useAppSelector(state => state.shop.coins);
   
@@ -22,41 +21,20 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, onCalibrate, col
       style={[styles.header, { backgroundColor: colors.surface }]}
       mode="center-aligned"
     >
-      <IconButton
-        icon="exit-to-app"
-        size={24}
-        iconColor={colors.primary}
-        onPress={onQuit}
-        accessibilityLabel="Quit game"
-        accessibilityHint="Opens a confirmation dialog to quit the game"
-        style={styles.iconButton}
-      />
-      <View style={styles.content}>
+      <Appbar.Action icon="exit-to-app" color={colors.primary} size={24} onPress={onQuit} />
+      <View style={styles.centerContent}>
         <Appbar.Content
-          title={String(score)}
-          subtitle="Score"
-          titleStyle={[gameScreenStyles.appbarTitle, { color: colors.onSurface, fontSize: 20 }]}
-          subtitleStyle={{ color: colors.onSurfaceVariant, fontSize: 12 }}
-          style={styles.scoreContent}
-        />
-        <Appbar.Content
-          title={String(coins)}
-          subtitle="Coins"
-          titleStyle={[gameScreenStyles.appbarTitle, { color: colors.secondary, fontSize: 20 }]}
-          subtitleStyle={{ color: colors.onSurfaceVariant, fontSize: 12 }}
-          style={styles.scoreContent}
-          left={() => <MaterialIcons name="monetization-on" size={20} color="#FFD700" style={{ marginLeft: 8 }} />}
+          title={`Score ${score}`}
+          titleStyle={{ color: colors.onSurface, fontSize: 20, fontWeight: 'bold' }}
+          style={{ alignItems: 'center' }}
         />
       </View>
-      <IconButton
-        icon="cellphone-settings"
-        size={24}
-        iconColor={colors.primary}
-        onPress={onCalibrate}
-        accessibilityLabel="Calibrate tilt controls"
-        accessibilityHint="Resets the tilt orientation to your current device position"
-        style={styles.iconButton}
-      />
+      <View style={styles.coinsContainer}>
+        <Appbar.Action icon="monetization-on" color={colors.secondary} size={24} />
+        <Badge style={[styles.badge, { backgroundColor: colors.secondary, color: colors.onSecondary }]}>
+          {coins}
+        </Badge>
+      </View>
     </Appbar.Header>
   );
 };
@@ -70,16 +48,20 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     paddingHorizontal: 16,
   },
-  content: {
+  centerContent: {
     flex: 1,
-    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  scoreContent: {
-    alignItems: 'center',
+  coinsContainer: {
+    position: 'relative',
+    marginRight: 16,
+    justifyContent: 'center',
   },
-  iconButton: {
-    marginHorizontal: 8,
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
   },
 });
 

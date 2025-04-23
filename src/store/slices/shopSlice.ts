@@ -119,7 +119,10 @@ export const { collectCoin, purchaseSkin, equipSkin } = shopSlice.actions;
 // Create middleware-compatible thunk actions for automatic saving
 export const collectCoinAndSave = () => (dispatch: any) => {
   dispatch(collectCoin());
-  dispatch(saveShopData());
+  // defer saving so we don't block the physics/collision loop
+  setTimeout(() => {
+    dispatch(saveShopData());
+  }, 0);
 };
 
 export const purchaseSkinAndSave = (skinId: string) => (dispatch: any) => {

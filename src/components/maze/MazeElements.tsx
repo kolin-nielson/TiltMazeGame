@@ -7,7 +7,7 @@ import { MazeGoal } from './MazeGoal';
 import { MazeBall } from './MazeBall';
 import { MazeLaserGate } from './MazeLaserGate';
 import { mazeRendererStyles } from '@styles/MazeRendererStyles';
-import { ThemeColors } from '@types';
+import { ThemeColors, Maze, Wall, LaserGate, Position } from '@types';
 import { useAppSelector, RootState } from '@store';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -111,7 +111,6 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
         <MazeGoal
           position={maze.endPosition}
           ballRadius={ballRadius}
-          color={colors?.goal ?? '#4CAF50'}
         />
 
         <MemoizedWalls walls={maze.walls} color={colors?.walls ?? '#333333'} />
@@ -132,7 +131,6 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
           ballPositionX={ballPositionX}
           ballPositionY={ballPositionY}
           radius={ballRadius}
-          color={colors?.ball ?? '#FF4081'}
         />
       </Svg>
     </View>

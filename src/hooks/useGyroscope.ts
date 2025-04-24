@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Accelerometer } from 'expo-sensors';
 import { useAppSelector, RootState } from '@store';
+import { Platform } from 'react-native';
 
 export interface GyroscopeData {
   x: number;
@@ -18,9 +19,9 @@ export const useGyroscope = (enabled = true) => {
 
   // Increase sample rate for more immediate updates
   const UPDATE_INTERVAL = 10; // ms
-  // Remove smoothing and dead zone for max responsiveness
-  const SMOOTHING = 0;
-  const DEAD_ZONE = 0;
+  // Smoothing and dead zone to filter out sensor noise
+  const SMOOTHING = 0; // no default smoothing, can increase if needed
+  const DEAD_ZONE = 0.02; // ignore movements smaller than this to prevent jitter
   // Extra tilt amplification
   const AMPLIFICATION = 1.5;
 
@@ -39,8 +40,13 @@ export const useGyroscope = (enabled = true) => {
         const dz = DEAD_ZONE;
         const clamp = (v: number) => (Math.abs(v) < dz ? 0 : v);
         // instant mapping with amplification
-        const mappedX = clamp(rawX) * sensitivity * AMPLIFICATION;
-        const mappedY = -clamp(rawY) * sensitivity * AMPLIFICATION;
+        let mappedX = clamp(rawX) * sensitivity * AMPLIFICATION;
+        let mappedY = -clamp(rawY) * sensitivity * AMPLIFICATION;
+        if (Platform.OS === 'android') {
+          // invert axes on Android to match iOS tilt orientation
+          mappedX = -mappedX;
+          mappedY = -mappedY;
+        }
         setData({ x: mappedX, y: mappedY });
       });
     };

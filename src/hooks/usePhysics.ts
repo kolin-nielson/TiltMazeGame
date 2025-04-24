@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 
 import { Maze, LaserGate, Wall, Coin } from '../types';
 import { useAppDispatch } from '@store';
-import { collectCoinAndSave, removeCoin } from '@store/slices/shopSlice';
+import { collectCoinAndSave } from '@store/slices/shopSlice';
 import { removeCoin as mazeRemoveCoin } from '@store/slices/mazeSlice';
 
 const lineIntersectsLine = (
@@ -532,40 +532,9 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     (tiltX: number, tiltY: number) => {
       if (!engineRef.current || !ballRef.current) return;
 
-      let gravityMagnitude = 0.0025;
-
-      if (qualityLevel === 'low') {
-        gravityMagnitude = 0.003;
-      } else if (qualityLevel === 'high') {
-        gravityMagnitude = 0.0022;
-      }
-
-      const position = ballRef.current.position;
-      const mazeSize = 300;
-      const centerBiasRange = 30;
-
-      const distFromLeftEdge = position.x;
-      const distFromRightEdge = mazeSize - position.x;
-      const distFromTopEdge = position.y;
-      const distFromBottomEdge = mazeSize - position.y;
-
-      let horizontalBias = 0;
-      let verticalBias = 0;
-
-      if (distFromLeftEdge < centerBiasRange) {
-        horizontalBias = 0.3 * (1 - distFromLeftEdge / centerBiasRange);
-      } else if (distFromRightEdge < centerBiasRange) {
-        horizontalBias = -0.3 * (1 - distFromRightEdge / centerBiasRange);
-      }
-
-      if (distFromTopEdge < centerBiasRange) {
-        verticalBias = 0.3 * (1 - distFromTopEdge / centerBiasRange);
-      } else if (distFromBottomEdge < centerBiasRange) {
-        verticalBias = -0.3 * (1 - distFromBottomEdge / centerBiasRange);
-      }
-
-      engineRef.current.gravity.x = (tiltX + horizontalBias) * gravityMagnitude;
-      engineRef.current.gravity.y = (tiltY + verticalBias) * gravityMagnitude;
+      // apply gravity directly based on device tilt
+      engineRef.current.gravity.x = tiltX * gravityScale;
+      engineRef.current.gravity.y = tiltY * gravityScale;
 
       let maxVelocity = 1.2;
       if (qualityLevel === 'low') {
@@ -601,10 +570,10 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
       const radius = ballRadius;
 
-      if (position.x < radius) {
+      if (ballRef.current.position.x < radius) {
         Matter.Body.setPosition(ballRef.current, {
           x: radius,
-          y: position.y,
+          y: ballRef.current.position.y,
         });
 
         const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.x) * 0.1);
@@ -613,10 +582,10 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           x: Math.abs(velocity.x) * -0.2,
           y: velocity.y * dampening,
         });
-      } else if (position.x > mazeSize - radius) {
+      } else if (ballRef.current.position.x > width - radius) {
         Matter.Body.setPosition(ballRef.current, {
-          x: mazeSize - radius,
-          y: position.y,
+          x: width - radius,
+          y: ballRef.current.position.y,
         });
 
         const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.x) * 0.1);
@@ -627,9 +596,9 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         });
       }
 
-      if (position.y < radius) {
+      if (ballRef.current.position.y < radius) {
         Matter.Body.setPosition(ballRef.current, {
-          x: position.x,
+          x: ballRef.current.position.x,
           y: radius,
         });
 
@@ -639,10 +608,10 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           x: velocity.x * dampening,
           y: Math.abs(velocity.y) * -0.2,
         });
-      } else if (position.y > mazeSize - radius) {
+      } else if (ballRef.current.position.y > height - radius) {
         Matter.Body.setPosition(ballRef.current, {
-          x: position.x,
-          y: mazeSize - radius,
+          x: ballRef.current.position.x,
+          y: height - radius,
         });
 
         const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.y) * 0.1);
@@ -653,8 +622,8 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         });
       }
 
-      const predictedX = position.x + velocity.x * 2;
-      const predictedY = position.y + velocity.y * 2;
+      const predictedX = ballRef.current.position.x + velocity.x * 2;
+      const predictedY = ballRef.current.position.y + velocity.y * 2;
 
       const potentialCollisions = wallsRef.current.filter(wall => {
         if (!wall.bounds) return false;
@@ -675,7 +644,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         const timeSteps = 3;
         const dt = 1 / 60;
 
-        const pos = { x: position.x, y: position.y };
+        const pos = { x: ballRef.current.position.x, y: ballRef.current.position.y };
         const vel = { x: velocity.x, y: velocity.y };
 
         const futurePos = {
@@ -705,13 +674,13 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           });
 
           potentialCollisions.forEach(wall => {
-            const dirX = position.x - wall.position.x;
-            const dirY = position.y - wall.position.y;
+            const dirX = pos.x - wall.position.x;
+            const dirY = pos.y - wall.position.y;
             const distance = Math.sqrt(dirX * dirX + dirY * dirY);
 
             if (distance > 0) {
               const repulsionForce = 0.002 / Math.max(distance, 0.5);
-              Matter.Body.applyForce(ballRef.current!, position, {
+              Matter.Body.applyForce(ballRef.current!, pos, {
                 x: (dirX / distance) * repulsionForce,
                 y: (dirY / distance) * repulsionForce,
               });
@@ -724,13 +693,13 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           });
 
           potentialCollisions.forEach(wall => {
-            const dirX = position.x - wall.position.x;
-            const dirY = position.y - wall.position.y;
+            const dirX = pos.x - wall.position.x;
+            const dirY = pos.y - wall.position.y;
             const distance = Math.sqrt(dirX * dirX + dirY * dirY);
 
             if (distance > 0) {
               const repulsionForce = 0.001 / Math.max(distance, 1);
-              Matter.Body.applyForce(ballRef.current!, position, {
+              Matter.Body.applyForce(ballRef.current!, pos, {
                 x: (dirX / distance) * repulsionForce,
                 y: (dirY / distance) * repulsionForce,
               });
@@ -739,7 +708,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         }
       }
     },
-    [qualityLevel]
+    [qualityLevel, width, height, ballRadius, gravityScale]
   );
 
   const changeQualityLevel = (level: 'low' | 'medium' | 'high') => {

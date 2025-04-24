@@ -31,6 +31,13 @@ const initialSkins: Skin[] = [
   { id: 'gold', name: 'Pure Gold', cost: 600, type: 'gradient', colors: ['#FFD700', '#FFA500'], gradientDirection: 'radial' },
   { id: 'lava', name: 'Lava Flow', cost: 750, type: 'gradient', colors: ['#FF3D00', '#FF7E5F', '#FEB47B'], gradientDirection: 'linear' },
   { id: 'rainbow', name: 'Rainbow Swirl', cost: 1000, type: 'gradient', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], gradientDirection: 'radial' },
+
+  // Custom fun skins
+  { id: 'galaxy-swirl', name: 'Galaxy Swirl', cost: 1200, type: 'gradient', colors: ['#0D1B2A', '#1B263B', '#415A77', '#778DA9', '#E0E1DD'], gradientDirection: 'radial' },
+  { id: 'neon-glow', name: 'Neon Glow', cost: 1800, type: 'gradient', colors: ['#FF00FF', '#00FFFF'], gradientDirection: 'linear' },
+  { id: 'prism-spectrum', name: 'Prism Spectrum', cost: 2000, type: 'gradient', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF'], gradientDirection: 'linear' },
+  { id: 'checkerboard', name: 'Checkerboard', cost: 2500, type: 'pattern', colors: ['#FFFFFF', '#000000'], patternType: 'stripes' },
+  { id: 'confetti-fun', name: 'Confetti Fun', cost: 3000, type: 'pattern', colors: ['#FF385C', '#FFBF00', '#1CE6FF', '#FF34FF', '#FF4A46'], patternType: 'dots' },
 ];
 
 const initialState: ShopState = {

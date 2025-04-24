@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppSelector, RootState } from '@store';
 import { ThemeColors } from '@types';
 
+
 interface GameOverOverlayProps {
   score: number;
   bestScore: number;
@@ -115,6 +116,8 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                 />
               </View>
 
+
+
               <View style={styles.buttonContainer}>
                 <ActionButton
                   mode="contained"
@@ -215,6 +218,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
+
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',

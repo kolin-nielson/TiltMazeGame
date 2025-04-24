@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 3.13.3"
+    "version": ">= 3.13.3",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -13,8 +14,17 @@
         "buildType": "apk"
       }
     },
+    "internal": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
@@ -23,10 +33,11 @@
         "appleId": "your-apple-id@example.com",
         "ascAppId": "1234567890",
         "appleTeamId": "ABCDEF1234"
-      },
+      }
+    },
+    "internal": {
       "android": {
-        "serviceAccountKeyPath": "./path-to-your-key.json",
-        "track": "production"
+        "track": "internal"
       }
     }
   }

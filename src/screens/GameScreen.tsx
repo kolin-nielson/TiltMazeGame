@@ -27,9 +27,11 @@ import {
   setDeathPosition,
   setGyroscopeCalibrated,
   setIsManualRecalibrating,
+  setGameOver,
 } from '@store/slices/gameSlice';
 import { usePhysics } from '@hooks/usePhysics';
 import { collectCoinAndSave } from '@store/slices/shopSlice';
+
 
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { generateMaze } from '@utils/mazeGenerator';
@@ -116,6 +118,8 @@ const GameScreen: React.FC = () => {
   );
   const showLevelTransition = useAppSelector((state: RootState) => state.game.showLevelTransition);
   const showDeathAnimation = useAppSelector((state: RootState) => state.game.showDeathAnimation);
+
+
 
   const [isQuitConfirmVisible, setIsQuitConfirmVisible] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
@@ -333,6 +337,8 @@ const GameScreen: React.FC = () => {
       }
     };
   }, []);
+
+
 
   useEffect(() => {
     if (gameState === 'loading') {

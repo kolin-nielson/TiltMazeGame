@@ -22,25 +22,6 @@ const FallbackMazeRenderer: React.FC<FallbackMazeRendererProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      {/* Render laser gates */}
-      {maze.laserGates?.map(gate => (
-        <View
-          key={gate.id}
-          style={[
-            styles.laserGate,
-            {
-              left: gate.x,
-              top: gate.y,
-              width: gate.width,
-              height: gate.height,
-              backgroundColor: colors.laser,
-              opacity: gameState === 'playing' ? 1 : 0,
-            },
-          ]}
-        />
-      ))}
-
-      {/* Render ball */}
       <Animated.View
         style={[
           styles.ball,

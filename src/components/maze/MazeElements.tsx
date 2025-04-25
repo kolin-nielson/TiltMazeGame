@@ -98,43 +98,43 @@ const CoinCircle = memo(({ coin, ballRadius }: { coin: { id: string, position: P
 });
 
 export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX, ballPositionY, ballRadius, colors, gameState = 'playing' }) => {
-  const mazeBaseSize = 300;
+    const mazeBaseSize = 300;
   const coinsInMaze = useAppSelector((state: RootState) => state.maze.currentMaze?.coins || []);
 
-  return (
-    <View style={mazeRendererStyles.mazeElementsContainer}>
-      <Svg
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        viewBox={`0 0 ${mazeBaseSize} ${mazeBaseSize}`}
-        preserveAspectRatio="none"
-      >
-        <MazeGoal
-          position={maze.endPosition}
-          ballRadius={ballRadius}
-        />
-
-        <MemoizedWalls walls={maze.walls} color={colors?.walls ?? '#333333'} />
-
-        {maze.laserGates && maze.laserGates.length > 0 && (
-          <MemoizedLaserGates
-            laserGates={maze.laserGates}
-            color={colors?.laser ?? '#FF0000'}
-            isActive={gameState === 'playing'}
+    return (
+      <View style={mazeRendererStyles.mazeElementsContainer}>
+        <Svg
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          viewBox={`0 0 ${mazeBaseSize} ${mazeBaseSize}`}
+          preserveAspectRatio="none"
+        >
+          <MazeGoal
+            position={maze.endPosition}
+            ballRadius={ballRadius}
           />
-        )}
+
+          <MemoizedWalls walls={maze.walls} color={colors?.walls ?? '#333333'} />
+
+          {maze.laserGates && maze.laserGates.length > 0 && (
+            <MemoizedLaserGates
+              laserGates={maze.laserGates}
+              color={colors?.laser ?? '#FF0000'}
+              isActive={gameState === 'playing'}
+            />
+          )}
 
         {coinsInMaze.map(coin => (
           <CoinCircle key={coin.id} coin={coin} ballRadius={ballRadius} />
         ))}
 
-        <MazeBall
-          ballPositionX={ballPositionX}
-          ballPositionY={ballPositionY}
-          radius={ballRadius}
-        />
-      </Svg>
-    </View>
-  );
+          <MazeBall
+            ballPositionX={ballPositionX}
+            ballPositionY={ballPositionY}
+            radius={ballRadius}
+          />
+        </Svg>
+      </View>
+    );
 };
 
 export default MazeElements;

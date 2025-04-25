@@ -1,106 +1,88 @@
-# Tilt Maze Game
+# Tilt Maze Game 🚀
 
-A fun mobile game where you tilt your phone to roll a ball through mazes! Try to reach the goal while avoiding walls and dangerous laser gates. How many levels can you complete?
+An addictive mobile puzzle game that uses device tilt to navigate a ball through challenging mazes!
 
-## What's This Game About?
+## Table of Contents
+- [Overview](#overview)
+- [Wireframes](#wireframes)
+- [Features](#features)
+- [Technologies](#technologies)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [License](#license)
 
-Tilt Maze is a simple but addictive game that uses your phone's motion sensors. Just tilt your device to move the ball around - it feels super natural, like rolling a real ball! The game starts easy but gets harder as you go, with trickier mazes and laser gates that turn on and off. You'll need good timing and steady hands to get through them.
+## Overview
+Tilt Maze Game challenges players to tilt their phone to roll a ball from the start to the green goal. Mazes grow more complex with static walls, dynamic laser gates, and collectible coins. Earn coins to unlock fun skins and strive for the highest score!
 
-The game keeps track of your best score so you can try to beat it next time. You can also switch between light and dark themes depending on what looks best to you. The controls are easy to learn but the later levels will really test your skills!
+## Wireframes
+<p align="center">
+  <img src="Wireframes/home.png" alt="Home Screen" width="30%" />
+  <img src="Wireframes/levelselect.png" alt="Level Select" width="30%" />
+  <img src="Wireframes/settings.png" alt="Settings" width="30%" />
+</p>
 
-## Game Screenshots
+## Features
+- **Intuitive Tilt Controls**: Uses device accelerometer for natural motion
+- **Procedural Mazes**: Every level is generated via depth-first search
+- **Laser Gates**: Timed obstacles that cycle on/off for extra challenge
+- **Coin Collectibles**: Persistent currency to unlock over a dozen ball skins
+- **Themes & Settings**: Light/dark mode, sensitivity control, and haptics toggle
+- **Advanced Animations**: Smooth transitions powered by Reanimated
+- **Realistic Physics**: Collisions and ball movement via Matter.js
+- **High Score Tracking**: Progress saved locally with AsyncStorage
 
-![Home Screen](Wireframes/home.png)
-*The home screen where you can see your best score and start playing*
+## Technologies
+- **React Native** & **Expo** — Cross-platform mobile development
+- **TypeScript** — Type safety and autocompletion
+- **Redux Toolkit** — Streamlined state management
+- **React Navigation** — Screen navigation and routing
+- **React Native Paper** — Material Design UI components
+- **React Native Reanimated** — High-performance animations
+- **Matter.js** — 2D physics engine for realistic ball dynamics
+- **@react-native-async-storage** — Persistent storage of settings & progress
 
-![Game Screen](Wireframes/levelselect.png)
-*The main game screen where you tilt to control the ball*
+## Architecture
+- **Components**: Reusable UI modules in `src/components`  
+- **Hooks**: Custom hooks (gyroscope, physics) in `src/hooks`  
+- **Store (Redux)**: Slice-based state in `src/store/slices`  
+- **Screens**: App screens in `src/screens`  
+- **Utils**: Utility functions in `src/utils`  
+- **Config**: Constants & themes in `src/config/constants.ts`
 
-![Settings Screen](Wireframes/settings.png)
-*Change themes and adjust game settings*
-
-## How I Used Material Design
-
-I built this game using Material Design to make it look modern and feel great to use. You can see this in the clean, simple layouts and the way everything has a consistent style.
-
-The game uses cards and surfaces that appear to float above the background with subtle shadows. This creates a sense of depth that helps you understand what's important on the screen. For example, on the game over screen, the score card pops out against the darker background, making it easy to read your results. The buttons have a nice ripple effect when you tap them, giving you instant feedback that you pressed something.
-
-Colors are another big part of Material Design in this game. I carefully picked colors that work well together and made sure text is always easy to read. The game has both light and dark themes that follow Material Design color guidelines. You'll notice that important buttons (like "Play Again") stand out with bold colors, while less important ones (like "Exit") are more subtle. This helps guide you through the game without having to think about what to do next.
-
-## How to Play
-
-1. Tilt your phone to move the ball
-2. Try to reach the green goal area
-3. Avoid walls and laser gates (they'll end your game!)
-4. Complete as many levels as you can
-5. Try to beat your high score!
-
-## Cool Features
-
-- Tilt controls that feel natural
-- Mazes that get harder as you play
-- Dangerous laser gates that turn on and off
-- High score tracking
-- Light and dark themes
-- Haptic feedback when you win or lose
-
-## Want to Try It?
-
+## Installation
 ```bash
 git clone https://github.com/kolin-nielson/TiltMazeGame.git
 cd TiltMazeGame
 npm install
-npm start
+npm run ios      # Launch on iOS simulator
+npm run android  # Launch on Android emulator
+npm start        # Open Expo dev tools
 ```
 
-Then scan the QR code with the Expo Go app on your phone.
-
-## Built With
-
-- **React Native**: Cross-platform mobile framework
-- **Expo**: Development platform for React Native
-- **Redux Toolkit**: State management
-- **React Navigation**: Screen navigation
-- **React Native Paper**: Material Design components
-- **React Native Reanimated**: Advanced animations
-- **Matter.js**: 2D physics engine
-- **TypeScript**: Type-safe JavaScript
-
 ## Project Structure
-
 ```bash
 src/
 ├── components/       # UI components
-│   ├── common/       # Reusable UI components
-│   ├── game/         # Game-specific components
-│   ├── logo/         # Logo components
-│   └── maze/         # Maze rendering components
-├── config/           # Configuration constants
-├── hooks/            # Custom React hooks
-├── navigation/       # Navigation setup
-├── screens/          # App screens
-├── storage/          # Local storage utilities
-├── store/            # Redux store setup
-│   └── slices/       # Redux slices
-├── styles/           # Shared styles
-├── types/            # TypeScript type definitions
-└── utils/            # Utility functions
+│   ├── maze/         # Maze renderer (walls, ball, goal, coins)
+│   └── common/       # Shared components (buttons, headers)
+├── hooks/            # Custom React hooks (sensor & physics)
+├── navigation/       # React Navigation setup
+├── screens/          # App screens (Home, Game, Settings)
+├── store/            # Redux store & slices
+├── config/           # App constants & themes
+├── styles/           # Shared style definitions
+└── utils/            # Helper functions (maze generator)
 ```
 
-## Technical Implementation
+## Contributing
+1. Fork the repo
+2. Create a branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add feature'`)
+4. Push to origin & open a PR
 
-### State Management
+*All contributions welcome — please follow ESLint & Prettier guidelines.*
 
-The game uses Redux Toolkit for centralized state management, with separate slices for settings, theme, maze, and game state. This provides a predictable state container and makes it easier to manage complex state interactions.
-
-### Physics Engine
-
-The ball movement is powered by a custom physics implementation that handles collisions with walls and other obstacles. The physics system is optimized for mobile devices and provides realistic ball movement based on device tilt.
-
-### Procedural Maze Generation
-
-Mazes are generated procedurally using a depth-first search algorithm, ensuring that every maze is solvable. The difficulty increases progressively by adding more complex paths and obstacles.
-
-### Responsive Design
-
-The game is designed to work on various screen sizes and aspect ratios, with a responsive layout that adapts to different devices.
+## License
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

@@ -28,6 +28,7 @@ import {
   setGyroscopeCalibrated,
   setIsManualRecalibrating,
   setGameOver,
+  resetGame,
 } from '@store/slices/gameSlice';
 import { usePhysics } from '@hooks/usePhysics';
 import { collectCoinAndSave } from '@store/slices/shopSlice';
@@ -56,6 +57,7 @@ type PhysicsMazeProps = {
   gyroY: number;
   gameState: GameState;
   isTransitioning: boolean;
+  isDying: boolean;
   ballPositionX: Animated.SharedValue<number>;
   ballPositionY: Animated.SharedValue<number>;
   update: (gyroX: number, gyroY: number) => void;
@@ -69,6 +71,7 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
   gyroY,
   gameState,
   isTransitioning,
+  isDying,
   ballPositionX,
   ballPositionY,
   update,
@@ -76,11 +79,12 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
   ballRadius,
 }) => {
   useEffect(() => {
-    // Pause ball movement during level transitions or when not playing
-    const effectiveX = !isTransitioning && gameState === 'playing' ? gyroX : 0;
-    const effectiveY = !isTransitioning && gameState === 'playing' ? gyroY : 0;
+    // Pause ball movement during level transitions, death animation, or when not playing
+    const frozen = isTransitioning || isDying || gameState !== 'playing';
+    const effectiveX = !frozen ? gyroX : 0;
+    const effectiveY = !frozen ? gyroY : 0;
     update(effectiveX, effectiveY);
-  }, [gyroX, gyroY, gameState, isTransitioning, update]);
+  }, [gyroX, gyroY, gameState, isTransitioning, isDying, update]);
 
   return (
     <View style={gameScreenStyles.mazeContainer}>
@@ -171,7 +175,7 @@ const GameScreen: React.FC = () => {
   const { ballPositionX, ballPositionY, update, goalReached, gameOver, reset: resetPhysics } = usePhysics(currentMaze, physicsOptions);
 
   const handlePlayAgain = useCallback(() => {
-    dispatch(setGameState('loading'));
+    dispatch(resetGame());
   }, [dispatch]);
 
   const handleGameOver = useCallback(() => {
@@ -295,7 +299,10 @@ const GameScreen: React.FC = () => {
     dispatch(setGameState('playing'));
   }, [dispatch, difficulty, GAME.MAX_DIFFICULTY]);
 
-  const handleExit = () => navigation.goBack();
+  const handleExit = useCallback(() => {
+    dispatch(resetGame());
+    navigation.goBack();
+  }, [dispatch, navigation]);
 
   const showQuitConfirm = () => setIsQuitConfirmVisible(true);
   const hideQuitConfirm = () => setIsQuitConfirmVisible(false);
@@ -413,6 +420,7 @@ const GameScreen: React.FC = () => {
         gyroY={gyroData.y}
         gameState={gameState}
         isTransitioning={showLevelTransition}
+        isDying={showDeathAnimation}
         ballPositionX={ballPositionX}
         ballPositionY={ballPositionY}
         update={update}

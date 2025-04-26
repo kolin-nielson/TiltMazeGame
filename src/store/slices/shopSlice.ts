@@ -8,8 +8,7 @@ export interface Skin {
   name: string;
   cost: number;
   type: 'solid' | 'gradient' | 'pattern';
-  colors: string[]; // For solid (1 color), gradient (2+ colors), pattern (multiple colors)
-  // Optional properties for gradients/patterns
+  colors: string[];
   gradientDirection?: 'linear' | 'radial';
   patternType?: 'stripes' | 'dots';
 }
@@ -47,7 +46,6 @@ const initialState: ShopState = {
   equippedSkin: 'default',
 };
 
-// Thunk to load shop data from AsyncStorage
 export const loadShopData = createAsyncThunk(
   'shop/loadShopData',
   async (_, { rejectWithValue }) => {
@@ -63,7 +61,6 @@ export const loadShopData = createAsyncThunk(
   }
 );
 
-// Thunk to save shop data to AsyncStorage
 export const saveShopData = createAsyncThunk(
   'shop/saveShopData',
   async (_, { getState, rejectWithValue }) => {
@@ -116,17 +113,15 @@ const shopSlice = createSlice({
         }
       })
       .addCase(saveShopData.fulfilled, () => {
-        // Nothing to do here, state is already updated
       });
   },
 });
 
 export const { collectCoin, purchaseSkin, equipSkin } = shopSlice.actions;
 
-// Create middleware-compatible thunk actions for automatic saving
+
 export const collectCoinAndSave = () => (dispatch: any) => {
   dispatch(collectCoin());
-  // defer saving so we don't block the physics/collision loop
   setTimeout(() => {
     dispatch(saveShopData());
   }, 0);

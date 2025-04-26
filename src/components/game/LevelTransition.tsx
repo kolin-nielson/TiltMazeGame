@@ -22,7 +22,6 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
   const scale = useRef(new Animated.Value(0.5)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
 
-  // Calculate bonus coins from level
   const bonusCoins = Math.floor(level * 1.5);
 
   useEffect(() => {

@@ -13,18 +13,15 @@ interface GameHeaderProps {
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
-  // Get coins from the shop state
   const coins = useAppSelector(state => state.shop.coins);
   
   return (
     <Appbar.Header style={[styles.header, { backgroundColor: colors.surface }]}>
-      {/* Score display on the left */}
       <View style={styles.scoreContainer}>
         <Text style={[styles.scoreText, { color: colors.primary }]}>Score: </Text>
         <Text style={[styles.scoreValue, { color: colors.onSurface }]}>{score}</Text>
       </View>
 
-      {/* Coins display and Quit action on the right */}
       <View style={styles.rightActions}>
         <View style={[styles.coinsDisplayContainer, { backgroundColor: colors.surfaceVariant }]}>
           <FontAwesome5 name="coins" size={18} color="#FFD700" solid />

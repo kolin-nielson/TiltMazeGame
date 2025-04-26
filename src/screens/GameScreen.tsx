@@ -1,6 +1,6 @@
 /* eslint-disable import/no-unresolved */
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, BackHandler } from 'react-native';
+import { View, BackHandler, Alert } from 'react-native';
 import { Text, Snackbar, Portal } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
@@ -304,6 +304,10 @@ const GameScreen: React.FC = () => {
     navigation.goBack();
   }, [dispatch, navigation]);
 
+  const handleWatchAd = useCallback(() => {
+    Alert.alert('Extra Life', 'Watch an ad to continue playing from your last position.');
+  }, []);
+
   const showQuitConfirm = () => setIsQuitConfirmVisible(true);
   const hideQuitConfirm = () => setIsQuitConfirmVisible(false);
 
@@ -443,6 +447,7 @@ const GameScreen: React.FC = () => {
             bestScore={settings.highestScore ?? 0}
             onPlayAgain={handlePlayAgain}
             onExit={handleExit}
+            onWatchAd={handleWatchAd}
           />
         </Portal>
       )}

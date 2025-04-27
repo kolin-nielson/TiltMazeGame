@@ -46,6 +46,18 @@ const initialState: ShopState = {
   equippedSkin: 'default',
 };
 
+// Reset all shop data (coins, purchased skins, equipped skin) to initial
+export const resetShopData = createAsyncThunk(
+  'shop/resetShopData',
+  async (_, { rejectWithValue }) => {
+    try {
+      await AsyncStorage.removeItem('shopData');
+    } catch (error) {
+      return rejectWithValue('Failed to reset shop data');
+    }
+  }
+);
+
 export const loadShopData = createAsyncThunk(
   'shop/loadShopData',
   async (_, { rejectWithValue }) => {
@@ -113,12 +125,17 @@ const shopSlice = createSlice({
         }
       })
       .addCase(saveShopData.fulfilled, () => {
+      })
+      .addCase(resetShopData.fulfilled, state => {
+        // revert to initial counts
+        state.coins = initialState.coins;
+        state.purchasedSkins = initialState.purchasedSkins;
+        state.equippedSkin = initialState.equippedSkin;
       });
   },
 });
 
 export const { collectCoin, purchaseSkin, equipSkin } = shopSlice.actions;
-
 
 export const collectCoinAndSave = () => (dispatch: any) => {
   dispatch(collectCoin());

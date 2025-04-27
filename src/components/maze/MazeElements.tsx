@@ -8,7 +8,6 @@ import { MazeBall } from './MazeBall';
 import { MazeLaserGate } from './MazeLaserGate';
 import { mazeRendererStyles } from '@styles/MazeRendererStyles';
 import { ThemeColors, Maze, Wall, LaserGate, Position } from '@types';
-import { useAppSelector, RootState } from '@store';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -99,7 +98,8 @@ const CoinCircle = memo(({ coin, ballRadius }: { coin: { id: string, position: P
 
 export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX, ballPositionY, ballRadius, colors, gameState = 'playing' }) => {
     const mazeBaseSize = 300;
-  const coinsInMaze = useAppSelector((state: RootState) => state.maze.currentMaze?.coins || []);
+  // Use coins from the passed-in maze prop (memoized)
+  const coinsInMaze = useMemo(() => maze.coins ?? [], [maze.coins]);
 
     return (
       <View style={mazeRendererStyles.mazeElementsContainer}>

@@ -6,6 +6,7 @@ import { RootStackParamList } from './types';
 import { View, ActivityIndicator } from 'react-native';
 
 const HomeScreen = React.lazy(() => import('@screens/HomeScreen'));
+const TutorialScreen = React.lazy(() => import('@screens/TutorialScreen'));
 const GameScreen = React.lazy(() => import('@screens/GameScreen'));
 const SettingsScreen = React.lazy(() => import('@screens/SettingsScreen'));
 const ThemeScreen = React.lazy(() => import('@screens/ThemeScreen'));
@@ -62,7 +63,11 @@ const AppNavigator: React.FC = () => {
               headerShown: false,
             }}
           />
-
+          <Stack.Screen
+            name="Tutorial"
+            component={TutorialScreen}
+            options={{ headerShown: false }}
+          />
           <Stack.Screen
             name="Game"
             component={GameScreen}

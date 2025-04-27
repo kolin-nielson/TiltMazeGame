@@ -10,6 +10,7 @@ export interface SettingsState {
   qualityLevel: 'low' | 'medium' | 'high';
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
+  hasSeenTutorial: boolean;
 }
 
 const initialState: SettingsState = {
@@ -20,6 +21,7 @@ const initialState: SettingsState = {
   qualityLevel: 'high',
   status: 'idle',
   error: null,
+  hasSeenTutorial: false,
 };
 
 export const loadSettings = createAsyncThunk(
@@ -62,6 +64,9 @@ const settingsSlice = createSlice({
       return { ...state, ...action.payload };
     },
     resetSettings: () => initialState,
+    setHasSeenTutorial: (state, action: PayloadAction<boolean>) => {
+      state.hasSeenTutorial = action.payload;
+    },
   },
   extraReducers: builder => {
     builder
@@ -82,5 +87,5 @@ const settingsSlice = createSlice({
   },
 });
 
-export const { updateSettings, resetSettings } = settingsSlice.actions;
+export const { updateSettings, resetSettings, setHasSeenTutorial } = settingsSlice.actions;
 export default settingsSlice.reducer;

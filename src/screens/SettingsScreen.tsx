@@ -4,10 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useAppSelector, useAppDispatch, RootState } from '@store';
-import { updateSettings, saveSettings } from '@store/slices/settingsSlice';
+import { updateSettings, saveSettings, resetSettings } from '@store/slices/settingsSlice';
 import { resetMazeProgress } from '@store/slices/mazeSlice';
 import { useNavigation } from '@react-navigation/native';
 import { SettingsScreenNavigationProp } from '@navigation/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resetShopData } from '@store/slices/shopSlice';
 
 type SettingItemProps = {
   label: string;
@@ -109,9 +111,14 @@ const SettingsScreen: React.FC = () => {
           text: 'Reset',
           style: 'destructive',
           onPress: async () => {
+            // Clear persisted data
+            await AsyncStorage.removeItem('settings');
+            await AsyncStorage.removeItem('shopData');
+            await AsyncStorage.removeItem('mazeProgress');
+            // Reset slices to initial state
+            dispatch(resetSettings());
             await dispatch(resetMazeProgress());
-            dispatch(updateSettings({ highestScore: 0 }));
-            dispatch(saveSettings({ highestScore: 0 }));
+            await dispatch(resetShopData());
             Alert.alert('Success', 'Your progress has been reset.');
           },
         },

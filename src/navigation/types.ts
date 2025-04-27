@@ -2,6 +2,7 @@ import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-naviga
 
 export type RootStackParamList = {
   Home: undefined;
+  Tutorial: undefined;
   Game: undefined;
   Settings: undefined;
   Theme: undefined;
@@ -21,3 +22,4 @@ export type SettingsScreenNavigationProp = NativeStackNavigationProp<
 >;
 export type ThemeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Theme'>;
 export type ShopScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Shop'>;
+export type TutorialScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Tutorial'>;

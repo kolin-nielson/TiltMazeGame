@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -14,7 +14,16 @@ const HomeScreen: React.FC = () => {
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const isDark = useAppSelector((state: RootState) => state.theme.isDark);
   const highestScore = useAppSelector((state: RootState) => state.settings.highestScore);
+  const hasSeenTutorial = useAppSelector((state: RootState) => state.settings.hasSeenTutorial);
   const insets = useSafeAreaInsets();
+
+  const handlePlay = useCallback(() => {
+    if (!hasSeenTutorial) {
+      navigation.navigate('Tutorial');
+    } else {
+      navigation.navigate('Game');
+    }
+  }, [hasSeenTutorial, navigation]);
 
   return (
     <SafeAreaView
@@ -66,10 +75,8 @@ const HomeScreen: React.FC = () => {
         <View style={styles.menuContainer}>
           <Button
             mode="contained"
-            icon={({ size, color }) => (
-              <MaterialIcons name="play-arrow" size={size} color={color} />
-            )}
-            onPress={() => navigation.navigate('Game')}
+            icon={({ size, color }) => <MaterialIcons name="play-arrow" size={size} color={color} />}
+            onPress={handlePlay}
             style={styles.menuButton}
             contentStyle={styles.buttonContent}
             labelStyle={styles.buttonLabel}

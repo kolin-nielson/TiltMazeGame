@@ -19,10 +19,10 @@ const LogoText: React.FC<LogoTextProps> = ({ size, fontSize, colors }) => (
     fill={colors?.primary ?? '#6200ee'}
   >
     <TSpan dx={-fontSize * 0.05} dy={-fontSize * 0.05}>
-      TILT
+      MAZER
     </TSpan>
     <TSpan x={size / 2} dy={fontSize * 1.1} fill={colors?.secondary ?? '#03DAC6'}>
-      MAZE
+      BEAM
     </TSpan>
   </SvgText>
 );

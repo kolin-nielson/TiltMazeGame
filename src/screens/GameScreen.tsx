@@ -1,6 +1,6 @@
 /* eslint-disable import/no-unresolved */
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, BackHandler, Alert } from 'react-native';
+import { View, BackHandler, Alert, Platform } from 'react-native';
 import { Text, Snackbar, Portal } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useGyroscope } from '@hooks/useGyroscope';
 import Slider from '@react-native-community/slider';
 import Animated from 'react-native-reanimated';
+import { AdMobRewarded } from 'expo-ads-admob';
 
 import { useAppSelector, useAppDispatch, RootState } from '@store';
 import { updateSettings, saveSettings } from '@store/slices/settingsSlice';
@@ -122,12 +123,12 @@ const GameScreen: React.FC = () => {
   );
   const showLevelTransition = useAppSelector((state: RootState) => state.game.showLevelTransition);
   const showDeathAnimation = useAppSelector((state: RootState) => state.game.showDeathAnimation);
-
-
+  const deathPosition = useAppSelector((state: RootState) => state.game.deathPosition);
 
   const [isQuitConfirmVisible, setIsQuitConfirmVisible] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const recalibrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const deathTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [sliderValue, setSliderValue] = useState<number>(settings.sensitivity);
   const [isSliding, setIsSliding] = useState<boolean>(false);
@@ -176,9 +177,11 @@ const GameScreen: React.FC = () => {
 
   const handlePlayAgain = useCallback(() => {
     dispatch(resetGame());
-  }, [dispatch]);
+    resetPhysics();
+  }, [dispatch, resetPhysics]);
 
   const handleGameOver = useCallback(() => {
+    dispatch(setDeathPosition({ x: ballPositionX.value, y: ballPositionY.value }));
     if (levelsCompleted > (settings.highestScore || 0)) {
       dispatch(updateSettings({ highestScore: levelsCompleted }));
       dispatch(saveSettings({ highestScore: levelsCompleted }));
@@ -194,7 +197,7 @@ const GameScreen: React.FC = () => {
 
     dispatch(setShowDeathAnimation(true));
     resetPhysics();
-  }, [dispatch, levelsCompleted, settings.highestScore, settings.vibrationEnabled, resetPhysics]);
+  }, [dispatch, levelsCompleted, settings.highestScore, settings.vibrationEnabled, resetPhysics, ballPositionX, ballPositionY]);
 
   useEffect(() => {
     if (gameState === 'playing' && !gyroIsCalibrated && gyroscopeAvailable) {
@@ -278,7 +281,12 @@ const GameScreen: React.FC = () => {
   }, [gameState]);
 
   const handleDeathAnimationComplete = useCallback(() => {
-    setTimeout(() => {
+    // Clear any existing timeout before scheduling a new one
+    if (deathTimeoutRef.current) {
+      clearTimeout(deathTimeoutRef.current);
+    }
+    // Schedule end-of-death-animation actions
+    deathTimeoutRef.current = setTimeout(() => {
       dispatch(setShowDeathAnimation(false));
       dispatch(setGameState('game_over'));
 
@@ -300,12 +308,29 @@ const GameScreen: React.FC = () => {
   }, [dispatch, difficulty, GAME.MAX_DIFFICULTY]);
 
   const handleExit = useCallback(() => {
-    dispatch(resetGame());
-    navigation.goBack();
-  }, [dispatch, navigation]);
+    // Cancel any pending death animation timeout when exiting
+    if (deathTimeoutRef.current) {
+      clearTimeout(deathTimeoutRef.current);
+    }
 
-  const handleWatchAd = useCallback(() => {
-    Alert.alert('Extra Life', 'Watch an ad to continue playing from your last position.');
+    // Reset all game state
+    dispatch(resetGame());
+    dispatch(setGameOver(false));
+    dispatch(setShowDeathAnimation(false));
+
+    // Reset physics before navigating away
+    resetPhysics();
+
+    navigation.goBack();
+  }, [dispatch, navigation, resetPhysics]);
+
+  const handleWatchAd = useCallback(async () => {
+    try {
+      await AdMobRewarded.showAdAsync();
+    } catch (error) {
+      console.error('Ad show error', error);
+      Alert.alert('Ad Error', 'Failed to load ad, please try again later.');
+    }
   }, []);
 
   const showQuitConfirm = () => setIsQuitConfirmVisible(true);
@@ -313,7 +338,13 @@ const GameScreen: React.FC = () => {
 
   const handleQuitConfirm = () => {
     hideQuitConfirm();
-    handleGameOver();
+
+    // Reset all game state before navigating away
+    dispatch(resetGame());
+    dispatch(setGameOver(false));
+    dispatch(setShowDeathAnimation(false));
+    resetPhysics();
+
     navigation.goBack();
   };
 
@@ -346,6 +377,9 @@ const GameScreen: React.FC = () => {
       if (recalibrationTimeoutRef.current) {
         clearTimeout(recalibrationTimeoutRef.current);
       }
+      if (deathTimeoutRef.current) {
+        clearTimeout(deathTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -355,11 +389,64 @@ const GameScreen: React.FC = () => {
     if (gameState === 'loading') {
       dispatch(setDifficulty(1));
       dispatch(setLevelsCompleted(0));
+      dispatch(setGameOver(false));
+      dispatch(setShowDeathAnimation(false));
       const initialMaze = generateMaze(1);
       dispatch(setCurrentMaze(initialMaze));
       dispatch(setGameState('playing'));
+
+      // Make sure physics is reset when starting a new game
+      if (resetPhysics) {
+        resetPhysics();
+      }
     }
-  }, [gameState, dispatch]);
+  }, [gameState, dispatch, resetPhysics]);
+
+  // Set up rewarded ad unit IDs and preload
+  useEffect(() => {
+    const adUnitID = Platform.OS === 'ios'
+      ? 'ca-app-pub-4299404428269280/4775290270'
+      : 'ca-app-pub-4299404428269280/4205278782';
+    AdMobRewarded.setAdUnitID(adUnitID);
+    AdMobRewarded.requestAdAsync({ servePersonalizedAds: true });
+    return () => {
+      AdMobRewarded.removeAllListeners();
+    };
+  }, []);
+
+  // Rewarded ad event listeners
+  useEffect(() => {
+    const rewardListener = AdMobRewarded.addEventListener(
+      'rewardedVideoDidRewardUser',
+      () => {
+        // User watched full ad: resume exactly where they died
+        dispatch(setShowDeathAnimation(false));
+        dispatch(setGameState('playing'));
+        // clear gameOver flag so we don't re-trigger death
+        dispatch(setGameOver(false));
+        // reset physics then position ball at the death location
+        resetPhysics();
+        ballPositionX.value = deathPosition.x;
+        ballPositionY.value = deathPosition.y;
+      }
+    );
+    const closeListener = AdMobRewarded.addEventListener(
+      'rewardedVideoDidClose',
+      () => {
+        // Preload next rewarded ad
+        AdMobRewarded.requestAdAsync({ servePersonalizedAds: true });
+      }
+    );
+    const errorListener = AdMobRewarded.addEventListener(
+      'rewardedVideoDidFailToLoad',
+      (error) => console.error('Rewarded ad failed to load', error)
+    );
+    return () => {
+      rewardListener.remove();
+      closeListener.remove();
+      errorListener.remove();
+    };
+  }, [dispatch, resetPhysics, ballPositionX, ballPositionY, deathPosition]);
 
   if (gameState === 'loading' || !currentMaze) {
     return (

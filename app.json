@@ -1,34 +1,36 @@
 {
   "expo": {
-    "name": "Tilt Maze",
-    "slug": "tilt-maze",
+    "name": "The Tilt Maze",
+    "slug": "the-tilt-maze",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "jsEngine": "hermes",
     "runtimeVersion": {
       "policy": "sdkVersion"
     },
     "updates": {
-      "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/your-project-id"
+      "fallbackToCacheTimeout": 0
     },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourusername.tiltmaze",
+      "bundleIdentifier": "com.kolinnielson.tiltmaze",
       "buildNumber": "1",
       "infoPlist": {
         "NSMotionUsageDescription": "This app uses motion sensors to control the game through device tilting.",
         "UIRequiresFullScreen": true,
-        "UIStatusBarHidden": true
+        "UIStatusBarHidden": true,
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -36,9 +38,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yourusername.tiltmaze",
+      "package": "com.kolinnielson.tiltmaze",
       "versionCode": 1,
-      "permissions": ["android.permission.VIBRATE"],
+      "permissions": [
+        "android.permission.VIBRATE"
+      ],
       "softwareKeyboardLayoutMode": "pan",
       "allowBackup": true
     },
@@ -46,6 +50,19 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": { "useFrameworks": "static" }
+        }
+      ],
+      [
+        "expo-ads-admob",
+        {
+          "iosAppId": "ca-app-pub-4299404428269280~3566150382",
+          "androidAppId": "ca-app-pub-4299404428269280/4205278782"
+        }
+      ],
       [
         "expo-sensors",
         {
@@ -55,8 +72,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "9dd5d0d0-2b31-4a44-9710-feec4b2a217f"
       }
-    }
+    },
+    "owner": "klnnielson"
   }
 }

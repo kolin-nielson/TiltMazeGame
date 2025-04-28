@@ -1,4 +1,4 @@
-export const APP_NAME = 'Tilt Maze';
+export const APP_NAME = 'The Tilt Maze';
 export const APP_VERSION = '1.0.0';
 
 export const PHYSICS = {

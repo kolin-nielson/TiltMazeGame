@@ -238,7 +238,7 @@ const SettingsScreen: React.FC = () => {
 
       <View style={styles.footer}>
         <Text style={[styles.footerText, { color: colors?.onSurfaceVariant ?? '#444444' }]}>
-          Tilt Maze v1.0.0
+          The Tilt Maze v1.0.0
         </Text>
       </View>
     </View>

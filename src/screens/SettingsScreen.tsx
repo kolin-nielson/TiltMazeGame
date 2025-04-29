@@ -65,11 +65,6 @@ const SettingsScreen: React.FC = () => {
   const settings = useAppSelector((state: RootState) => state.settings);
   const insets = useSafeAreaInsets();
 
-  const handleSoundToggle = (value: boolean) => {
-    dispatch(updateSettings({ soundEnabled: value }));
-    dispatch(saveSettings({ soundEnabled: value }));
-  };
-
   const handleVibrationToggle = (value: boolean) => {
     dispatch(updateSettings({ vibrationEnabled: value }));
     dispatch(saveSettings({ vibrationEnabled: value }));
@@ -167,23 +162,6 @@ const SettingsScreen: React.FC = () => {
               </Text>
             </View>
           </View>
-        </SettingItem>
-
-        <SettingItem label="Sound" iconName="volume-up">
-          <Switch
-            trackColor={{
-              false: colors?.surfaceVariant ?? '#E7E0EB',
-              true: (colors?.primary ?? '#6200ee') + '80',
-            }}
-            thumbColor={
-              settings.soundEnabled
-                ? colors?.primary ?? '#6200ee'
-                : colors?.onSurfaceVariant ?? '#CAC4CF'
-            }
-            ios_backgroundColor={colors?.surfaceVariant ?? '#E7E0EB'}
-            onValueChange={handleSoundToggle}
-            value={settings.soundEnabled}
-          />
         </SettingItem>
 
         <SettingItem label="Vibration" iconName="vibration">

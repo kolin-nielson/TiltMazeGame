@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useGyroscope } from '@hooks/useGyroscope';
 import Slider from '@react-native-community/slider';
 import Animated from 'react-native-reanimated';
-import mobileAds, { RewardedAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
+import mobileAds, { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 import { useAppSelector, useAppDispatch, RootState } from '@store';
 import { updateSettings, saveSettings } from '@store/slices/settingsSlice';
@@ -339,14 +339,14 @@ const GameScreen: React.FC = () => {
   // Initialize and manage rewarded ad lifecycle
   useEffect(() => {
     mobileAds().initialize();
-    const loadListener = rewarded.addAdEventListener(AdEventType.LOADED, () => {
+    const loadListener = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
       setLoadedRewarded(true);
     });
-    const closeListener = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
+    const closeListener = rewarded.addAdEventListener(RewardedAdEventType.CLOSED, () => {
       setLoadedRewarded(false);
       rewarded.load();
     });
-    const earnedListener = rewarded.addAdEventListener(AdEventType.EARNED_REWARD, () => {
+    const earnedListener = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
       dispatch(setShowDeathAnimation(false));
       dispatch(setGameState('playing'));
       dispatch(setGameOver(false));

@@ -13,6 +13,7 @@ interface GameOverOverlayProps {
   onPlayAgain: () => void;
   onExit: () => void;
   onWatchAd: () => void;
+  onContinuePlaying: () => void
 }
 
 interface ScoreRowProps {
@@ -83,8 +84,19 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
   bestScore,
   onPlayAgain,
   onExit,
-  onWatchAd,
+  onWatchAd, 
+  onContinuePlaying
 }) => {
+  const [hasWatchedAd, setHasWatchedAd] = React.useState(false)
+
+  const handleWatchAd = () => {
+    if (!hasWatchedAd) {
+        onWatchAd();
+        setHasWatchedAd(true); // Update state after watching the ad
+    } else {
+        onContinuePlaying();
+    }
+  };
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const isNewHighScore = score > bestScore;
 
@@ -122,7 +134,7 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                 <Button
                   mode="contained"
                   icon="movie-play-outline"
-                  onPress={onWatchAd}
+                  onPress={handleWatchAd}
                   buttonColor={colors.primary}
                   textColor={colors.onPrimary}
                   contentStyle={styles.buttonContent}

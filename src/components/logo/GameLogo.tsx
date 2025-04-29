@@ -20,7 +20,7 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
   const rectOriginX = (baseSize - rectSize) / 2;
   const rectOriginY = (baseSize - rectSize) / 2;
 
-  const totalHeight = showText ? textYOffset + baseSize * 0.18 : baseSize;
+  const totalHeight = showText ? baseSize + baseSize * 0.18 : baseSize;
 
   return (
     <View style={styles.container}>

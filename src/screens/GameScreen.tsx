@@ -1,5 +1,5 @@
 /* eslint-disable import/no-unresolved */
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { View, BackHandler, Alert, Platform } from 'react-native';
 import { Text, Snackbar, Portal } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useGyroscope } from '@hooks/useGyroscope';
 import Slider from '@react-native-community/slider';
 import Animated from 'react-native-reanimated';
-import { AdMobRewarded } from 'expo-ads-admob';
+import mobileAds, { RewardedAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 import { useAppSelector, useAppDispatch, RootState } from '@store';
 import { updateSettings, saveSettings } from '@store/slices/settingsSlice';
@@ -324,14 +324,51 @@ const GameScreen: React.FC = () => {
     navigation.goBack();
   }, [dispatch, navigation, resetPhysics]);
 
-  const handleWatchAd = useCallback(async () => {
-    try {
-      await AdMobRewarded.showAdAsync();
-    } catch (error) {
-      console.error('Ad show error', error);
-      Alert.alert('Ad Error', 'Failed to load ad, please try again later.');
+  // set up production/test ad unit
+  const adUnitId = __DEV__
+    ? TestIds.REWARDED
+    : Platform.OS === 'ios'
+      ? 'ca-app-pub-4299404428269280/4775290270'
+      : 'ca-app-pub-4299404428269280/4205278782';
+  const rewarded = useMemo(
+    () => RewardedAd.createForAdRequest(adUnitId, { requestNonPersonalizedAdsOnly: true }),
+    [adUnitId]
+  );
+  const [loadedRewarded, setLoadedRewarded] = useState<boolean>(false);
+
+  // Initialize and manage rewarded ad lifecycle
+  useEffect(() => {
+    mobileAds().initialize();
+    const loadListener = rewarded.addAdEventListener(AdEventType.LOADED, () => {
+      setLoadedRewarded(true);
+    });
+    const closeListener = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
+      setLoadedRewarded(false);
+      rewarded.load();
+    });
+    const earnedListener = rewarded.addAdEventListener(AdEventType.EARNED_REWARD, () => {
+      dispatch(setShowDeathAnimation(false));
+      dispatch(setGameState('playing'));
+      dispatch(setGameOver(false));
+      resetPhysics();
+      ballPositionX.value = deathPosition.x;
+      ballPositionY.value = deathPosition.y;
+    });
+    rewarded.load();
+    return () => {
+      loadListener();
+      closeListener();
+      earnedListener();
+    };
+  }, [rewarded, dispatch, resetPhysics, ballPositionX, ballPositionY, deathPosition]);
+
+  const handleWatchAd = useCallback(() => {
+    if (loadedRewarded) {
+      rewarded.show();
+    } else {
+      Alert.alert('Ad Not Ready', 'The ad is not loaded yet. Please try again in a moment.');
     }
-  }, []);
+  }, [loadedRewarded, rewarded]);
 
   const showQuitConfirm = () => setIsQuitConfirmVisible(true);
   const hideQuitConfirm = () => setIsQuitConfirmVisible(false);
@@ -401,52 +438,6 @@ const GameScreen: React.FC = () => {
       }
     }
   }, [gameState, dispatch, resetPhysics]);
-
-  // Set up rewarded ad unit IDs and preload
-  useEffect(() => {
-    const adUnitID = Platform.OS === 'ios'
-      ? 'ca-app-pub-4299404428269280/4775290270'
-      : 'ca-app-pub-4299404428269280/4205278782';
-    AdMobRewarded.setAdUnitID(adUnitID);
-    AdMobRewarded.requestAdAsync({ servePersonalizedAds: true });
-    return () => {
-      AdMobRewarded.removeAllListeners();
-    };
-  }, []);
-
-  // Rewarded ad event listeners
-  useEffect(() => {
-    const rewardListener = AdMobRewarded.addEventListener(
-      'rewardedVideoDidRewardUser',
-      () => {
-        // User watched full ad: resume exactly where they died
-        dispatch(setShowDeathAnimation(false));
-        dispatch(setGameState('playing'));
-        // clear gameOver flag so we don't re-trigger death
-        dispatch(setGameOver(false));
-        // reset physics then position ball at the death location
-        resetPhysics();
-        ballPositionX.value = deathPosition.x;
-        ballPositionY.value = deathPosition.y;
-      }
-    );
-    const closeListener = AdMobRewarded.addEventListener(
-      'rewardedVideoDidClose',
-      () => {
-        // Preload next rewarded ad
-        AdMobRewarded.requestAdAsync({ servePersonalizedAds: true });
-      }
-    );
-    const errorListener = AdMobRewarded.addEventListener(
-      'rewardedVideoDidFailToLoad',
-      (error) => console.error('Rewarded ad failed to load', error)
-    );
-    return () => {
-      rewardListener.remove();
-      closeListener.remove();
-      errorListener.remove();
-    };
-  }, [dispatch, resetPhysics, ballPositionX, ballPositionY, deathPosition]);
 
   if (gameState === 'loading' || !currentMaze) {
     return (

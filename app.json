@@ -52,15 +52,13 @@
     "plugins": [
       [
         "expo-build-properties",
-        {
-          "ios": { "useFrameworks": "static" }
-        }
+        { "ios": { "useFrameworks": "static" } }
       ],
       [
-        "expo-ads-admob",
+        "react-native-google-mobile-ads",
         {
-          "iosAppId": "ca-app-pub-4299404428269280~3566150382",
-          "androidAppId": "ca-app-pub-4299404428269280/4205278782"
+          "ios_app_id": "ca-app-pub-4299404428269280~3566150382",
+          "android_app_id": "ca-app-pub-4299404428269280/4205278782"
         }
       ],
       [

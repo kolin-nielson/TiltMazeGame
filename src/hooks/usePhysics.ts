@@ -8,6 +8,7 @@ import { Maze, LaserGate, Wall, Coin } from '../types';
 import { useAppDispatch } from '@store';
 import { collectCoinAndSave } from '@store/slices/shopSlice';
 import { removeCoin as mazeRemoveCoin } from '@store/slices/mazeSlice';
+import { GAME } from '@config/constants';
 
 const lineIntersectsLine = (
   x1: number,
@@ -320,8 +321,9 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     const currentEngine = engine;
 
     Matter.Events.on(currentEngine, 'collisionStart', event => {
-      const pairs = event.pairs;
+      if (gameOverTriggeredRef.current) return;
 
+      const pairs = event.pairs;
       for (let i = 0; i < pairs.length; i++) {
         const pair = pairs[i];
         const bodyA = pair.bodyA;
@@ -361,13 +363,24 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         }
 
         if (
-          (bodyA.label === 'ball' && bodyB.label?.startsWith('coin-')) ||
-          (bodyA.label?.startsWith('coin-') && bodyB.label === 'ball')
+          (bodyA.label === 'ball' && (bodyB.label?.startsWith('coin-') || bodyB.label?.includes('-bonus-'))) ||
+          ((bodyA.label?.startsWith('coin-') || bodyA.label?.includes('-bonus-')) && bodyB.label === 'ball')
         ) {
-          const coinBody = bodyA.label?.startsWith('coin-') ? bodyA : bodyB;
-          const coinId = coinBody.label.replace(/^coin-/, '');
-          dispatch(collectCoinAndSave());
-          dispatch(mazeRemoveCoin(coinId));
+          const coinBody = bodyA.label === 'ball' ? bodyB : bodyA;
+          const label = coinBody.label;
+          let amount = GAME.POINTS_PER_COIN;
+          let removeId = '';
+          const bonusMatch = label.match(/-bonus-(\d+)-coin$/);
+          if (bonusMatch) {
+            amount = parseInt(bonusMatch[1], 10);
+            removeId = label.replace(/^coin-/, '');
+          } else {
+            removeId = label.replace(/^coin-/, '');
+          }
+          for (let j = 0; j < amount; j++) {
+            dispatch(collectCoinAndSave());
+          }
+          dispatch(mazeRemoveCoin(removeId));
           if (vibrationEnabled) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }

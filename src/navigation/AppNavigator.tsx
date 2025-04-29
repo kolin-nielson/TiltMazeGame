@@ -70,7 +70,7 @@ const AppNavigator: React.FC = () => {
           name="Game"
           component={GameScreen}
           options={{
-            title: 'Mazer Beam',
+            title: 'The Tilt Maze',
             gestureEnabled: false,
             headerBackVisible: false,
           }}

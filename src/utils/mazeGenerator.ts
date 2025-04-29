@@ -391,6 +391,12 @@ export const generateMaze = (difficulty: number): Maze => {
   const coinPositions = flatCells.slice(0, maxCoins);
   const coins: Coin[] = coinPositions.map((pos, idx) => ({ id: `${id}-coin-${idx}`, position: pos }));
 
+  // Add a single bonus coin worth $5 or $10 to engage users
+  const bonusAmount = Math.random() < 0.5 ? 5 : 10;
+  const bonusPos = flatCells[maxCoins];
+  const bonusCoinId = `${id}-bonus-${bonusAmount}-coin`;
+  coins.push({ id: bonusCoinId, position: bonusPos });
+
   return {
     id,
     name,

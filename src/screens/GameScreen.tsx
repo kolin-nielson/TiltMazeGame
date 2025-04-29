@@ -4,7 +4,7 @@ import { View, BackHandler, Alert, Platform } from 'react-native';
 import { Text, Snackbar, Portal } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
-import { GameScreenNavigationProp } from '@navigation/types';
+import { GameScreenNavigationProp, ShopScreenNavigationProp } from '@navigation/types';
 import * as Haptics from 'expo-haptics';
 import { useGyroscope } from '@hooks/useGyroscope';
 import Slider from '@react-native-community/slider';
@@ -324,12 +324,8 @@ const GameScreen: React.FC = () => {
     navigation.goBack();
   }, [dispatch, navigation, resetPhysics]);
 
-  // set up production/test ad unit
-  const adUnitId = __DEV__
-    ? TestIds.REWARDED
-    : Platform.OS === 'ios'
-      ? 'ca-app-pub-4299404428269280/4775290270'
-      : 'ca-app-pub-4299404428269280/4205278782';
+  // Use test ad unit ID unconditionally for local testing
+  const adUnitId = TestIds.REWARDED;
   const rewarded = useMemo(
     () => RewardedAd.createForAdRequest(adUnitId, { requestNonPersonalizedAdsOnly: true }),
     [adUnitId]
@@ -362,19 +358,17 @@ const GameScreen: React.FC = () => {
     };
   }, [rewarded, dispatch, resetPhysics, ballPositionX, ballPositionY, deathPosition]);
 
-  // When the user hits game over, reload the rewarded ad so it can finish loading before they tap
+  // Preload the rewarded ad when death animation starts
   useEffect(() => {
-    if (gameState === 'game_over') {
+    if (showDeathAnimation) {
       setLoadedRewarded(false);
       rewarded.load();
     }
-  }, [gameState, rewarded]);
+  }, [showDeathAnimation, rewarded]);
 
   const handleWatchAd = useCallback(() => {
     if (loadedRewarded) {
       rewarded.show();
-    } else {
-      Alert.alert('Ad Not Ready', 'The ad is not loaded yet. Please try again in a moment.');
     }
   }, [loadedRewarded, rewarded]);
 
@@ -462,6 +456,7 @@ const GameScreen: React.FC = () => {
       <GameHeader
         score={levelsCompleted}
         onQuit={showQuitConfirm}
+        onShop={() => navigation.navigate('Shop')}
         colors={colors}
       />
 
@@ -534,6 +529,7 @@ const GameScreen: React.FC = () => {
             onPlayAgain={handlePlayAgain}
             onExit={handleExit}
             onWatchAd={handleWatchAd}
+            isAdReady={loadedRewarded}
           />
         </Portal>
       )}

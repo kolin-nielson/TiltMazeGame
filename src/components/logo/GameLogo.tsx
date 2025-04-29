@@ -72,7 +72,7 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
             textAnchor="middle"
             fill={colors?.primary ?? '#6200EE'}
           >
-            MAZER BEAM
+            THE TILT MAZE
           </SvgText>
         </Svg>
       )}

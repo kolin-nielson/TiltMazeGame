@@ -1,6 +1,6 @@
 import React from 'react';
 import { Appbar, IconButton, Text } from 'react-native-paper';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { ThemeColors } from '@types';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { useAppSelector } from '@store';
@@ -9,10 +9,11 @@ import { FontAwesome5 } from '@expo/vector-icons';
 interface GameHeaderProps {
   score: number;
   onQuit: () => void;
+  onShop: () => void;
   colors: ThemeColors;
 }
 
-const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
+const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, onShop, colors }) => {
   const coins = useAppSelector(state => state.shop.coins);
   
   return (
@@ -23,10 +24,12 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
       </View>
 
       <View style={styles.rightActions}>
-        <View style={[styles.coinsDisplayContainer, { backgroundColor: colors.surfaceVariant }]}>
-          <FontAwesome5 name="coins" size={18} color="#FFD700" solid />
-          <Text style={[styles.coinsValue, { color: colors.primary }]}>{coins}</Text>
-        </View>
+        <Pressable onPress={onShop}>
+          <View style={[styles.coinsDisplayContainer, { backgroundColor: colors.surfaceVariant }]}>
+            <FontAwesome5 name="coins" size={18} color="#FFD700" solid />
+            <Text style={[styles.coinsValue, { color: colors.primary }]}>{coins}</Text>
+          </View>
+        </Pressable>
         <Appbar.Action icon="logout" color={colors.primary} size={24} onPress={onQuit} />
       </View>
     </Appbar.Header>

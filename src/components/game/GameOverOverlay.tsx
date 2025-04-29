@@ -13,6 +13,7 @@ interface GameOverOverlayProps {
   onPlayAgain: () => void;
   onExit: () => void;
   onWatchAd: () => void;
+  isAdReady: boolean;
 }
 
 interface ScoreRowProps {
@@ -84,6 +85,7 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
   onPlayAgain,
   onExit,
   onWatchAd,
+  isAdReady,
 }) => {
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const isNewHighScore = score > bestScore;
@@ -123,13 +125,14 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   mode="contained"
                   icon="movie-play-outline"
                   onPress={onWatchAd}
+                  disabled={!isAdReady}
                   buttonColor={colors.primary}
                   textColor={colors.onPrimary}
                   contentStyle={styles.buttonContent}
                   labelStyle={[styles.buttonLabel, { fontSize: 18 }]}
                   style={styles.watchAdButton}
                 >
-                  Watch Ad for Extra Life
+                  {isAdReady ? 'Continue' : 'Loading...'}
                 </Button>
               </View>
 

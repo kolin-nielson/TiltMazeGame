@@ -304,6 +304,10 @@ const GameScreen: React.FC = () => {
     navigation.goBack();
   }, [dispatch, navigation]);
 
+  const onContinuePlaying = useCallback(() => {
+    dispatch(resetGame());
+  }, [dispatch]);
+
   const handleWatchAd = useCallback(() => {
     Alert.alert('Extra Life', 'Watch an ad to continue playing from your last position.');
   }, []);
@@ -448,6 +452,7 @@ const GameScreen: React.FC = () => {
             onPlayAgain={handlePlayAgain}
             onExit={handleExit}
             onWatchAd={handleWatchAd}
+            onContinuePlaying={onContinuePlaying}
           />
         </Portal>
       )}

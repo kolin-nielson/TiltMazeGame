@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useGyroscope } from '@hooks/useGyroscope';
 import Slider from '@react-native-community/slider';
 import Animated from 'react-native-reanimated';
-import mobileAds, { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
+import mobileAds, { RewardedAd, RewardedAdEventType, AdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 import { useAppSelector, useAppDispatch, RootState } from '@store';
 import { updateSettings, saveSettings } from '@store/slices/settingsSlice';
@@ -342,7 +342,7 @@ const GameScreen: React.FC = () => {
     const loadListener = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
       setLoadedRewarded(true);
     });
-    const closeListener = rewarded.addAdEventListener(RewardedAdEventType.CLOSED, () => {
+    const closeListener = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
       setLoadedRewarded(false);
       rewarded.load();
     });
@@ -361,6 +361,14 @@ const GameScreen: React.FC = () => {
       earnedListener();
     };
   }, [rewarded, dispatch, resetPhysics, ballPositionX, ballPositionY, deathPosition]);
+
+  // When the user hits game over, reload the rewarded ad so it can finish loading before they tap
+  useEffect(() => {
+    if (gameState === 'game_over') {
+      setLoadedRewarded(false);
+      rewarded.load();
+    }
+  }, [gameState, rewarded]);
 
   const handleWatchAd = useCallback(() => {
     if (loadedRewarded) {

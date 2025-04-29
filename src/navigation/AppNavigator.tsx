@@ -1,16 +1,15 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useAppSelector, RootState } from '@store';
 import { RootStackParamList } from './types';
 import { View, ActivityIndicator } from 'react-native';
-
-const HomeScreen = React.lazy(() => import('@screens/HomeScreen'));
-const TutorialScreen = React.lazy(() => import('@screens/TutorialScreen'));
-const GameScreen = React.lazy(() => import('@screens/GameScreen'));
-const SettingsScreen = React.lazy(() => import('@screens/SettingsScreen'));
-const ThemeScreen = React.lazy(() => import('@screens/ThemeScreen'));
-const ShopScreen = React.lazy(() => import('@screens/ShopScreen'));
+import HomeScreen from '@screens/HomeScreen';
+import TutorialScreen from '@screens/TutorialScreen';
+import GameScreen from '@screens/GameScreen';
+import SettingsScreen from '@screens/SettingsScreen';
+import ThemeScreen from '@screens/ThemeScreen';
+import ShopScreen from '@screens/ShopScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -37,69 +36,67 @@ const AppNavigator: React.FC = () => {
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <Suspense fallback={<ScreenLoader />}>
-        <Stack.Navigator
-          initialRouteName="Home"
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: colors?.primary ?? '#6200ee',
-            },
-            headerTintColor: colors?.onPrimary ?? '#ffffff',
-            headerTitleStyle: {
-              fontWeight: '500',
-              fontSize: 20,
-            },
-            headerShadowVisible: false,
-            contentStyle: {
-              backgroundColor: colors?.background ?? '#ffffff',
-            },
-            animation: 'slide_from_right',
+      <Stack.Navigator
+        initialRouteName="Home"
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: colors?.primary ?? '#6200ee',
+          },
+          headerTintColor: colors?.onPrimary ?? '#ffffff',
+          headerTitleStyle: {
+            fontWeight: '500',
+            fontSize: 20,
+          },
+          headerShadowVisible: false,
+          contentStyle: {
+            backgroundColor: colors?.background ?? '#ffffff',
+          },
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            headerShown: false,
           }}
-        >
-          <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="Tutorial"
-            component={TutorialScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Game"
-            component={GameScreen}
-            options={{
-              title: 'Mazer Beam',
-              gestureEnabled: false,
-              headerBackVisible: false,
-            }}
-          />
-          <Stack.Screen
-            name="Settings"
-            component={SettingsScreen}
-            options={{
-              title: 'Settings',
-            }}
-          />
-          <Stack.Screen
-            name="Theme"
-            component={ThemeScreen}
-            options={{
-              title: 'Theme Settings',
-            }}
-          />
-          <Stack.Screen
-            name="Shop"
-            component={ShopScreen}
-            options={{
-              title: 'Shop',
-            }}
-          />
-        </Stack.Navigator>
-      </Suspense>
+        />
+        <Stack.Screen
+          name="Tutorial"
+          component={TutorialScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Game"
+          component={GameScreen}
+          options={{
+            title: 'Mazer Beam',
+            gestureEnabled: false,
+            headerBackVisible: false,
+          }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            title: 'Settings',
+          }}
+        />
+        <Stack.Screen
+          name="Theme"
+          component={ThemeScreen}
+          options={{
+            title: 'Theme Settings',
+          }}
+        />
+        <Stack.Screen
+          name="Shop"
+          component={ShopScreen}
+          options={{
+            title: 'Shop',
+          }}
+        />
+      </Stack.Navigator>
     </>
   );
 };

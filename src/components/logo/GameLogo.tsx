@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 import Svg, { Rect, Path, Circle, Text as SvgText, G } from 'react-native-svg';
 import { useAppSelector, RootState } from '@store';
 
@@ -20,7 +20,6 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
   const rectOriginX = (baseSize - rectSize) / 2;
   const rectOriginY = (baseSize - rectSize) / 2;
 
-  const textYOffset = baseSize * 1.1;
   const totalHeight = showText ? textYOffset + baseSize * 0.18 : baseSize;
 
   return (
@@ -57,24 +56,25 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
       </Svg>
 
       {showText && (
-        <Svg
-          width={size}
-          height={size * 0.3}
-          viewBox={`0 0 ${baseSize} ${baseSize * 0.3}`}
-          style={{ marginTop: size * 0.05 }}
-        >
-          <SvgText
-            x={baseSize / 2}
-            y={baseSize * 0.15}
-            fontSize={baseSize * 0.15}
-            fontWeight="600"
-            fontFamily="System"
-            textAnchor="middle"
-            fill={colors?.primary ?? '#6200EE'}
+        <View style={[styles.textContainer, { marginTop: size * 0.02 }]}>
+          <Svg
+            width={size}
+            height={size * 0.4}
+            viewBox={`0 0 ${baseSize} ${baseSize * 0.4}`}
           >
-            TILT MAZE
-          </SvgText>
-        </Svg>
+            <SvgText
+              x={baseSize / 2}
+              y={baseSize * 0.2}
+              fontSize={baseSize * 0.15}
+              fontWeight="600"
+              fontFamily="System"
+              textAnchor="middle"
+              fill={colors?.primary ?? '#6200EE'}
+            >
+              TILT MAZE
+            </SvgText>
+          </Svg>
+        </View>
       )}
     </View>
   );
@@ -85,6 +85,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  textContainer: {
+    paddingHorizontal: 10, // Add padding to contain the text
+    alignItems: "center",
+  } as ViewStyle,
 });
 
 export default GameLogo;

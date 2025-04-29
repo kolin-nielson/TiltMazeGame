@@ -3,6 +3,10 @@ import { GAME } from '@config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
+export type GradientAnimationType = 'cycle' | 'pulse' | 'flow';
+
+
+
 export interface Skin {
   id: string;
   name: string;
@@ -11,6 +15,9 @@ export interface Skin {
   colors: string[];
   gradientDirection?: 'linear' | 'radial';
   patternType?: 'stripes' | 'dots';
+  animated?: boolean;
+  gradientAnimationType?: GradientAnimationType;
+  gradientSpeed?: number;
 }
 
 export interface ShopState {
@@ -22,19 +29,19 @@ export interface ShopState {
 
 const initialSkins: Skin[] = [
   { id: 'default', name: 'Steel', cost: 0, type: 'solid', colors: ['#B0BEC5'] },
-  { id: 'ocean-gradient', name: 'Ocean Wave', cost: 150, type: 'gradient', colors: ['#00C9FF', '#92FE9D'], gradientDirection: 'linear' },
-  { id: 'sunset-gradient', name: 'Sunset', cost: 200, type: 'gradient', colors: ['#FF7E5F', '#FEB47B'], gradientDirection: 'linear' },
-  { id: 'purple-haze', name: 'Purple Haze', cost: 250, type: 'gradient', colors: ['#7C4DFF', '#FF6EC7'], gradientDirection: 'radial' },
+  { id: 'ocean-gradient', name: 'Ocean Wave', cost: 150, type: 'gradient', colors: ['#00C9FF', '#92FE9D'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
+  { id: 'sunset-gradient', name: 'Sunset', cost: 200, type: 'gradient', colors: ['#FF7E5F', '#FEB47B'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
+  { id: 'purple-haze', name: 'Purple Haze', cost: 250, type: 'gradient', colors: ['#7C4DFF', '#FF6EC7'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
   { id: 'cyber-dots', name: 'Cyber Dots', cost: 350, type: 'pattern', colors: ['#0A0A0A', '#00E5FF'], patternType: 'dots' },
   { id: 'zebra', name: 'Zebra', cost: 400, type: 'pattern', colors: ['#FFFFFF', '#333333'], patternType: 'stripes' },
-  { id: 'gold', name: 'Pure Gold', cost: 600, type: 'gradient', colors: ['#FFD700', '#FFA500'], gradientDirection: 'radial' },
-  { id: 'lava', name: 'Lava Flow', cost: 750, type: 'gradient', colors: ['#FF3D00', '#FF7E5F', '#FEB47B'], gradientDirection: 'linear' },
-  { id: 'rainbow', name: 'Rainbow Swirl', cost: 1000, type: 'gradient', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], gradientDirection: 'radial' },
+  { id: 'gold', name: 'Pure Gold', cost: 600, type: 'gradient', colors: ['#FFD700', '#FFA500'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
+  { id: 'lava', name: 'Lava Flow', cost: 750, type: 'gradient', colors: ['#FF3D00', '#FF7E5F', '#FEB47B'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
+  { id: 'rainbow', name: 'Rainbow Swirl', cost: 1000, type: 'gradient', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
 
   // Custom fun skins
-  { id: 'galaxy-swirl', name: 'Galaxy Swirl', cost: 1200, type: 'gradient', colors: ['#0D1B2A', '#1B263B', '#415A77', '#778DA9', '#E0E1DD'], gradientDirection: 'radial' },
-  { id: 'neon-glow', name: 'Neon Glow', cost: 1800, type: 'gradient', colors: ['#FF00FF', '#00FFFF'], gradientDirection: 'linear' },
-  { id: 'prism-spectrum', name: 'Prism Spectrum', cost: 2000, type: 'gradient', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF'], gradientDirection: 'linear' },
+  { id: 'galaxy-swirl', name: 'Galaxy Swirl', cost: 1200, type: 'gradient', colors: ['#0D1B2A', '#1B263B', '#415A77', '#778DA9', '#E0E1DD'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'flow', gradientSpeed: 0.5 },
+  { id: 'neon-glow', name: 'Neon Glow', cost: 1800, type: 'gradient', colors: ['#FF00FF', '#00FFFF'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
+  { id: 'prism-spectrum', name: 'Prism Spectrum', cost: 2000, type: 'gradient', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
   { id: 'checkerboard', name: 'Checkerboard', cost: 2500, type: 'pattern', colors: ['#FFFFFF', '#000000'], patternType: 'stripes' },
   { id: 'confetti-fun', name: 'Confetti Fun', cost: 3000, type: 'pattern', colors: ['#FF385C', '#FFBF00', '#1CE6FF', '#FF34FF', '#FF4A46'], patternType: 'dots' },
 ];

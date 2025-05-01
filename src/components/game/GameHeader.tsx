@@ -1,10 +1,11 @@
 import React from 'react';
 import { Appbar, IconButton, Text } from 'react-native-paper';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemeColors } from '@types';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { useAppSelector } from '@store';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 interface GameHeaderProps {
   score: number;
@@ -14,7 +15,12 @@ interface GameHeaderProps {
 
 const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
   const coins = useAppSelector(state => state.shop.coins);
-  
+  const navigation = useNavigation();
+
+  const goToShop = () => {
+    navigation.navigate('Shop' as never);
+  };
+
   return (
     <Appbar.Header style={[styles.header, { backgroundColor: colors.surface }]}>
       <View style={styles.scoreContainer}>
@@ -23,10 +29,12 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
       </View>
 
       <View style={styles.rightActions}>
-        <View style={[styles.coinsDisplayContainer, { backgroundColor: colors.surfaceVariant }]}>
-          <FontAwesome5 name="coins" size={18} color="#FFD700" solid />
-          <Text style={[styles.coinsValue, { color: colors.primary }]}>{coins}</Text>
-        </View>
+        <TouchableOpacity onPress={goToShop}>
+          <View style={[styles.coinsDisplayContainer, { backgroundColor: colors.surfaceVariant }]}>
+            <FontAwesome5 name="coins" size={18} color="#FFD700" solid />
+            <Text style={[styles.coinsValue, { color: colors.primary }]}>{coins}</Text>
+          </View>
+        </TouchableOpacity>
         <Appbar.Action icon="logout" color={colors.primary} size={24} onPress={onQuit} />
       </View>
     </Appbar.Header>

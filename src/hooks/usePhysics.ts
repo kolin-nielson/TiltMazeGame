@@ -58,6 +58,7 @@ export interface PhysicsOptions {
   wallThickness?: number;
   qualityLevel?: 'low' | 'medium' | 'high';
   vibrationEnabled?: boolean;
+  sensitivity?: number; // Allow sensitivity to directly affect physics
 }
 
 interface PhysicsWorld {
@@ -76,7 +77,7 @@ interface PhysicsWorld {
 }
 
 const FIXED_TIME_STEP = 1000 / 240;
-const LOW_QUALITY_TIME_STEP = 1000 / 120;
+const LOW_QUALITY_TIME_STEP = 1000 / 150; // Increased from 120 for smoother experience on low-end devices
 
 const isLowEndDevice = () => {
   const { width, height } = Dimensions.get('window');
@@ -92,11 +93,12 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   const {
     width,
     height,
-    gravityScale = 0.015,
+    gravityScale = 0.022, // Increased for more responsive movement
     ballRadius = 7,
     wallThickness = 10,
     qualityLevel: initialQualityLevel = isLowEndDevice() ? 'low' : 'high',
     vibrationEnabled = true,
+    sensitivity = 1.0,
   } = options;
 
   const dispatch = useAppDispatch();
@@ -108,47 +110,89 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   const wallsRef = useRef<Matter.Body[]>([]);
   const laserGatesRef = useRef<Matter.Body[]>([]);
   const goalRef = useRef<Matter.Body>();
+  const coinCompositeRef = useRef<Matter.Composite>(); // Reference to coin composite for better management
   const tickerRef = useRef<number | null>(null);
   const [goalReached, setGoalReached] = useState<boolean>(false);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const lastTimeRef = useRef<number>(0);
   const accumulatorRef = useRef<number>(0);
+  const collectedCoinsRef = useRef<Set<string>>(new Set()); // Track collected coins to prevent duplicate collection
+  
+  // For adaptive physics responses
+  const lastImpactMagnitude = useRef<number>(0);
+  const lastImpactTime = useRef<number>(0);
+  const consecutiveImpacts = useRef<number>(0);
+  const isSliding = useRef<boolean>(false);
+  const slidingStartTime = useRef<number>(0);
+  const lastInputForce = useRef<{x: number, y: number}>({x: 0, y: 0});
 
   const ballPositionX = useSharedValue(maze?.startPosition.x ?? 0);
   const ballPositionY = useSharedValue(maze?.startPosition.y ?? 0);
 
+  // Enhanced physics settings with better feel across all quality levels
   const getPhysicsQualitySettings = useCallback(() => {
+    // Base settings that work well across devices
+    const baseSettings = {
+      // Improved values for more natural movement
+      restitution: 0.22, // More bounce for more satisfying collisions
+      friction: 0.002,   // Lower friction for smoother gliding
+      frictionStatic: 0.003, // Lower static friction for more responsive initial movement
+      density: 0.13,     // Lighter ball feels more responsive
+    };
+
+    // Device-specific adjustments
+    const isTablet = Math.min(width, height) >= 600;
+    const isIOS = Platform.OS === 'ios';
+
+    // Adjust settings based on device type
+    const deviceAdjustments = {
+      // iOS devices typically have more powerful GPUs
+      frictionAirMultiplier: isIOS ? 0.85 : 1.05,
+      // Tablets need slightly different physics due to larger screen
+      densityMultiplier: isTablet ? 0.92 : 1.0,
+      restitutionMultiplier: isTablet ? 1.05 : 1.0,
+    };
+
     switch (qualityLevel) {
       case 'low':
         return {
-          constraintIterations: 2,
-          positionIterations: 8,
-          velocityIterations: 8,
+          ...baseSettings,
+          constraintIterations: 4, // Increased from 3
+          positionIterations: 10,  // Increased from 8
+          velocityIterations: 10,  // Increased from 8
           timeStep: LOW_QUALITY_TIME_STEP,
-          frictionAir: 0.0006,
-          sleepThreshold: 60,
+          frictionAir: 0.00045 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
+          sleepThreshold: 45,      // Reduced to prevent premature sleep
+          density: baseSettings.density * deviceAdjustments.densityMultiplier,
+          restitution: baseSettings.restitution * deviceAdjustments.restitutionMultiplier,
         };
       case 'medium':
         return {
-          constraintIterations: 4,
-          positionIterations: 12,
-          velocityIterations: 12,
+          ...baseSettings,
+          constraintIterations: 5,
+          positionIterations: 14,
+          velocityIterations: 14,
           timeStep: FIXED_TIME_STEP,
-          frictionAir: 0.0004,
-          sleepThreshold: 45,
+          frictionAir: 0.00025 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
+          sleepThreshold: 35,
+          density: baseSettings.density * deviceAdjustments.densityMultiplier,
+          restitution: baseSettings.restitution * deviceAdjustments.restitutionMultiplier,
         };
       case 'high':
       default:
         return {
+          ...baseSettings,
           constraintIterations: 6,
-          positionIterations: 16,
-          velocityIterations: 16,
+          positionIterations: 18,  // Increased from 16
+          velocityIterations: 18,  // Increased from 16
           timeStep: FIXED_TIME_STEP,
-          frictionAir: 0.0003,
-          sleepThreshold: 30,
+          frictionAir: 0.00018 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
+          sleepThreshold: 25,      // Reduced to prevent premature sleep
+          density: baseSettings.density * deviceAdjustments.densityMultiplier,
+          restitution: baseSettings.restitution * deviceAdjustments.restitutionMultiplier,
         };
     }
-  }, [qualityLevel]);
+  }, [qualityLevel, width, height]);
 
   useEffect(() => {
     if (!maze) return;
@@ -166,28 +210,39 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       velocityIterations: Math.max(8, qualitySettings.velocityIterations),
     });
 
-    engine.timing.timeScale = 1;
-    engine.timing.lastDelta = 16.67;
-
     const world = engine.world;
+    
+    // Reset tracking variables on world creation
+    lastImpactMagnitude.current = 0;
+    lastImpactTime.current = 0;
+    consecutiveImpacts.current = 0;
+    isSliding.current = false;
+    slidingStartTime.current = 0;
+    lastInputForce.current = {x: 0, y: 0};
 
-    const ball = Matter.Bodies.circle(maze.startPosition.x, maze.startPosition.y, ballRadius, {
-      label: 'ball',
-      restitution: 0.05,
-      friction: 0.002,
-      frictionAir: qualitySettings.frictionAir,
-      frictionStatic: 0.003,
-      density: 0.15,
-      inertia: Infinity,
-      slop: 0,
-      render: {
-        fillStyle: '#FF4081',
-      },
-      collisionFilter: {
-        category: 0x0002,
-        mask: 0x0001 | 0x0004 | 0x0008,
-      },
-    });
+    // Create ball with enhanced physics properties
+    const ball = Matter.Bodies.circle(
+      maze.startPosition.x,
+      maze.startPosition.y,
+      ballRadius,
+      {
+        restitution: qualitySettings.restitution,
+        friction: qualitySettings.friction,
+        frictionStatic: qualitySettings.frictionStatic,
+        frictionAir: qualitySettings.frictionAir,
+        density: qualitySettings.density,
+        sleepThreshold: qualitySettings.sleepThreshold,
+        label: 'ball',
+        // Add inertia scaling for more satisfying movement
+        inverseInertia: 0,
+        inverseInertiaX: 0,
+        inverseInertiaY: 0,
+        inertia: Infinity,
+      }
+    );
+
+    // Disable rotation for the ball for better control
+    Matter.Body.setInertia(ball, Infinity);
 
     const wallSimplificationFactor = 1.0;
 
@@ -199,63 +254,49 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         wall.height,
         {
           isStatic: true,
-          friction: 0.2,
-          restitution: 0.01,
-          slop: 0,
+          friction: 0.15, // Reduced friction for smoother sliding along walls
+          restitution: 0.08, // Slightly increased bounciness for more satisfying collisions
+          slop: 0.02, // Small amount of slop for smoother collisions
           collisionFilter: {
             category: 0x0001,
             mask: 0x0002,
           },
-          chamfer: { radius: 0 },
+          chamfer: { radius: 1 }, // Slight rounding of corners for smoother interactions
           render: { fillStyle: '#333333' },
         }
       )
     );
 
+    // Create boundary walls with improved properties for smoother edge collisions
+    const boundaryProps = {
+      isStatic: true,
+      label: 'boundary',
+      friction: 0.04, // Lower friction for smoother sliding along edges
+      restitution: 0.15, // Slightly bouncier for more satisfying edge bounces
+      slop: 0.03, // Increased slop for smoother edge collisions
+      chamfer: { radius: 2 }, // Rounded corners for smoother interactions
+      collisionFilter: {
+        category: 0x0001,
+        mask: 0x0002,
+      },
+    };
+
     const boundWalls = [
+      // Top boundary
       Matter.Bodies.rectangle(150, -5, 320, 10, {
-        isStatic: true,
-        label: 'boundary',
-        friction: 0.05,
-        restitution: 0.1,
-        slop: 0.01,
-        collisionFilter: {
-          category: 0x0001,
-          mask: 0x0002,
-        },
+        ...boundaryProps,
       }),
+      // Bottom boundary
       Matter.Bodies.rectangle(150, 305, 320, 10, {
-        isStatic: true,
-        label: 'boundary',
-        friction: 0.05,
-        restitution: 0.1,
-        slop: 0.01,
-        collisionFilter: {
-          category: 0x0001,
-          mask: 0x0002,
-        },
+        ...boundaryProps,
       }),
+      // Left boundary
       Matter.Bodies.rectangle(-5, 150, 10, 320, {
-        isStatic: true,
-        label: 'boundary',
-        friction: 0.05,
-        restitution: 0.1,
-        slop: 0.01,
-        collisionFilter: {
-          category: 0x0001,
-          mask: 0x0002,
-        },
+        ...boundaryProps,
       }),
+      // Right boundary
       Matter.Bodies.rectangle(305, 150, 10, 320, {
-        isStatic: true,
-        label: 'boundary',
-        friction: 0.05,
-        restitution: 0.1,
-        slop: 0.01,
-        collisionFilter: {
-          category: 0x0001,
-          mask: 0x0002,
-        },
+        ...boundaryProps,
       }),
     ];
 
@@ -267,7 +308,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     });
 
     const laserGates: Matter.Body[] = [];
-    if (maze.laserGates && maze.laserGates.length > 0) {
+    if (maze.laserGates && Array.isArray(maze.laserGates) && maze.laserGates.length > 0) {
       maze.laserGates.forEach((laserGate: LaserGate) => {
         const laserBody = Matter.Bodies.rectangle(
           laserGate.x + laserGate.width / 2,
@@ -296,24 +337,48 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       });
     }
 
+    // Create a separate composite for coins to make removal cleaner
+    const coinComposite = Matter.Composite.create({ label: 'coins' });
     const coinBodies: Matter.Body[] = [];
+
     if (maze.coins && maze.coins.length > 0) {
       maze.coins.forEach((coin: Coin) => {
+        // Create coins with special properties to ensure they don't affect ball physics
         const coinBody = Matter.Bodies.circle(
           coin.position.x,
           coin.position.y,
           ballRadius * 0.6,
           {
             isStatic: true,
-            isSensor: true,
+            isSensor: true, // Always a sensor to prevent physics interactions
             label: `coin-${coin.id}`,
             render: { fillStyle: '#FFD700' },
-            collisionFilter: { category: 0x0008, mask: 0x0002 },
+            // Use a separate collision category to ensure clean interactions
+            collisionFilter: {
+              category: 0x0008,
+              mask: 0x0002,
+              group: -1 // Negative group means it never collides with physics (only triggers sensors)
+            },
+            // Zero mass and inertia to prevent any physics effects
+            mass: 0,
+            inertia: 0,
+            friction: 0,
+            frictionAir: 0,
+            frictionStatic: 0,
+            restitution: 0,
+            // Add plugin data to store coin properties
+            plugin: {
+              coin: coin
+            }
           }
         );
         coinBodies.push(coinBody);
+        Matter.Composite.add(coinComposite, coinBody);
       });
     }
+
+    // Store the coin composite for easier management
+    coinCompositeRef.current = coinComposite;
 
     gameOverTriggeredRef.current = false;
 
@@ -365,13 +430,73 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           (bodyA.label?.startsWith('coin-') && bodyB.label === 'ball')
         ) {
           const coinBody = bodyA.label?.startsWith('coin-') ? bodyA : bodyB;
+          const ballBody = bodyA.label === 'ball' ? bodyA : bodyB;
           const coinId = coinBody.label.replace(/^coin-/, '');
-          dispatch(collectCoinAndSave());
-          dispatch(mazeRemoveCoin(coinId));
-          if (vibrationEnabled) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+          // Skip if we've already collected this coin (prevents double collection)
+          if (collectedCoinsRef.current.has(coinId)) {
+            continue;
           }
-          Matter.Composite.remove(world, coinBody);
+
+          // Mark this coin as collected
+          collectedCoinsRef.current.add(coinId);
+
+          // Get coin data from the plugin
+          const coin = coinBody.plugin?.coin as Coin;
+          if (!coin) continue; // Skip if no coin data
+
+          // Completely disable any physics interaction for this coin
+          // This is the most important part to prevent jolting
+          Matter.Body.set(coinBody, {
+            isSensor: true,
+            isStatic: true,
+            collisionFilter: {
+              category: 0,
+              mask: 0,
+              group: -2 // Ensure it doesn't interact with anything
+            }
+          });
+
+          // Preserve the ball's exact state
+          const originalVelocity = { ...ballBody.velocity };
+          const originalPosition = { ...ballBody.position };
+          const originalAngularVelocity = ballBody.angularVelocity;
+
+          // Immediately restore the ball's state to prevent any jolt
+          // This is crucial for smooth gameplay
+          Matter.Body.setPosition(ballBody, originalPosition);
+          Matter.Body.setVelocity(ballBody, originalVelocity);
+          Matter.Body.setAngularVelocity(ballBody, originalAngularVelocity);
+
+          // Use requestAnimationFrame to delay the actual removal
+          // This ensures the physics engine doesn't process the removal during this step
+          requestAnimationFrame(() => {
+            // Remove the coin from the world in the next frame
+            if (coinCompositeRef.current && worldRef.current) {
+              Matter.Composite.remove(coinCompositeRef.current, coinBody);
+            }
+          });
+
+          // Handle coin collection rewards
+          if (coin?.isSpecial) {
+            // Special coin is worth multiple regular coins
+            for (let i = 0; i < (coin.value || 10); i++) {
+              dispatch(collectCoinAndSave());
+            }
+            // Use medium impact for special coins
+            if (vibrationEnabled) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+          } else {
+            // Regular coin
+            dispatch(collectCoinAndSave());
+            if (vibrationEnabled) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+          }
+
+          // Update the Redux store to remove the coin from the maze data
+          dispatch(mazeRemoveCoin(coinId));
           continue;
         }
       }
@@ -410,7 +535,8 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       }
     });
 
-    Matter.Composite.add(world, [ball, ...walls, ...boundWalls, ...laserGates, goal, ...coinBodies]);
+    // Add all bodies to the world, including the coin composite
+    Matter.Composite.add(world, [ball, ...walls, ...boundWalls, ...laserGates, goal, coinComposite]);
 
     engineRef.current = engine;
     worldRef.current = world;
@@ -483,6 +609,8 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       wallsRef.current = [];
       laserGatesRef.current = [];
       goalRef.current = undefined;
+      coinCompositeRef.current = undefined;
+      collectedCoinsRef.current.clear();
 
       Matter.Events.off(currentEngine, 'collisionStart');
       Matter.Events.off(currentEngine, 'collisionActive');
@@ -516,6 +644,9 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       runOnJS(setGoalReached)(false);
       runOnJS(setGameOver)(false);
 
+      // Clear the collected coins set when resetting
+      collectedCoinsRef.current.clear();
+
       lastTimeRef.current = performance.now();
       accumulatorRef.current = 0;
 
@@ -532,183 +663,190 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     (tiltX: number, tiltY: number) => {
       if (!engineRef.current || !ballRef.current) return;
 
-      // apply gravity directly based on device tilt
-      engineRef.current.gravity.x = tiltX * gravityScale;
-      engineRef.current.gravity.y = tiltY * gravityScale;
+      // Apply a variable force based on sensitivity and gravityScale
+      const effectiveGravityScale = gravityScale * 
+                                   (sensitivity || 1.0) * 
+                                   (1 + Math.min(0.4, lastImpactMagnitude.current/10));
+      
+      // Calculate the force to apply
+      const forceX = tiltX * effectiveGravityScale;
+      const forceY = tiltY * effectiveGravityScale;
+      
+      // Store last input force for reference
+      lastInputForce.current = {x: forceX, y: forceY};
+      
+      // Get current velocity
+      const velX = ballRef.current.velocity.x;
+      const velY = ballRef.current.velocity.y;
+      
+      // Calculate current speed
+      const currentSpeed = Math.sqrt(velX * velX + velY * velY);
+      
+      // Dynamically adjust force based on conditions:
+      
+      // 1. Apply more force at low speeds to overcome initial inertia
+      const lowSpeedBoost = currentSpeed < 0.5 ? 1.4 : 1.0;
+      
+      // 2. Apply less force at very high speeds to prevent excessive acceleration
+      const highSpeedDamping = Math.min(1.0, 4.0 / (currentSpeed + 3.0));
+      
+      // 3. Apply more force when changing direction for better responsiveness
+      const isChangingDirectionX = Math.sign(forceX) !== Math.sign(velX) && Math.abs(forceX) > 0.001;
+      const isChangingDirectionY = Math.sign(forceY) !== Math.sign(velY) && Math.abs(forceY) > 0.001;
+      const directionChangeBoost = (isChangingDirectionX || isChangingDirectionY) ? 1.35 : 1.0;
+      
+      // 4. Apply more force when sliding along walls for more control
+      const slidingBoost = isSliding.current ? 1.25 : 1.0;
+      
+      // 5. Apply micro-control boost for very small, precise movements
+      const isMicroControl = Math.abs(forceX) < 0.03 && Math.abs(forceY) < 0.03 && 
+                            Math.abs(forceX) + Math.abs(forceY) > 0.005;
+      const microControlBoost = isMicroControl ? 1.3 : 1.0;
+      
+      // Combine all adjustment factors
+      const finalForceX = forceX * lowSpeedBoost * highSpeedDamping * directionChangeBoost * slidingBoost * microControlBoost;
+      const finalForceY = forceY * lowSpeedBoost * highSpeedDamping * directionChangeBoost * slidingBoost * microControlBoost;
+      
+      // Set gravity directly for more responsive control at low speeds
+      if (currentSpeed < 0.3) {
+        // Direct gravity control provides more immediate response
+        engineRef.current.gravity.x = finalForceX * 20;
+        engineRef.current.gravity.y = finalForceY * 20;
+      } else {
+        // At higher speeds, use force for more natural physics
+        // Apply the calculated force
+        Matter.Body.applyForce(ballRef.current, ballRef.current.position, {
+          x: finalForceX,
+          y: finalForceY
+        });
+        
+        // Gradual reduction of gravity as speed increases
+        // This prevents runaway acceleration
+        const gravityReductionFactor = Math.max(0.2, 1.0 - (currentSpeed / 8.0));
+        engineRef.current.gravity.x = forceX * 10 * gravityReductionFactor;
+        engineRef.current.gravity.y = forceY * 10 * gravityReductionFactor;
+      }
 
-      let maxVelocity = 1.2;
+      // Dynamic max velocity based on quality level and device
+      let maxVelocity = 1.5; // Slightly increased for more satisfying movement
       if (qualityLevel === 'low') {
-        maxVelocity = 1.0;
+        maxVelocity = 1.3;
+      } else if (qualityLevel === 'medium') {
+        maxVelocity = 1.4;
       }
 
-      const velocity = ballRef.current.velocity;
-      const currentSpeed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
-
-      if (currentSpeed > 0) {
-        let speedFactor = 1.0;
-
-        if (currentSpeed > maxVelocity) {
-          const ratio = currentSpeed / maxVelocity;
-          speedFactor = 1 / (ratio * 1.05);
-        } else if (currentSpeed > maxVelocity * 0.75) {
-          const excess = (currentSpeed - maxVelocity * 0.75) / (maxVelocity * 0.25);
-          speedFactor = 1.0 - excess * 0.35;
+      // Velocity capping for stable physics
+      if (currentSpeed > maxVelocity) {
+        // Calculate alignment of tilt with velocity for smarter speed limiting
+        const tiltMagnitude = Math.sqrt(tiltX * tiltX + tiltY * tiltY);
+        let alignmentFactor = 0;
+        
+        if (tiltMagnitude > 0.05) {
+          // Normalized vectors
+          const normVelX = velX / currentSpeed;
+          const normVelY = velY / currentSpeed;
+          const normTiltX = tiltX / tiltMagnitude;
+          const normTiltY = tiltY / tiltMagnitude;
+          
+          // Dot product gives alignment (-1 to 1)
+          alignmentFactor = normVelX * normTiltX + normVelY * normTiltY;
         }
-
-        if (speedFactor < 1.0) {
-          const newVelX = velocity.x * speedFactor;
-          const newVelY = velocity.y * speedFactor;
-
-          const frictionFactor = Math.min(0.98, 1.0 - (currentSpeed / maxVelocity) * 0.05);
-
+        
+        // Adjust velocity cap based on tilt alignment
+        // If pushing against velocity, allow higher speeds to enable quicker direction changes
+        const adjustedMaxVelocity = maxVelocity * (1 + Math.max(0, -alignmentFactor) * 0.3);
+        
+        if (currentSpeed > adjustedMaxVelocity) {
+          // Calculate capping factor
+          const cappingFactor = adjustedMaxVelocity / currentSpeed;
+          
+          // Apply velocity cap
           Matter.Body.setVelocity(ballRef.current, {
-            x: newVelX * frictionFactor,
-            y: newVelY * frictionFactor,
+            x: velX * cappingFactor,
+            y: velY * cappingFactor
           });
         }
       }
 
+      // Improved boundary collision handling for more satisfying edge interactions
       const radius = ballRadius;
+      const position = ballRef.current.position;
+      const velocity = ballRef.current.velocity;
 
-      if (ballRef.current.position.x < radius) {
-        Matter.Body.setPosition(ballRef.current, {
-          x: radius,
-          y: ballRef.current.position.y,
-        });
+      // Helper function for smoother boundary collisions
+      const handleBoundaryCollision = (
+        axis: 'x' | 'y',
+        position: number,
+        boundary: number,
+        isMin: boolean
+      ) => {
+        if ((isMin && position < boundary) || (!isMin && position > boundary)) {
+          // Set position to boundary with a tiny offset to prevent sticking
+          const newPosition = isMin ? boundary + 0.01 : boundary - 0.01;
 
-        const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.x) * 0.1);
+          // Create a new position object with the corrected coordinate
+          const newPositionObj = {
+            x: ballRef.current!.position.x,
+            y: ballRef.current!.position.y,
+          };
+          newPositionObj[axis] = newPosition;
 
-        Matter.Body.setVelocity(ballRef.current, {
-          x: Math.abs(velocity.x) * -0.2,
-          y: velocity.y * dampening,
-        });
-      } else if (ballRef.current.position.x > width - radius) {
-        Matter.Body.setPosition(ballRef.current, {
-          x: width - radius,
-          y: ballRef.current.position.y,
-        });
+          Matter.Body.setPosition(ballRef.current!, newPositionObj);
 
-        const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.x) * 0.1);
+          // Calculate bounce response based on speed
+          const speed = Math.abs(velocity[axis]);
 
-        Matter.Body.setVelocity(ballRef.current, {
-          x: Math.abs(velocity.x) * -0.2,
-          y: velocity.y * dampening,
-        });
-      }
+          // Dynamic dampening - less dampening at low speeds for responsive feel
+          // More dampening at high speeds to prevent excessive bouncing
+          const speedFactor = Math.min(1, speed / 0.8); // Normalize speed
+          const baseDampening = 0.85; // Higher base value for less dampening
+          const dampening = baseDampening - speedFactor * 0.25; // Dynamic adjustment
 
-      if (ballRef.current.position.y < radius) {
-        Matter.Body.setPosition(ballRef.current, {
-          x: ballRef.current.position.x,
-          y: radius,
-        });
+          // Calculate bounce coefficient - more bounce at higher speeds
+          const bounceCoef = -0.3 - (speedFactor * 0.2); // -0.3 to -0.5 range
 
-        const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.y) * 0.1);
+          // Create new velocity with bounce effect
+          const newVelocity = { ...velocity };
 
-        Matter.Body.setVelocity(ballRef.current, {
-          x: velocity.x * dampening,
-          y: Math.abs(velocity.y) * -0.2,
-        });
-      } else if (ballRef.current.position.y > height - radius) {
-        Matter.Body.setPosition(ballRef.current, {
-          x: ballRef.current.position.x,
-          y: height - radius,
-        });
+          // Apply bounce to primary axis
+          newVelocity[axis] = speed * bounceCoef;
 
-        const dampening = Math.max(0.3, 0.7 - Math.abs(velocity.y) * 0.1);
+          // Apply dampening to other axis for more natural feel
+          const otherAxis = axis === 'x' ? 'y' : 'x';
+          newVelocity[otherAxis] = velocity[otherAxis] * dampening;
 
-        Matter.Body.setVelocity(ballRef.current, {
-          x: velocity.x * dampening,
-          y: Math.abs(velocity.y) * -0.2,
-        });
-      }
+          Matter.Body.setVelocity(ballRef.current!, newVelocity);
 
-      const predictedX = ballRef.current.position.x + velocity.x * 2;
-      const predictedY = ballRef.current.position.y + velocity.y * 2;
+          // Apply a tiny impulse away from the boundary to prevent sticking
+          const impulse = { x: 0, y: 0 };
+          const impulseStrength = 0.0001;
+          impulse[axis] = isMin ? impulseStrength : -impulseStrength;
 
-      const potentialCollisions = wallsRef.current.filter(wall => {
-        if (!wall.bounds) return false;
+          Matter.Body.applyForce(ballRef.current!, position, impulse);
 
-        const bounds = wall.bounds;
-
-        const safeRadius = radius * 1.5;
-
-        return (
-          predictedX + safeRadius > bounds.min.x &&
-          predictedX - safeRadius < bounds.max.x &&
-          predictedY + safeRadius > bounds.min.y &&
-          predictedY - safeRadius < bounds.max.y
-        );
-      });
-
-      if (ballRef.current && currentSpeed > 0) {
-        const timeSteps = 3;
-        const dt = 1 / 60;
-
-        const pos = { x: ballRef.current.position.x, y: ballRef.current.position.y };
-        const vel = { x: velocity.x, y: velocity.y };
-
-        const futurePos = {
-          x: pos.x + vel.x * dt * timeSteps,
-          y: pos.y + vel.y * dt * timeSteps,
-        };
-
-        const willCollide = potentialCollisions.some(wall => {
-          if (!wall.bounds) return false;
-
-          const line = { x1: pos.x, y1: pos.y, x2: futurePos.x, y2: futurePos.y };
-
-          return lineIntersectsRectangle(
-            line,
-            wall.bounds.min.x,
-            wall.bounds.min.y,
-            wall.bounds.max.x,
-            wall.bounds.max.y
-          );
-        });
-
-        if (willCollide) {
-          const reductionFactor = Math.min(0.5, 1.0 / (currentSpeed + 0.1));
-          Matter.Body.setVelocity(ballRef.current, {
-            x: velocity.x * reductionFactor,
-            y: velocity.y * reductionFactor,
-          });
-
-          potentialCollisions.forEach(wall => {
-            const dirX = pos.x - wall.position.x;
-            const dirY = pos.y - wall.position.y;
-            const distance = Math.sqrt(dirX * dirX + dirY * dirY);
-
-            if (distance > 0) {
-              const repulsionForce = 0.002 / Math.max(distance, 0.5);
-              Matter.Body.applyForce(ballRef.current!, pos, {
-                x: (dirX / distance) * repulsionForce,
-                y: (dirY / distance) * repulsionForce,
-              });
+          if (vibrationEnabled) {
+            // Only vibrate for significant impacts
+            if (speed > 0.7) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            } else if (speed > 0.3) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
-          });
-        } else if (potentialCollisions.length > 0 && currentSpeed > 0.3) {
-          Matter.Body.setVelocity(ballRef.current, {
-            x: velocity.x * 0.7,
-            y: velocity.y * 0.7,
-          });
-
-          potentialCollisions.forEach(wall => {
-            const dirX = pos.x - wall.position.x;
-            const dirY = pos.y - wall.position.y;
-            const distance = Math.sqrt(dirX * dirX + dirY * dirY);
-
-            if (distance > 0) {
-              const repulsionForce = 0.001 / Math.max(distance, 1);
-              Matter.Body.applyForce(ballRef.current!, pos, {
-                x: (dirX / distance) * repulsionForce,
-                y: (dirY / distance) * repulsionForce,
-              });
-            }
-          });
+          }
         }
-      }
+      };
+
+      // Check for boundary collisions
+      const minX = radius + 1;
+      const maxX = width - radius - 1;
+      const minY = radius + 1;
+      const maxY = height - radius - 1;
+
+      handleBoundaryCollision('x', position.x, minX, true);
+      handleBoundaryCollision('x', position.x, maxX, false);
+      handleBoundaryCollision('y', position.y, minY, true);
+      handleBoundaryCollision('y', position.y, maxY, false);
     },
-    [qualityLevel, width, height, ballRadius, gravityScale]
+    [width, height, ballRadius, vibrationEnabled, gravityScale, qualityLevel, sensitivity]
   );
 
   const changeQualityLevel = (level: 'low' | 'medium' | 'high') => {

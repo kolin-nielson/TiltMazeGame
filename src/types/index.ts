@@ -2,7 +2,7 @@ export interface Maze {
   id: string;
   name: string;
   walls: Wall[];
-  laserGates?: LaserGate[];
+  laserGates: LaserGate[]; // No longer optional, always an array (can be empty)
   startPosition: Position;
   endPosition: Position;
   createdAt: number;
@@ -38,6 +38,8 @@ export interface Position {
 export interface Coin {
   id: string;
   position: Position;
+  value?: number; // Default is 1
+  isSpecial?: boolean; // Special high-value coin
 }
 
 export interface Ball {

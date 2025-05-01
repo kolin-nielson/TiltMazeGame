@@ -33,6 +33,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -51,6 +52,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -69,6 +71,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 260, y: 260 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -86,6 +89,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -106,6 +110,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 260, y: 260 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -126,6 +131,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 250, y: 250 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -193,6 +199,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 270, y: 270 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -212,6 +219,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 30, y: 270 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -232,6 +240,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 265, y: 265 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -257,6 +266,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 150, y: 150 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -291,6 +301,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 265, y: 265 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },
@@ -392,6 +403,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 260, y: 260 },
+    laserGates: [], // Ensure laserGates is always defined
     createdAt: 0,
     updatedAt: 0,
   },

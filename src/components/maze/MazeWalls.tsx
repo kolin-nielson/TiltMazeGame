@@ -70,7 +70,7 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
       >
         <MazeGoal position={maze.endPosition} ballRadius={ballRadius} color={colors?.goal ?? '#4CAF50'} />
         <MemoizedWalls walls={maze.walls} color={colors?.walls ?? '#333333'} />
-        {maze.laserGates && maze.laserGates.length > 0 && (
+        {maze.laserGates && Array.isArray(maze.laserGates) && maze.laserGates.length > 0 && (
           <>
             {maze.laserGates.map((laserGate) => (
               <MazeLaserGate
@@ -86,7 +86,7 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
           ballPositionX={ballPositionX}
           ballPositionY={ballPositionY}
           radius={ballRadius}
-          color={colors?.ball ?? '#FF4081'}
+          color={colors?.ball ?? '#E53935'}
         />
       </MazeElements>
     </View>

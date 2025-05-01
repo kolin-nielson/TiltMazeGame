@@ -1,6 +1,6 @@
 /* eslint-disable import/no-unresolved */
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, BackHandler, Alert } from 'react-native';
+import { View, BackHandler, Alert, Platform } from 'react-native';
 import { Text, Snackbar, Portal } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
@@ -29,9 +29,11 @@ import {
   setIsManualRecalibrating,
   setGameOver,
   resetGame,
+  continueAfterAd,
 } from '@store/slices/gameSlice';
 import { usePhysics } from '@hooks/usePhysics';
 import { collectCoinAndSave } from '@store/slices/shopSlice';
+import { showRewardedAd } from '../services/adsService';
 
 
 import { gameScreenStyles } from '@styles/GameScreenStyles';
@@ -83,7 +85,13 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
     const frozen = isTransitioning || isDying || gameState !== 'playing';
     const effectiveX = !frozen ? gyroX : 0;
     const effectiveY = !frozen ? gyroY : 0;
-    update(effectiveX, effectiveY);
+    
+    // Use requestAnimationFrame for smoother updates
+    const frameId = requestAnimationFrame(() => {
+      update(effectiveX, effectiveY);
+    });
+    
+    return () => cancelAnimationFrame(frameId);
   }, [gyroX, gyroY, gameState, isTransitioning, isDying, update]);
 
   return (
@@ -158,10 +166,11 @@ const GameScreen: React.FC = () => {
   const physicsOptions = {
     width: 300,
     height: 300,
-    gravityScale: 0.015,
+    gravityScale: 0.022,
     ballRadius: 7,
     vibrationEnabled: settings.vibrationEnabled,
     sensitivity: sliderValue,
+    qualityLevel: Platform.OS === 'ios' ? 'high' : 'medium',
   };
 
   const {
@@ -237,7 +246,24 @@ const GameScreen: React.FC = () => {
       gyroIsCalibrated &&
       hasDeviceMovedSignificantly()
     ) {
+      // Display a brief notification to let the user know recalibration occurred
+      dispatch(setIsManualRecalibrating(true));
+      
+      // Perform the recalibration
       resetGyroscope();
+      
+      // Show a brief message to user
+      setSnackbarVisible(true);
+      
+      // Clear any existing timeout
+      if (recalibrationTimeoutRef.current) {
+        clearTimeout(recalibrationTimeoutRef.current);
+      }
+      
+      // Reset manual recalibration flag after a short delay
+      recalibrationTimeoutRef.current = setTimeout(() => {
+        dispatch(setIsManualRecalibrating(false));
+      }, 1000);
     }
   }, [
     gameState,
@@ -245,6 +271,7 @@ const GameScreen: React.FC = () => {
     isManualRecalibrating,
     hasDeviceMovedSignificantly,
     resetGyroscope,
+    dispatch,
   ]);
 
   useEffect(() => {
@@ -268,6 +295,8 @@ const GameScreen: React.FC = () => {
   useEffect(() => {
     const handleBackPress = () => {
       if (gameState === 'playing') {
+        // Show the quit confirmation dialog when back button is pressed during gameplay
+        showQuitConfirm();
         return true;
       }
       return false;
@@ -300,24 +329,41 @@ const GameScreen: React.FC = () => {
   }, [dispatch, difficulty, GAME.MAX_DIFFICULTY]);
 
   const handleExit = useCallback(() => {
+    // Ensure the game state is completely reset before navigating back
     dispatch(resetGame());
-    navigation.goBack();
+    // Use a small timeout to ensure the state is reset before navigation
+    setTimeout(() => {
+      navigation.goBack();
+    }, 50);
   }, [dispatch, navigation]);
 
   const onContinuePlaying = useCallback(() => {
-    dispatch(resetGame());
-  }, [dispatch]);
+    // Continue from the current level instead of resetting
+    dispatch(continueAfterAd());
+    // Reset the physics engine to restart the level
+    resetPhysics();
+  }, [dispatch, resetPhysics]);
 
-  const handleWatchAd = useCallback(() => {
-    Alert.alert('Extra Life', 'Watch an ad to continue playing from your last position.');
-  }, []);
+  const handleWatchAd = useCallback(async () => {
+    const adShown = await showRewardedAd(onContinuePlaying);
+
+    if (!adShown) {
+      // Ad failed to show, inform the user
+      Alert.alert(
+        'Continue',
+        'Unable to continue at this time. Please try again later.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [onContinuePlaying]);
 
   const showQuitConfirm = () => setIsQuitConfirmVisible(true);
   const hideQuitConfirm = () => setIsQuitConfirmVisible(false);
 
   const handleQuitConfirm = () => {
     hideQuitConfirm();
-    handleGameOver();
+    // Reset the game state completely instead of triggering game over
+    dispatch(resetGame());
     navigation.goBack();
   };
 
@@ -362,8 +408,12 @@ const GameScreen: React.FC = () => {
       const initialMaze = generateMaze(1);
       dispatch(setCurrentMaze(initialMaze));
       dispatch(setGameState('playing'));
+    } else if (gameState === 'playing' && gameOver) {
+      // This handles the case when we continue after an ad
+      // Reset the gameOver flag to allow playing again
+      dispatch(setGameOver(false));
     }
-  }, [gameState, dispatch]);
+  }, [gameState, gameOver, dispatch]);
 
   if (gameState === 'loading' || !currentMaze) {
     return (
@@ -503,7 +553,7 @@ const GameScreen: React.FC = () => {
           }}
         >
           <Text style={{ color: colors?.inverseOnSurface ?? colors?.surface }}>
-            Tilt orientation reset!
+            {isManualRecalibrating ? "Recalibrating tilt controls..." : "Tilt controls recalibrated!"}
           </Text>
         </Snackbar>
       </Portal>

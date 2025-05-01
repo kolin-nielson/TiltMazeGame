@@ -391,11 +391,24 @@ export const generateMaze = (difficulty: number): Maze => {
   const coinPositions = flatCells.slice(0, maxCoins);
   const coins: Coin[] = coinPositions.map((pos, idx) => ({ id: `${id}-coin-${idx}`, position: pos }));
 
+  // Add a special high-value coin if we have enough cells
+  if (flatCells.length > maxCoins) {
+    // Get a position that's not already used for regular coins
+    const specialCoinPosition = flatCells[maxCoins];
+    const specialCoin: Coin = {
+      id: `${id}-special-coin`,
+      position: specialCoinPosition,
+      value: 10, // Special coin worth 10 regular coins
+      isSpecial: true
+    };
+    coins.push(specialCoin);
+  }
+
   return {
     id,
     name,
     walls,
-    laserGates: laserGates.length > 0 ? laserGates : undefined,
+    laserGates: laserGates.length > 0 ? laserGates : [], // Always return an array, even if empty
     startPosition,
     endPosition,
     coins,

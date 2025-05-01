@@ -71,7 +71,15 @@ const mazeSlice = createSlice({
   initialState,
   reducers: {
     setCurrentMaze: (state, action: PayloadAction<Maze | null>) => {
-      state.currentMaze = action.payload;
+      // Ensure maze has laserGates array if it's not null
+      if (action.payload) {
+        state.currentMaze = {
+          ...action.payload,
+          laserGates: action.payload.laserGates || [] // Ensure laserGates is always an array
+        };
+      } else {
+        state.currentMaze = null;
+      }
     },
     generateNewMaze: (state, action: PayloadAction<number>) => {
       state.currentMaze = generateMaze(action.payload);

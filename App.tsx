@@ -21,6 +21,7 @@ import AppNavigator from '@navigation/AppNavigator';
 import GameLogo from '@components/logo/GameLogo';
 import { View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
 import ErrorBoundary from '@components/common/ErrorBoundary';
+import { initializeAds, loadRewardedAd } from './src/services/adsService';
 
 const { LightTheme, DarkTheme } = adaptNavigationTheme({
   reactNavigationLight: NavigationDefaultTheme,
@@ -50,12 +51,28 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      await Promise.all([
-        dispatch(loadSettings()), 
-        dispatch(loadTheme()), 
-        dispatch(loadShopData())
-      ]);
-      setIsLoading(false);
+      try {
+        // First load essential app data
+        await Promise.all([
+          dispatch(loadSettings()),
+          dispatch(loadTheme()),
+          dispatch(loadShopData())
+        ]);
+
+        // Then initialize ads separately to handle any potential issues
+        try {
+          await initializeAds();
+          // Preload rewarded ad
+          await loadRewardedAd();
+        } catch (adError) {
+          // Log but don't block app startup if ads fail
+          console.warn('Ad initialization error:', adError);
+        }
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadInitialData();

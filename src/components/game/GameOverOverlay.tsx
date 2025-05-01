@@ -84,20 +84,16 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
   bestScore,
   onPlayAgain,
   onExit,
-  onWatchAd, 
+  onWatchAd,
   onContinuePlaying
 }) => {
-  const [hasWatchedAd, setHasWatchedAd] = React.useState(false)
-
+  // We don't need to track if the ad was watched anymore since
+  // the continue functionality is handled by the ad reward callback
   const handleWatchAd = () => {
-    if (!hasWatchedAd) {
-        onWatchAd();
-        setHasWatchedAd(true); // Update state after watching the ad
-    } else {
-        onContinuePlaying();
-    }
+    onWatchAd();
   };
   const colors = useAppSelector((state: RootState) => state.theme.colors);
+  const hasUsedContinue = useAppSelector((state: RootState) => state.game.hasUsedContinue);
   const isNewHighScore = score > bestScore;
 
   return (
@@ -130,20 +126,22 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                 />
               </View>
 
-              <View style={styles.adButtonContainer}>
-                <Button
-                  mode="contained"
-                  icon="movie-play-outline"
-                  onPress={handleWatchAd}
-                  buttonColor={colors.primary}
-                  textColor={colors.onPrimary}
-                  contentStyle={styles.buttonContent}
-                  labelStyle={[styles.buttonLabel, { fontSize: 18 }]}
-                  style={styles.watchAdButton}
-                >
-                  Watch Ad for Extra Life
-                </Button>
-              </View>
+              {!hasUsedContinue && (
+                <View style={styles.adButtonContainer}>
+                  <Button
+                    mode="contained"
+                    icon="play-circle-outline"
+                    onPress={handleWatchAd}
+                    buttonColor={colors.primary}
+                    textColor={colors.onPrimary}
+                    contentStyle={styles.buttonContent}
+                    labelStyle={[styles.buttonLabel, { fontSize: 18 }]}
+                    style={styles.watchAdButton}
+                  >
+                    Continue
+                  </Button>
+                </View>
+              )}
 
               <View style={styles.buttonContainer}>
                 <ActionButton

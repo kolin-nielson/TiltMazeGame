@@ -55,7 +55,7 @@ const MemoizedLaserGates = memo(
   }
 );
 
-const CoinCircle = memo(({ coin, ballRadius }: { coin: { id: string, position: Position }, ballRadius: number }) => {
+const CoinCircle = memo(({ coin, ballRadius }: { coin: Coin, ballRadius: number }) => {
   const anim = useSharedValue(0);
   useEffect(() => {
     anim.value = withRepeat(
@@ -64,14 +64,27 @@ const CoinCircle = memo(({ coin, ballRadius }: { coin: { id: string, position: P
       true
     );
   }, []);
+
+  // Determine if this is a special coin
+  const isSpecial = coin.isSpecial || false;
+
   const glowProps = useAnimatedProps(() => {
     const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
-    return { r: ballRadius * 0.8 * scale };
+    // Make special coins glow larger
+    return { r: ballRadius * (isSpecial ? 1.0 : 0.8) * scale };
   });
+
   const bodyProps = useAnimatedProps(() => {
     const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
-    return { r: ballRadius * 0.6 * scale };
+    // Make special coins larger
+    return { r: ballRadius * (isSpecial ? 0.8 : 0.6) * scale };
   });
+
+  // Colors for special coins
+  const glowColor = isSpecial ? "#FF5E0040" : "#FFDF0040";
+  const fillColor = isSpecial ? "#FF5E00" : "#FFD700";
+  const strokeColor = isSpecial ? "#FF3D00" : "#FFA500";
+
   return (
     <>
       <AnimatedCircle
@@ -80,7 +93,7 @@ const CoinCircle = memo(({ coin, ballRadius }: { coin: { id: string, position: P
         animatedProps={glowProps}
         cx={coin.position.x}
         cy={coin.position.y}
-        fill="#FFDF0040"
+        fill={glowColor}
       />
       <AnimatedCircle
         entering={FadeIn.duration(200)}
@@ -88,9 +101,9 @@ const CoinCircle = memo(({ coin, ballRadius }: { coin: { id: string, position: P
         animatedProps={bodyProps}
         cx={coin.position.x}
         cy={coin.position.y}
-        fill="#FFD700"
-        stroke="#FFA500"
-        strokeWidth={1}
+        fill={fillColor}
+        stroke={strokeColor}
+        strokeWidth={isSpecial ? 2 : 1}
       />
     </>
   );
@@ -115,7 +128,7 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
 
           <MemoizedWalls walls={maze.walls} color={colors?.walls ?? '#333333'} />
 
-          {maze.laserGates && maze.laserGates.length > 0 && (
+          {maze.laserGates && Array.isArray(maze.laserGates) && maze.laserGates.length > 0 && (
             <MemoizedLaserGates
               laserGates={maze.laserGates}
               color={colors?.laser ?? '#FF0000'}

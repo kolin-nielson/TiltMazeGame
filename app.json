@@ -51,6 +51,15 @@
         {
           "motionPermission": "Allow $(PRODUCT_NAME) to access your device motion to control the game."
         }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "userTrackingPermission": "This identifier will be used to deliver personalized ads to you.",
+          "androidAppId": "ca-app-pub-4299404428269280~1234567890",
+          "iosAppId": "ca-app-pub-4299404428269280~0987654321",
+          "skipProguardConfigGeneration": false
+        }
       ]
     ],
     "extra": {

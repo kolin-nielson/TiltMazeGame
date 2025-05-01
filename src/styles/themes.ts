@@ -31,7 +31,7 @@ export const lightTheme: ThemeColors = {
   backdrop: 'rgba(0, 0, 0, 0.5)',
 
   walls: MD3LightTheme.colors.onSurfaceVariant,
-  ball: MD3LightTheme.colors.primary,
+  ball: '#E53935', // Classic Red default color
   laser: MD3LightTheme.colors.error,
   goal: MD3LightTheme.colors.secondary,
 };
@@ -66,7 +66,7 @@ export const darkTheme: ThemeColors = {
   backdrop: 'rgba(0, 0, 0, 0.8)',
 
   walls: MD3DarkTheme.colors.onSurfaceVariant,
-  ball: MD3DarkTheme.colors.primary,
+  ball: '#E53935', // Classic Red default color
   laser: MD3DarkTheme.colors.error,
   goal: MD3DarkTheme.colors.secondary,
 };

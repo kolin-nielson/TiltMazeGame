@@ -1,6 +1,6 @@
 /* eslint-disable import/no-unresolved */
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, BackHandler, Alert, Platform } from 'react-native';
+import { View, BackHandler, Alert } from 'react-native';
 import { Text, Snackbar, Portal } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
@@ -86,7 +86,7 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
     const effectiveX = !frozen ? gyroX : 0;
     const effectiveY = !frozen ? gyroY : 0;
     
-    // Use requestAnimationFrame for smoother updates
+    // Use requestAnimationFrame for smoother updates and to avoid Reanimated warnings
     const frameId = requestAnimationFrame(() => {
       update(effectiveX, effectiveY);
     });
@@ -166,11 +166,10 @@ const GameScreen: React.FC = () => {
   const physicsOptions = {
     width: 300,
     height: 300,
-    gravityScale: 0.022,
+    gravityScale: 0.015,
     ballRadius: 7,
     vibrationEnabled: settings.vibrationEnabled,
     sensitivity: sliderValue,
-    qualityLevel: Platform.OS === 'ios' ? 'high' : 'medium',
   };
 
   const {
@@ -246,24 +245,7 @@ const GameScreen: React.FC = () => {
       gyroIsCalibrated &&
       hasDeviceMovedSignificantly()
     ) {
-      // Display a brief notification to let the user know recalibration occurred
-      dispatch(setIsManualRecalibrating(true));
-      
-      // Perform the recalibration
       resetGyroscope();
-      
-      // Show a brief message to user
-      setSnackbarVisible(true);
-      
-      // Clear any existing timeout
-      if (recalibrationTimeoutRef.current) {
-        clearTimeout(recalibrationTimeoutRef.current);
-      }
-      
-      // Reset manual recalibration flag after a short delay
-      recalibrationTimeoutRef.current = setTimeout(() => {
-        dispatch(setIsManualRecalibrating(false));
-      }, 1000);
     }
   }, [
     gameState,
@@ -271,7 +253,6 @@ const GameScreen: React.FC = () => {
     isManualRecalibrating,
     hasDeviceMovedSignificantly,
     resetGyroscope,
-    dispatch,
   ]);
 
   useEffect(() => {
@@ -553,7 +534,7 @@ const GameScreen: React.FC = () => {
           }}
         >
           <Text style={{ color: colors?.inverseOnSurface ?? colors?.surface }}>
-            {isManualRecalibrating ? "Recalibrating tilt controls..." : "Tilt controls recalibrated!"}
+            Tilt orientation reset!
           </Text>
         </Snackbar>
       </Portal>

@@ -30,8 +30,15 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
     const pulseAnim = useSharedValue(0);
 
     // Track last positions to create trailing effect and calculate velocity
-    const lastPositionX = useSharedValue(ballPositionX.value);
-    const lastPositionY = useSharedValue(ballPositionY.value);
+    // Initialize with 0 to avoid accessing .value during render
+    const lastPositionX = useSharedValue(0);
+    const lastPositionY = useSharedValue(0);
+    
+    // Set initial values after render
+    useEffect(() => {
+      lastPositionX.value = ballPositionX.value;
+      lastPositionY.value = ballPositionY.value;
+    }, []);
 
     // Calculate ball velocity from position changes for dynamic effects
     const velocityX = useDerivedValue(() => {

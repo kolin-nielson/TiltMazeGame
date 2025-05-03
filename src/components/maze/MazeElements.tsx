@@ -57,6 +57,7 @@ const MemoizedLaserGates = memo(
 
 const CoinCircle = memo(({ coin, ballRadius }: { coin: Coin, ballRadius: number }) => {
   const anim = useSharedValue(0);
+  
   useEffect(() => {
     anim.value = withRepeat(
       withTiming(1, { duration: 1000, easing: Easing.linear }),

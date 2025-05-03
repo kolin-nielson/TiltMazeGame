@@ -58,7 +58,6 @@ export interface PhysicsOptions {
   wallThickness?: number;
   qualityLevel?: 'low' | 'medium' | 'high';
   vibrationEnabled?: boolean;
-  sensitivity?: number; // Allow sensitivity to directly affect physics
 }
 
 interface PhysicsWorld {
@@ -77,7 +76,7 @@ interface PhysicsWorld {
 }
 
 const FIXED_TIME_STEP = 1000 / 240;
-const LOW_QUALITY_TIME_STEP = 1000 / 150; // Increased from 120 for smoother experience on low-end devices
+const LOW_QUALITY_TIME_STEP = 1000 / 120;
 
 const isLowEndDevice = () => {
   const { width, height } = Dimensions.get('window');
@@ -93,12 +92,11 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   const {
     width,
     height,
-    gravityScale = 0.022, // Increased for more responsive movement
+    gravityScale = 0.015,
     ballRadius = 7,
     wallThickness = 10,
     qualityLevel: initialQualityLevel = isLowEndDevice() ? 'low' : 'high',
     vibrationEnabled = true,
-    sensitivity = 1.0,
   } = options;
 
   const dispatch = useAppDispatch();
@@ -117,14 +115,6 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   const lastTimeRef = useRef<number>(0);
   const accumulatorRef = useRef<number>(0);
   const collectedCoinsRef = useRef<Set<string>>(new Set()); // Track collected coins to prevent duplicate collection
-  
-  // For adaptive physics responses
-  const lastImpactMagnitude = useRef<number>(0);
-  const lastImpactTime = useRef<number>(0);
-  const consecutiveImpacts = useRef<number>(0);
-  const isSliding = useRef<boolean>(false);
-  const slidingStartTime = useRef<number>(0);
-  const lastInputForce = useRef<{x: number, y: number}>({x: 0, y: 0});
 
   const ballPositionX = useSharedValue(maze?.startPosition.x ?? 0);
   const ballPositionY = useSharedValue(maze?.startPosition.y ?? 0);
@@ -134,10 +124,10 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     // Base settings that work well across devices
     const baseSettings = {
       // Improved values for more natural movement
-      restitution: 0.22, // More bounce for more satisfying collisions
-      friction: 0.002,   // Lower friction for smoother gliding
-      frictionStatic: 0.003, // Lower static friction for more responsive initial movement
-      density: 0.13,     // Lighter ball feels more responsive
+      restitution: 0.12, // Slightly bouncier for more satisfying collisions
+      friction: 0.003,   // Lower friction for smoother sliding
+      frictionStatic: 0.004, // Slightly higher static friction for better control
+      density: 0.14,     // Slightly lighter ball feels more responsive
     };
 
     // Device-specific adjustments
@@ -147,34 +137,34 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     // Adjust settings based on device type
     const deviceAdjustments = {
       // iOS devices typically have more powerful GPUs
-      frictionAirMultiplier: isIOS ? 0.85 : 1.05,
+      frictionAirMultiplier: isIOS ? 0.9 : 1.1,
       // Tablets need slightly different physics due to larger screen
-      densityMultiplier: isTablet ? 0.92 : 1.0,
-      restitutionMultiplier: isTablet ? 1.05 : 1.0,
+      densityMultiplier: isTablet ? 0.95 : 1.0,
+      restitutionMultiplier: isTablet ? 1.1 : 1.0,
     };
 
     switch (qualityLevel) {
       case 'low':
         return {
           ...baseSettings,
-          constraintIterations: 4, // Increased from 3
-          positionIterations: 10,  // Increased from 8
-          velocityIterations: 10,  // Increased from 8
+          constraintIterations: 3, // Increased from 2
+          positionIterations: 8,
+          velocityIterations: 8,
           timeStep: LOW_QUALITY_TIME_STEP,
-          frictionAir: 0.00045 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
-          sleepThreshold: 45,      // Reduced to prevent premature sleep
+          frictionAir: 0.00055 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
+          sleepThreshold: 60,
           density: baseSettings.density * deviceAdjustments.densityMultiplier,
           restitution: baseSettings.restitution * deviceAdjustments.restitutionMultiplier,
         };
       case 'medium':
         return {
           ...baseSettings,
-          constraintIterations: 5,
-          positionIterations: 14,
-          velocityIterations: 14,
+          constraintIterations: 4,
+          positionIterations: 12,
+          velocityIterations: 12,
           timeStep: FIXED_TIME_STEP,
-          frictionAir: 0.00025 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
-          sleepThreshold: 35,
+          frictionAir: 0.00035 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
+          sleepThreshold: 45,
           density: baseSettings.density * deviceAdjustments.densityMultiplier,
           restitution: baseSettings.restitution * deviceAdjustments.restitutionMultiplier,
         };
@@ -183,11 +173,11 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
         return {
           ...baseSettings,
           constraintIterations: 6,
-          positionIterations: 18,  // Increased from 16
-          velocityIterations: 18,  // Increased from 16
+          positionIterations: 16,
+          velocityIterations: 16,
           timeStep: FIXED_TIME_STEP,
-          frictionAir: 0.00018 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
-          sleepThreshold: 25,      // Reduced to prevent premature sleep
+          frictionAir: 0.00025 * deviceAdjustments.frictionAirMultiplier, // Reduced for smoother movement
+          sleepThreshold: 30,
           density: baseSettings.density * deviceAdjustments.densityMultiplier,
           restitution: baseSettings.restitution * deviceAdjustments.restitutionMultiplier,
         };
@@ -210,39 +200,28 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       velocityIterations: Math.max(8, qualitySettings.velocityIterations),
     });
 
+    engine.timing.timeScale = 1;
+    engine.timing.lastDelta = 16.67;
+
     const world = engine.world;
-    
-    // Reset tracking variables on world creation
-    lastImpactMagnitude.current = 0;
-    lastImpactTime.current = 0;
-    consecutiveImpacts.current = 0;
-    isSliding.current = false;
-    slidingStartTime.current = 0;
-    lastInputForce.current = {x: 0, y: 0};
 
-    // Create ball with enhanced physics properties
-    const ball = Matter.Bodies.circle(
-      maze.startPosition.x,
-      maze.startPosition.y,
-      ballRadius,
-      {
-        restitution: qualitySettings.restitution,
-        friction: qualitySettings.friction,
-        frictionStatic: qualitySettings.frictionStatic,
-        frictionAir: qualitySettings.frictionAir,
-        density: qualitySettings.density,
-        sleepThreshold: qualitySettings.sleepThreshold,
-        label: 'ball',
-        // Add inertia scaling for more satisfying movement
-        inverseInertia: 0,
-        inverseInertiaX: 0,
-        inverseInertiaY: 0,
-        inertia: Infinity,
-      }
-    );
-
-    // Disable rotation for the ball for better control
-    Matter.Body.setInertia(ball, Infinity);
+    const ball = Matter.Bodies.circle(maze.startPosition.x, maze.startPosition.y, ballRadius, {
+      label: 'ball',
+      restitution: qualitySettings.restitution,
+      friction: qualitySettings.friction,
+      frictionAir: qualitySettings.frictionAir,
+      frictionStatic: qualitySettings.frictionStatic,
+      density: qualitySettings.density,
+      inertia: Infinity, // Prevents rotation for better control
+      slop: 0.01, // Small amount of slop for smoother collisions
+      render: {
+        fillStyle: '#FF4081',
+      },
+      collisionFilter: {
+        category: 0x0002,
+        mask: 0x0001 | 0x0004 | 0x0008,
+      },
+    });
 
     const wallSimplificationFactor = 1.0;
 
@@ -593,6 +572,36 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       tick();
     }
 
+    // Update ball position shared values for use in the UI
+    Matter.Events.on(engine, 'afterUpdate', () => {
+      if (!ball) return;
+      
+      // Use runOnUI to update shared values if available
+      if (typeof ballPositionX.runOnUI === 'function') {
+        ballPositionX.value = ball.position.x;
+        ballPositionY.value = ball.position.y;
+      } else {
+        // Fallback
+        ballPositionX.value = ball.position.x;
+        ballPositionY.value = ball.position.y;
+      }
+      
+      // Apply a subtle easing to high velocities to prevent visual jitter
+      const currentSpeed = Math.sqrt(
+        ball.velocity.x * ball.velocity.x + 
+        ball.velocity.y * ball.velocity.y
+      );
+      
+      // Gradually slow down extremely fast movements to prevent visual jitter
+      if (currentSpeed > 8) {
+        const dampingFactor = 0.98;
+        Matter.Body.setVelocity(ball, {
+          x: ball.velocity.x * dampingFactor,
+          y: ball.velocity.y * dampingFactor
+        });
+      }
+    });
+
     return () => {
       if (tickerRef.current !== null) {
         cancelAnimationFrame(tickerRef.current);
@@ -663,115 +672,152 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     (tiltX: number, tiltY: number) => {
       if (!engineRef.current || !ballRef.current) return;
 
-      // Apply a variable force based on sensitivity and gravityScale
-      const effectiveGravityScale = gravityScale * 
-                                   (sensitivity || 1.0) * 
-                                   (1 + Math.min(0.4, lastImpactMagnitude.current/10));
-      
-      // Calculate the force to apply
-      const forceX = tiltX * effectiveGravityScale;
-      const forceY = tiltY * effectiveGravityScale;
-      
-      // Store last input force for reference
-      lastInputForce.current = {x: forceX, y: forceY};
-      
-      // Get current velocity
-      const velX = ballRef.current.velocity.x;
-      const velY = ballRef.current.velocity.y;
-      
-      // Calculate current speed
-      const currentSpeed = Math.sqrt(velX * velX + velY * velY);
-      
-      // Dynamically adjust force based on conditions:
-      
-      // 1. Apply more force at low speeds to overcome initial inertia
-      const lowSpeedBoost = currentSpeed < 0.5 ? 1.4 : 1.0;
-      
-      // 2. Apply less force at very high speeds to prevent excessive acceleration
-      const highSpeedDamping = Math.min(1.0, 4.0 / (currentSpeed + 3.0));
-      
-      // 3. Apply more force when changing direction for better responsiveness
-      const isChangingDirectionX = Math.sign(forceX) !== Math.sign(velX) && Math.abs(forceX) > 0.001;
-      const isChangingDirectionY = Math.sign(forceY) !== Math.sign(velY) && Math.abs(forceY) > 0.001;
-      const directionChangeBoost = (isChangingDirectionX || isChangingDirectionY) ? 1.35 : 1.0;
-      
-      // 4. Apply more force when sliding along walls for more control
-      const slidingBoost = isSliding.current ? 1.25 : 1.0;
-      
-      // 5. Apply micro-control boost for very small, precise movements
-      const isMicroControl = Math.abs(forceX) < 0.03 && Math.abs(forceY) < 0.03 && 
-                            Math.abs(forceX) + Math.abs(forceY) > 0.005;
-      const microControlBoost = isMicroControl ? 1.3 : 1.0;
-      
-      // Combine all adjustment factors
-      const finalForceX = forceX * lowSpeedBoost * highSpeedDamping * directionChangeBoost * slidingBoost * microControlBoost;
-      const finalForceY = forceY * lowSpeedBoost * highSpeedDamping * directionChangeBoost * slidingBoost * microControlBoost;
-      
-      // Set gravity directly for more responsive control at low speeds
-      if (currentSpeed < 0.3) {
-        // Direct gravity control provides more immediate response
-        engineRef.current.gravity.x = finalForceX * 20;
-        engineRef.current.gravity.y = finalForceY * 20;
-      } else {
-        // At higher speeds, use force for more natural physics
-        // Apply the calculated force
-        Matter.Body.applyForce(ballRef.current, ballRef.current.position, {
-          x: finalForceX,
-          y: finalForceY
-        });
-        
-        // Gradual reduction of gravity as speed increases
-        // This prevents runaway acceleration
-        const gravityReductionFactor = Math.max(0.2, 1.0 - (currentSpeed / 8.0));
-        engineRef.current.gravity.x = forceX * 10 * gravityReductionFactor;
-        engineRef.current.gravity.y = forceY * 10 * gravityReductionFactor;
+      // Get device-specific adjustments
+      const isTablet = Math.min(width, height) >= 600;
+      const isIOS = Platform.OS === 'ios';
+
+      // Apply gravity with enhanced device-specific adjustments for more intuitive feel
+      const gravityMultiplier = isIOS ? 1.0 : 1.05; // Slightly stronger on Android
+      const tabletAdjustment = isTablet ? 0.95 : 1.0; // Slightly weaker on tablets
+
+      // Apply dynamic gravity scaling based on tilt magnitude
+      // This creates a more intuitive control experience:
+      // - Small tilts: More precise control with slightly reduced gravity
+      // - Medium tilts: Linear response for predictable movement
+      // - Large tilts: Slightly boosted gravity for responsive feel at extremes
+
+      const tiltMagnitude = Math.sqrt(tiltX * tiltX + tiltY * tiltY);
+      let dynamicGravityMultiplier = 1.0;
+
+      if (tiltMagnitude < 0.3) {
+        // Small tilts get slightly reduced gravity for finer control
+        dynamicGravityMultiplier = 0.9 + (tiltMagnitude / 0.3) * 0.1;
+      } else if (tiltMagnitude > 0.8) {
+        // Large tilts get slightly boosted gravity for responsive feel
+        const excess = Math.min(0.2, tiltMagnitude - 0.8);
+        dynamicGravityMultiplier = 1.0 + (excess / 0.2) * 0.15;
       }
+
+      // Apply gravity directly based on device tilt with all adjustments
+      const effectiveGravityScale = gravityScale * gravityMultiplier * tabletAdjustment * dynamicGravityMultiplier;
+
+      // Apply gravity with subtle easing for more natural acceleration
+      const currentGravityX = engineRef.current.gravity.x;
+      const currentGravityY = engineRef.current.gravity.y;
+      const targetGravityX = tiltX * effectiveGravityScale;
+      const targetGravityY = tiltY * effectiveGravityScale;
+
+      // Smooth gravity changes for more natural feel
+      // Faster response when increasing gravity, slower when decreasing (feels more natural)
+      const gravityEasingFactor = 0.3;
+      engineRef.current.gravity.x = currentGravityX + (targetGravityX - currentGravityX) *
+        (targetGravityX > currentGravityX ? gravityEasingFactor * 1.5 : gravityEasingFactor);
+      engineRef.current.gravity.y = currentGravityY + (targetGravityY - currentGravityY) *
+        (targetGravityY > currentGravityY ? gravityEasingFactor * 1.5 : gravityEasingFactor);
 
       // Dynamic max velocity based on quality level and device
-      let maxVelocity = 1.5; // Slightly increased for more satisfying movement
+      let maxVelocity = 1.3; // Slightly increased for more responsive feel
       if (qualityLevel === 'low') {
-        maxVelocity = 1.3;
+        maxVelocity = 1.1;
       } else if (qualityLevel === 'medium') {
-        maxVelocity = 1.4;
+        maxVelocity = 1.2;
       }
 
-      // Velocity capping for stable physics
-      if (currentSpeed > maxVelocity) {
-        // Calculate alignment of tilt with velocity for smarter speed limiting
+      // Adjust max velocity based on device type
+      if (isTablet) {
+        maxVelocity *= 1.1; // Tablets can handle slightly higher velocities
+      }
+
+      const velocity = ballRef.current.velocity;
+      const currentSpeed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+
+      // Enhanced progressive velocity capping for more intuitive movement
+      if (currentSpeed > 0) {
+        // Calculate tilt direction alignment with current velocity
+        // This helps determine if the player is trying to speed up or slow down
         const tiltMagnitude = Math.sqrt(tiltX * tiltX + tiltY * tiltY);
         let alignmentFactor = 0;
-        
-        if (tiltMagnitude > 0.05) {
-          // Normalized vectors
-          const normVelX = velX / currentSpeed;
-          const normVelY = velY / currentSpeed;
+
+        if (tiltMagnitude > 0.05 && currentSpeed > 0.1) {
+          // Calculate normalized vectors
+          const normVelX = velocity.x / currentSpeed;
+          const normVelY = velocity.y / currentSpeed;
           const normTiltX = tiltX / tiltMagnitude;
           const normTiltY = tiltY / tiltMagnitude;
-          
+
           // Dot product gives alignment (-1 to 1)
           alignmentFactor = normVelX * normTiltX + normVelY * normTiltY;
         }
-        
-        // Adjust velocity cap based on tilt alignment
-        // If pushing against velocity, allow higher speeds to enable quicker direction changes
-        const adjustedMaxVelocity = maxVelocity * (1 + Math.max(0, -alignmentFactor) * 0.3);
-        
-        if (currentSpeed > adjustedMaxVelocity) {
-          // Calculate capping factor
-          const cappingFactor = adjustedMaxVelocity / currentSpeed;
-          
-          // Apply velocity cap
+
+        // Dynamic speed threshold based on alignment
+        // - When accelerating in same direction: higher threshold for responsive feel
+        // - When changing direction: lower threshold for quicker response to changes
+        const baseSpeedThreshold = maxVelocity * 0.7;
+        const speedThreshold = baseSpeedThreshold * (1 + alignmentFactor * 0.2);
+
+        let speedFactor = 1.0;
+
+        if (currentSpeed > maxVelocity) {
+          // Progressive capping that gets stronger as speed increases
+          const excess = currentSpeed - maxVelocity;
+
+          // Alignment-aware capping strength:
+          // - Stronger capping when trying to go against current direction
+          // - Gentler capping when continuing in same direction
+          const baseCappingStrength = 1.0 + (excess / maxVelocity) * 0.5;
+          const alignmentAdjustment = Math.max(0, 0.2 - alignmentFactor * 0.2);
+          const cappingStrength = baseCappingStrength + alignmentAdjustment;
+
+          speedFactor = maxVelocity / (currentSpeed * cappingStrength);
+        }
+        else if (currentSpeed > speedThreshold) {
+          // Gradual reduction as we approach max velocity
+          const normalizedExcess = (currentSpeed - speedThreshold) / (maxVelocity - speedThreshold);
+
+          // Smoother easing curve for more natural feel
+          // Using a custom ease-out curve that feels more natural than cubic
+          const t = normalizedExcess;
+          const easedReduction = t * t * (3 - 2 * t);
+
+          // Alignment-aware reduction:
+          // - Less reduction when continuing in same direction (feels more responsive)
+          // - More reduction when changing direction (prevents overshooting)
+          const baseReduction = 0.3;
+          const alignmentAdjustment = Math.max(0, 0.1 - alignmentFactor * 0.1);
+
+          speedFactor = 1.0 - easedReduction * (baseReduction + alignmentAdjustment);
+        }
+
+        if (speedFactor < 1.0) {
+          // Apply velocity capping with smooth friction
+          const newVelX = velocity.x * speedFactor;
+          const newVelY = velocity.y * speedFactor;
+
+          // Enhanced dynamic friction:
+          // 1. Base friction that increases with speed
+          // 2. Alignment-aware adjustment (less friction when aligned with tilt)
+          // 3. Speed-dependent component for natural feel
+
+          const baseFriction = Math.min(
+            0.99,
+            1.0 - Math.pow(currentSpeed / maxVelocity, 2) * 0.04
+          );
+
+          // Reduce friction when player is actively pushing in velocity direction
+          const alignmentBonus = Math.max(0, alignmentFactor * 0.02);
+
+          // Final friction with all factors
+          const frictionFactor = Math.min(0.99, baseFriction + alignmentBonus);
+
           Matter.Body.setVelocity(ballRef.current, {
-            x: velX * cappingFactor,
-            y: velY * cappingFactor
+            x: newVelX * frictionFactor,
+            y: newVelY * frictionFactor,
           });
         }
       }
 
       // Improved boundary collision handling for more satisfying edge interactions
       const radius = ballRadius;
-      const position = ballRef.current.position;
-      const velocity = ballRef.current.velocity;
 
       // Helper function for smoother boundary collisions
       const handleBoundaryCollision = (
@@ -822,31 +868,221 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           const impulseStrength = 0.0001;
           impulse[axis] = isMin ? impulseStrength : -impulseStrength;
 
-          Matter.Body.applyForce(ballRef.current!, position, impulse);
-
-          if (vibrationEnabled) {
-            // Only vibrate for significant impacts
-            if (speed > 0.7) {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            } else if (speed > 0.3) {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-          }
+          Matter.Body.applyForce(
+            ballRef.current!,
+            ballRef.current!.position,
+            impulse
+          );
         }
       };
 
-      // Check for boundary collisions
-      const minX = radius + 1;
-      const maxX = width - radius - 1;
-      const minY = radius + 1;
-      const maxY = height - radius - 1;
+      // Handle all boundaries with the improved function
+      handleBoundaryCollision('x', ballRef.current.position.x, radius, true); // Left boundary
+      handleBoundaryCollision('x', ballRef.current.position.x, width - radius, false); // Right boundary
+      handleBoundaryCollision('y', ballRef.current.position.y, radius, true); // Top boundary
+      handleBoundaryCollision('y', ballRef.current.position.y, height - radius, false); // Bottom boundary
 
-      handleBoundaryCollision('x', position.x, minX, true);
-      handleBoundaryCollision('x', position.x, maxX, false);
-      handleBoundaryCollision('y', position.y, minY, true);
-      handleBoundaryCollision('y', position.y, maxY, false);
+      // Movement assist code moved after potentialCollisions is defined
+
+      const predictedX = ballRef.current.position.x + velocity.x * 2;
+      const predictedY = ballRef.current.position.y + velocity.y * 2;
+
+      // Ensure wallsRef.current exists before filtering
+      const potentialCollisions = wallsRef.current ? wallsRef.current.filter(wall => {
+        if (!wall || !wall.bounds) return false;
+
+        const bounds = wall.bounds;
+
+        const safeRadius = radius * 1.5;
+
+        return (
+          predictedX + safeRadius > bounds.min.x &&
+          predictedX - safeRadius < bounds.max.x &&
+          predictedY + safeRadius > bounds.min.y &&
+          predictedY - safeRadius < bounds.max.y
+        );
+      }) : [];
+
+      if (ballRef.current && currentSpeed > 0) {
+        const timeSteps = 3;
+        const dt = 1 / 60;
+
+        const pos = { x: ballRef.current.position.x, y: ballRef.current.position.y };
+        const vel = { x: velocity.x, y: velocity.y };
+
+        const futurePos = {
+          x: pos.x + vel.x * dt * timeSteps,
+          y: pos.y + vel.y * dt * timeSteps,
+        };
+
+        // Add safety checks for potentialCollisions
+        const willCollide = Array.isArray(potentialCollisions) && potentialCollisions.length > 0 ?
+          potentialCollisions.some(wall => {
+            if (!wall || !wall.bounds) return false;
+
+            const line = { x1: pos.x, y1: pos.y, x2: futurePos.x, y2: futurePos.y };
+
+            return lineIntersectsRectangle(
+              line,
+              wall.bounds.min.x,
+              wall.bounds.min.y,
+              wall.bounds.max.x,
+              wall.bounds.max.y
+            );
+          }) : false;
+
+        // Improved wall collision handling for more satisfying interactions
+        if (willCollide) {
+          // Dynamic reduction factor based on speed for more natural collision response
+          // Faster speeds get more reduction to prevent excessive bouncing
+          const speedFactor = Math.min(1, currentSpeed / 1.2); // Normalize speed
+          const baseReduction = 0.6; // Higher base value for less reduction
+          const reductionFactor = baseReduction - speedFactor * 0.3; // 0.6 to 0.3 range
+
+          // Apply velocity reduction with slight directional bias to prevent head-on sticking
+          const directionBias = 0.05; // Small bias to help ball slide along walls
+          const biasedVelocity = {
+            x: velocity.x * (1 + (Math.sign(velocity.x) * directionBias)),
+            y: velocity.y * (1 + (Math.sign(velocity.y) * directionBias))
+          };
+
+          Matter.Body.setVelocity(ballRef.current, {
+            x: biasedVelocity.x * reductionFactor,
+            y: biasedVelocity.y * reductionFactor,
+          });
+
+          // Apply repulsion forces from each potential wall with safety checks
+          if (Array.isArray(potentialCollisions)) {
+            potentialCollisions.forEach(wall => {
+              if (!wall || !wall.position) return;
+
+              const dirX = pos.x - wall.position.x;
+              const dirY = pos.y - wall.position.y;
+              const distance = Math.sqrt(dirX * dirX + dirY * dirY);
+
+              if (distance > 0) {
+                // Stronger repulsion for imminent collisions
+                const repulsionForce = 0.0025 / Math.max(distance, 0.4);
+
+                // Apply force with slight tangential component for better sliding
+                const normalizedDirX = dirX / distance;
+                const normalizedDirY = dirY / distance;
+
+                // Add small tangential component (perpendicular to normal)
+                const tangentialFactor = 0.2;
+                const tangentialX = -normalizedDirY * tangentialFactor;
+                const tangentialY = normalizedDirX * tangentialFactor;
+
+                Matter.Body.applyForce(ballRef.current!, pos, {
+                  x: (normalizedDirX + tangentialX) * repulsionForce,
+                  y: (normalizedDirY + tangentialY) * repulsionForce,
+                });
+              }
+            });
+          }
+        }
+        // Near-miss handling for smoother approach to walls with safety checks
+        else if (Array.isArray(potentialCollisions) && potentialCollisions.length > 0 && currentSpeed > 0.25) {
+          // Progressive velocity reduction based on speed and proximity
+          const proximityFactor = Math.min(1, potentialCollisions.length / 2);
+          const speedFactor = Math.min(1, currentSpeed / 0.8);
+          const reductionStrength = 0.2 + (proximityFactor * speedFactor * 0.15);
+
+          Matter.Body.setVelocity(ballRef.current, {
+            x: velocity.x * (1 - reductionStrength),
+            y: velocity.y * (1 - reductionStrength),
+          });
+
+          // Apply gentler repulsion forces for near-miss walls
+          potentialCollisions.forEach(wall => {
+            if (!wall || !wall.position) return;
+
+            const dirX = pos.x - wall.position.x;
+            const dirY = pos.y - wall.position.y;
+            const distance = Math.sqrt(dirX * dirX + dirY * dirY);
+
+            if (distance > 0) {
+              // Gentler repulsion for near misses
+              const repulsionForce = 0.0012 / Math.max(distance, 0.8);
+
+              Matter.Body.applyForce(ballRef.current!, pos, {
+                x: (dirX / distance) * repulsionForce,
+                y: (dirY / distance) * repulsionForce,
+              });
+            }
+          });
+        }
+      }
+
+      // Add subtle movement assist for more intuitive control in tight spaces
+      // This helps players navigate narrow corridors and tight turns more easily
+      if (currentSpeed > 0.05 && Array.isArray(potentialCollisions) && potentialCollisions.length > 0 && ballRef.current) {
+        // Check if we're in a narrow passage (walls on multiple sides)
+        const narrowPassageThreshold = radius * 5; // Distance to check for narrow passages
+
+        // Find nearby walls in different directions
+        const nearbyWalls = {
+          left: false,
+          right: false,
+          top: false,
+          bottom: false
+        };
+
+        // Check for walls in each direction
+        potentialCollisions.forEach(wall => {
+          if (!wall || !wall.bounds) return;
+
+          const ballX = ballRef.current!.position.x;
+          const ballY = ballRef.current!.position.y;
+          const wallCenterX = (wall.bounds.min.x + wall.bounds.max.x) / 2;
+          const wallCenterY = (wall.bounds.min.y + wall.bounds.max.y) / 2;
+
+          const dx = ballX - wallCenterX;
+          const dy = ballY - wallCenterY;
+
+          // Determine wall direction relative to ball
+          if (Math.abs(dx) > Math.abs(dy)) {
+            // Wall is to the left or right
+            if (dx < 0 && Math.abs(dx) < narrowPassageThreshold) nearbyWalls.right = true;
+            if (dx > 0 && Math.abs(dx) < narrowPassageThreshold) nearbyWalls.left = true;
+          } else {
+            // Wall is to the top or bottom
+            if (dy < 0 && Math.abs(dy) < narrowPassageThreshold) nearbyWalls.bottom = true;
+            if (dy > 0 && Math.abs(dy) < narrowPassageThreshold) nearbyWalls.top = true;
+          }
+        });
+
+        // Check if we're in a corridor (walls on opposite sides)
+        const inHorizontalCorridor = nearbyWalls.left && nearbyWalls.right;
+        const inVerticalCorridor = nearbyWalls.top && nearbyWalls.bottom;
+
+        if (inHorizontalCorridor || inVerticalCorridor) {
+          // We're in a narrow passage, apply subtle movement assist
+
+          // Determine primary movement direction
+          const absVelX = Math.abs(velocity.x);
+          const absVelY = Math.abs(velocity.y);
+          const movingHorizontally = absVelX > absVelY;
+
+          if (inHorizontalCorridor && !movingHorizontally) {
+            // In horizontal corridor but moving vertically - help align horizontally
+            const assistFactor = 0.92; // Reduce vertical movement
+            Matter.Body.setVelocity(ballRef.current, {
+              x: velocity.x,
+              y: velocity.y * assistFactor
+            });
+          } else if (inVerticalCorridor && movingHorizontally) {
+            // In vertical corridor but moving horizontally - help align vertically
+            const assistFactor = 0.92; // Reduce horizontal movement
+            Matter.Body.setVelocity(ballRef.current, {
+              x: velocity.x * assistFactor,
+              y: velocity.y
+            });
+          }
+        }
+      }
     },
-    [width, height, ballRadius, vibrationEnabled, gravityScale, qualityLevel, sensitivity]
+    [qualityLevel, width, height, ballRadius, gravityScale, Platform]
   );
 
   const changeQualityLevel = (level: 'low' | 'medium' | 'high') => {

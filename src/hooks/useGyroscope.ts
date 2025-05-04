@@ -278,22 +278,43 @@ export const useGyroscope = (enabled = true) => {
     // Create a safe offset from current raw values
     const rawX = prevRawX.current || 0;
     const rawY = prevRawY.current || 0;
-    
+
     // Set new offset to current raw position plus existing offset
-    setOffset(current => ({ 
-      x: rawX + current.x, 
-      y: rawY + current.y 
+    // This is the key to proper calibration - we need to account for the current position
+    setOffset(current => ({
+      x: rawX + current.x,
+      y: rawY + current.y
     }));
-    
-    // Reset data to zero
+
+    // Reset data to zero immediately
     setData({ x: 0, y: 0 });
     setIsCalibrated(true);
-    
+
     // Reset previous values to prevent jumps
     prevRawX.current = 0;
     prevRawY.current = 0;
     prevMappedX.current = 0;
     prevMappedY.current = 0;
+
+    // Force a second calibration after a short delay to ensure stability
+    // This helps with devices that have sensor lag
+    setTimeout(() => {
+      const currentRawX = prevRawX.current || 0;
+      const currentRawY = prevRawY.current || 0;
+
+      setOffset(current => ({
+        x: currentRawX + current.x,
+        y: currentRawY + current.y
+      }));
+
+      setData({ x: 0, y: 0 });
+
+      // Reset previous values again
+      prevRawX.current = 0;
+      prevRawY.current = 0;
+      prevMappedX.current = 0;
+      prevMappedY.current = 0;
+    }, 50);
   }, []);
 
   // Auto-calibrate once sensor becomes available

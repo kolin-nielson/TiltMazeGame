@@ -62,7 +62,7 @@ type PhysicsMazeProps = {
   isDying: boolean;
   ballPositionX: Animated.SharedValue<number>;
   ballPositionY: Animated.SharedValue<number>;
-  update: (gyroX: number, gyroY: number) => void;
+  update: (gyroX: number, gyroY: number, resetVelocity?: boolean) => void;
   colors: any;
   ballRadius: number;
 };
@@ -80,17 +80,28 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
   colors,
   ballRadius,
 }) => {
+  // Track previous game state to detect transitions
+  const prevGameStateRef = useRef<GameState | null>(null);
+
   useEffect(() => {
+    // Detect transition to playing state
+    const wasNotPlaying = prevGameStateRef.current !== 'playing';
+    const isNowPlaying = gameState === 'playing';
+    const justStartedPlaying = wasNotPlaying && isNowPlaying && !isTransitioning && !isDying;
+
+    // Update previous state reference
+    prevGameStateRef.current = gameState;
+
     // Pause ball movement during level transitions, death animation, or when not playing
     const frozen = isTransitioning || isDying || gameState !== 'playing';
     const effectiveX = !frozen ? gyroX : 0;
     const effectiveY = !frozen ? gyroY : 0;
-    
-    // Use requestAnimationFrame for smoother updates and to avoid Reanimated warnings
+
+    // If we just started playing, force zero velocity by passing a special flag
     const frameId = requestAnimationFrame(() => {
-      update(effectiveX, effectiveY);
+      update(effectiveX, effectiveY, justStartedPlaying);
     });
-    
+
     return () => cancelAnimationFrame(frameId);
   }, [gyroX, gyroY, gameState, isTransitioning, isDying, update]);
 
@@ -184,7 +195,26 @@ const GameScreen: React.FC = () => {
 
   const handlePlayAgain = useCallback(() => {
     dispatch(resetGame());
-  }, [dispatch]);
+
+    // Calibrate gyroscope when starting a new game
+    if (gyroscopeAvailable) {
+      // First reset immediately to prevent initial movement
+      resetGyroscope();
+      dispatch(setGyroscopeCalibrated(true));
+
+      // Small delay to ensure game state is reset first
+      setTimeout(() => {
+        // Then recalibrate after the game state is reset
+        resetGyroscope();
+        dispatch(setGyroscopeCalibrated(true));
+
+        // Add haptic feedback for better user experience
+        if (settings.vibrationEnabled) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }, 150);
+    }
+  }, [dispatch, gyroscopeAvailable, resetGyroscope, settings.vibrationEnabled]);
 
   const handleGameOver = useCallback(() => {
     if (levelsCompleted > (settings.highestScore || 0)) {
@@ -204,14 +234,45 @@ const GameScreen: React.FC = () => {
     resetPhysics();
   }, [dispatch, levelsCompleted, settings.highestScore, settings.vibrationEnabled, resetPhysics]);
 
+  // Track previous game state to detect transitions for calibration
+  const prevGameStateForCalibrationRef = useRef<GameState | null>(null);
+
+  // Effect to handle gyroscope calibration when game state changes to 'playing'
+  useEffect(() => {
+    // Detect transition to playing state
+    const wasNotPlaying = prevGameStateForCalibrationRef.current !== 'playing';
+    const isNowPlaying = gameState === 'playing';
+    const justStartedPlaying = wasNotPlaying && isNowPlaying;
+
+    // Update previous state reference
+    prevGameStateForCalibrationRef.current = gameState;
+
+    // Always calibrate when transitioning to playing state
+    if (justStartedPlaying && gyroscopeAvailable) {
+      // Give a small delay to ensure the device is stable when the user clicks play
+      // This is crucial for proper calibration
+      setTimeout(() => {
+        // Reset gyroscope to calibrate based on current device position
+        resetGyroscope();
+        dispatch(setGyroscopeCalibrated(true));
+
+        // Add haptic feedback for better user experience
+        if (settings.vibrationEnabled) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }, 100); // 100ms delay gives enough time for the user to stabilize their device
+    }
+  }, [gameState, gyroscopeAvailable, resetGyroscope, dispatch, settings.vibrationEnabled]);
+
+  // Handle other calibration cases
   useEffect(() => {
     if (gameState === 'playing' && !gyroIsCalibrated && gyroscopeAvailable) {
       resetGyroscope();
-      setGyroscopeCalibrated(true);
+      dispatch(setGyroscopeCalibrated(true));
     } else if (gyroIsCalibrated && !gyroscopeCalibrated) {
-      setGyroscopeCalibrated(true);
+      dispatch(setGyroscopeCalibrated(true));
     }
-  }, [gameState, gyroscopeCalibrated, gyroIsCalibrated, gyroscopeAvailable, resetGyroscope]);
+  }, [gameState, gyroscopeCalibrated, gyroIsCalibrated, gyroscopeAvailable, resetGyroscope, dispatch]);
 
   const handleGoalReachedAndNextLevel = useCallback(() => {
     if (gameState === 'playing') {
@@ -306,8 +367,29 @@ const GameScreen: React.FC = () => {
 
     dispatch(setDifficulty(nextDifficulty));
     dispatch(setCurrentMaze(nextMaze));
-    dispatch(setGameState('playing'));
-  }, [dispatch, difficulty, GAME.MAX_DIFFICULTY]);
+
+    // Calibrate gyroscope before setting game state to playing
+    // Use a small delay to ensure the device is stable
+    if (gyroscopeAvailable) {
+      // First reset immediately to prevent initial movement
+      resetGyroscope();
+      dispatch(setGyroscopeCalibrated(true));
+
+      // Then set a small delay before setting the game state to playing
+      // This ensures the calibration is complete before gameplay starts
+      setTimeout(() => {
+        // Recalibrate once more for stability
+        resetGyroscope();
+        dispatch(setGyroscopeCalibrated(true));
+
+        // Now set the game state to playing
+        dispatch(setGameState('playing'));
+      }, 150);
+    } else {
+      // If gyroscope is not available, just set the game state to playing
+      dispatch(setGameState('playing'));
+    }
+  }, [dispatch, difficulty, GAME.MAX_DIFFICULTY, gyroscopeAvailable, resetGyroscope]);
 
   const handleExit = useCallback(() => {
     // Ensure the game state is completely reset before navigating back
@@ -321,9 +403,28 @@ const GameScreen: React.FC = () => {
   const onContinuePlaying = useCallback(() => {
     // Continue from the current level instead of resetting
     dispatch(continueAfterAd());
+
     // Reset the physics engine to restart the level
     resetPhysics();
-  }, [dispatch, resetPhysics]);
+
+    // Calibrate gyroscope when continuing after ad
+    if (gyroscopeAvailable) {
+      // First reset immediately to prevent initial movement
+      resetGyroscope();
+      dispatch(setGyroscopeCalibrated(true));
+
+      // Add haptic feedback for better user experience
+      if (settings.vibrationEnabled) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+
+      // Then recalibrate after a small delay to ensure stability
+      setTimeout(() => {
+        resetGyroscope();
+        dispatch(setGyroscopeCalibrated(true));
+      }, 150);
+    }
+  }, [dispatch, resetPhysics, gyroscopeAvailable, resetGyroscope, settings.vibrationEnabled]);
 
   const handleWatchAd = useCallback(async () => {
     const adShown = await showRewardedAd(onContinuePlaying);

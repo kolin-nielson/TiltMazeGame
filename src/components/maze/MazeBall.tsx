@@ -33,7 +33,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
     // Initialize with 0 to avoid accessing .value during render
     const lastPositionX = useSharedValue(0);
     const lastPositionY = useSharedValue(0);
-    
+
     // Set initial values after render
     useEffect(() => {
       lastPositionX.value = ballPositionX.value;
@@ -67,13 +67,29 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       return velocityY.value * 0.8;
     });
 
-    // Dynamic ball scale - slight squish effect when moving fast
+    // Enhanced dynamic ball scale - more pronounced squish effect for visual feedback
     const dynamicScale = useDerivedValue(() => {
       const baseScale = 1.0;
-      // Calculate scale factors based on velocity components
-      const xScale = 1 - Math.min(0.1, Math.abs(velocityX.value) * 0.01);
-      const yScale = 1 - Math.min(0.1, Math.abs(velocityY.value) * 0.01);
-      return { x: xScale * baseScale, y: yScale * baseScale };
+
+      // Calculate speed for dynamic effects
+      const speed = Math.sqrt(velocityX.value * velocityX.value + velocityY.value * velocityY.value);
+
+      // Calculate direction-aware scale factors for more realistic deformation
+      // This creates a more pronounced squish effect in the direction of movement
+      const directionFactor = speed > 0.1 ? 0.15 : 0;
+      const xContribution = Math.abs(velocityX.value) / (speed + 0.01); // Avoid division by zero
+      const yContribution = Math.abs(velocityY.value) / (speed + 0.01);
+
+      // Calculate scale factors with enhanced squish effect
+      // The ball will compress more in the direction of movement and stretch perpendicular to it
+      const xScale = 1 - (Math.min(0.15, Math.abs(velocityX.value) * 0.015) * xContribution * directionFactor);
+      const yScale = 1 - (Math.min(0.15, Math.abs(velocityY.value) * 0.015) * yContribution * directionFactor);
+
+      return {
+        x: xScale * baseScale,
+        y: yScale * baseScale,
+        speed: speed // Pass speed for other effects
+      };
     });
 
     const animatedProps = useAnimatedProps(() => {
@@ -83,34 +99,72 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       };
     });
 
-    // Simple shadow that works across platforms
+    // Enhanced shadow effect for more realistic and satisfying visual feedback
     const shadowProps = useAnimatedProps(() => {
+      // Calculate dynamic shadow offset based on velocity
+      // This creates a more realistic shadow that follows the ball's movement
+      const speed = dynamicScale.value.speed || 0;
       const offsetX = shadowOffsetX.value;
       const offsetY = shadowOffsetY.value;
-      const opacity = Math.min(0.4, 0.2 + (ballSpeed.value * 0.05));
+
+      // Dynamic shadow opacity based on speed
+      // Faster movement creates a more pronounced shadow
+      const baseOpacity = 0.25;
+      const speedContribution = Math.min(0.2, speed * 0.05);
+      const opacity = baseOpacity + speedContribution;
+
+      // Dynamic shadow size based on speed
+      // Faster movement creates a slightly larger, more diffuse shadow
+      const sizeMultiplier = 1.02 + Math.min(0.08, speed * 0.01);
 
       return {
         cx: ballPositionX.value + offsetX,
         cy: ballPositionY.value + offsetY + 1.5, // Add slight y offset for shadow
-        r: radius * 1.02,
+        r: radius * sizeMultiplier,
         opacity: opacity,
       };
     });
 
+    // Enhanced glow effect for more dynamic visual feedback
     const glowProps = useAnimatedProps(() => {
+      // Calculate speed-based glow intensity
+      // Faster movement creates a more intense glow
+      const speed = dynamicScale.value.speed || 0;
+      const speedGlow = Math.min(0.15, speed * 0.03);
+
+      // Combine speed glow with pulse animation for a dynamic effect
+      const pulseEffect = pulseAnim.value * 0.1;
+      const opacity = 0.25 + pulseEffect + speedGlow;
+
+      // Dynamic glow size based on speed and pulse
+      // Creates a more responsive and alive feel
+      const sizeMultiplier = 1.1 + pulseAnim.value * 0.05 + Math.min(0.1, speed * 0.01);
+
       return {
         cx: ballPositionX.value,
         cy: ballPositionY.value,
-        opacity: 0.3 + (pulseAnim.value * 0.1),
-        r: radius * (1.1 + pulseAnim.value * 0.05)
+        opacity: opacity,
+        r: radius * sizeMultiplier
       };
     });
 
-    // Ball scaling animation for squish effect
+    // Enhanced ball scaling animation for more pronounced squish effect
+    // This creates a more visually satisfying deformation as the ball moves
     const scaleXProps = useAnimatedProps(() => {
+      // Calculate rotation angle based on velocity direction
+      const angle = Math.atan2(velocityY.value, velocityX.value);
+      const speed = dynamicScale.value.speed || 0;
+
+      // Apply subtle rotation to the ball based on movement direction
+      // This creates a more dynamic and responsive feel
+      const rotationEffect = speed > 0.5 ? Math.sin(angle) * 0.1 : 0;
+
+      // Apply subtle size variation based on speed
+      // Faster movement makes the ball appear slightly smaller (like it's compressing)
+      const sizeVariation = 1 - Math.min(0.05, speed * 0.005);
+
       return {
-        rx: radius * dynamicScale.value.x,
-        ry: radius * dynamicScale.value.y,
+        r: radius * sizeVariation, // Apply subtle size variation
         cx: ballPositionX.value,
         cy: ballPositionY.value,
       };
@@ -170,8 +224,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
 
     const renderFill = () => {
       if (!skin) return defaultColor;
-      const gradientId = `ball-grad-${skin.id}`;
-      const patternId = `ball-pattern-${skin.id}`;
+
       if (skin.animated && skin.type === 'gradient'){
         return `url(#${gradientId})`;
       }
@@ -183,12 +236,83 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       }
     };
 
+    // Generate unique IDs for SVG elements to avoid conflicts
+    const uniqueId = `${Date.now()}`;
+    const gradientId = `ball-grad-${skin?.id || 'default'}-${uniqueId}`;
+    const patternId = `ball-pattern-${skin?.id || 'default'}-${uniqueId}`;
+
+    // Track previous positions for motion trail effect
+    const trailPositions = useSharedValue<{x: number, y: number, time: number}[]>([]);
+
+    // Update trail positions
+    useDerivedValue(() => {
+      const now = Date.now();
+      const speed = dynamicScale.value.speed || 0;
+
+      // Only add trail points when moving at a certain speed
+      if (speed > 0.5) {
+        // Add current position to trail
+        trailPositions.value = [
+          {
+            x: ballPositionX.value,
+            y: ballPositionY.value,
+            time: now
+          },
+          ...trailPositions.value
+        ].slice(0, 5); // Keep only the 5 most recent positions
+      }
+
+      // Remove old trail points (older than 300ms)
+      trailPositions.value = trailPositions.value.filter(
+        point => now - point.time < 300
+      );
+    });
+
+    // Generate trail circle props for each trail position
+    const generateTrailProps = (index: number) => {
+      return useAnimatedProps(() => {
+        if (trailPositions.value.length <= index) {
+          return {
+            cx: 0,
+            cy: 0,
+            r: 0,
+            opacity: 0
+          };
+        }
+
+        const point = trailPositions.value[index];
+        const now = Date.now();
+        const age = now - point.time;
+        const speed = dynamicScale.value.speed || 0;
+
+        // Calculate opacity based on age and speed
+        // Faster movement creates more visible trails
+        const maxOpacity = Math.min(0.4, speed * 0.05);
+        const opacity = maxOpacity * (1 - (age / 300));
+
+        // Calculate size based on age (older points are smaller)
+        const size = radius * (0.8 - (index * 0.15));
+
+        return {
+          cx: point.x,
+          cy: point.y,
+          r: size,
+          opacity: opacity
+        };
+      });
+    };
+
+    // Generate trail props for multiple trail points
+    const trailProps1 = generateTrailProps(0);
+    const trailProps2 = generateTrailProps(1);
+    const trailProps3 = generateTrailProps(2);
+
     return (
       <>
         <Defs>
           {skin?.type === 'gradient' && (
             skin.gradientDirection === 'radial' ? (
-              <RadialGradient id={`ball-grad-${skin.id}`} cx="50%" cy="50%" r="50%">
+              <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
                 {skin.colors.map((c, index) => (
                   <Stop key={index} offset={`${(index / (skin.colors.length - 1)) * 100}%`} stopColor={c} />
                 ))}
@@ -196,7 +320,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
             ) : (
               skin.animated ? (
                 <AnimatedLinearGradient
-                  id={`ball-grad-${skin.id}`}
+                  id={gradientId}
                   animatedProps={animatedGradientProps}
                 >
                   {skin.colors.map((c, index) => (
@@ -205,7 +329,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
                 </AnimatedLinearGradient>
               ) : (
                 <LinearGradient
-                  id={`ball-grad-${skin.id}`}
+                  id={gradientId}
                   {...getLinearGradientProps(skin)}
                 >
                   {skin.colors.map((c, index) => (
@@ -216,45 +340,69 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
             )
           )}
           {skin?.type === 'pattern' && skin.patternType === 'dots' && (
-            <Pattern id={`ball-pattern-${skin.id}`} patternUnits="userSpaceOnUse" width="10" height="10">
+            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="10" height="10">
               <Rect width="10" height="10" fill={skin.colors[0]} />
               <Circle cx="5" cy="5" r="2" fill={skin.colors[1]} />
             </Pattern>
           )}
           {skin?.type === 'pattern' && skin.patternType === 'stripes' && (
-            <Pattern id={`ball-pattern-${skin.id}`} patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
               <Rect width="10" height="10" fill={skin.colors[0]} />
               <Rect width="5" height="10" fill={skin.colors[1]} />
             </Pattern>
           )}
         </Defs>
 
-        {/* Simple shadow under the ball - no filters used */}
+        {/* Motion trail effect for more dynamic movement */}
+        <AnimatedCircle
+          animatedProps={trailProps3}
+          fill={skin?.type === 'solid' ? skin.colors[0] : renderFill()}
+        />
+        <AnimatedCircle
+          animatedProps={trailProps2}
+          fill={skin?.type === 'solid' ? skin.colors[0] : renderFill()}
+        />
+        <AnimatedCircle
+          animatedProps={trailProps1}
+          fill={skin?.type === 'solid' ? skin.colors[0] : renderFill()}
+        />
+
+        {/* Enhanced shadow under the ball */}
         <AnimatedCircle
           animatedProps={shadowProps}
           fill="rgba(0,0,0,0.3)"
         />
 
-        {/* Subtle glow around the ball */}
+        {/* Enhanced glow around the ball */}
         <AnimatedCircle
           animatedProps={glowProps}
           fill="rgba(255,255,255,0.2)"
         />
 
-        {/* Main ball with ellipse deformation based on movement */}
+        {/* Main ball with enhanced deformation based on movement */}
         <AnimatedCircle
           animatedProps={scaleXProps}
           fill={renderFill()}
         />
 
-        {/* Highlight spot on the ball for 3D effect */}
+        {/* Enhanced highlight spot on the ball for 3D effect */}
         <AnimatedCircle
-          animatedProps={useAnimatedProps(() => ({
-            cx: ballPositionX.value - radius * 0.3,
-            cy: ballPositionY.value - radius * 0.3,
-            r: radius * 0.3
-          }))}
-          fill="rgba(255,255,255,0.2)"
+          animatedProps={useAnimatedProps(() => {
+            const speed = dynamicScale.value.speed || 0;
+            // Dynamic highlight that shifts based on movement direction
+            const offsetX = -radius * 0.3 + (velocityX.value * 0.02);
+            const offsetY = -radius * 0.3 + (velocityY.value * 0.02);
+            // Highlight gets smaller at higher speeds for more dynamic feel
+            const highlightSize = radius * (0.3 - Math.min(0.1, speed * 0.01));
+
+            return {
+              cx: ballPositionX.value + offsetX,
+              cy: ballPositionY.value + offsetY,
+              r: highlightSize,
+              opacity: 0.25 - Math.min(0.1, speed * 0.02) // Highlight fades slightly with speed
+            };
+          })}
+          fill="rgba(255,255,255,0.25)"
         />
       </>
     );

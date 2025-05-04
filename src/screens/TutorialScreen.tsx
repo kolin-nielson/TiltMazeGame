@@ -32,7 +32,7 @@ const slides = [
   },
   {
     key: 'lasers',
-    icon: 'laser-sword',
+    icon: 'ray-start-end',
     title: 'Avoid Lasers',
     description: 'Red laser gates are deadly—dodge them to stay alive.',
   },
@@ -71,8 +71,8 @@ const TutorialScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>      
-      <Card mode="elevated" style={[styles.card, { backgroundColor: colors.surface }]}>        
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Card mode="elevated" style={[styles.card, { backgroundColor: colors.surface }]}>
         <Card.Content style={styles.cardContent}>
           <MaterialCommunityIcons
             name={slides[index].icon as any}
@@ -120,4 +120,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TutorialScreen; 
+export default TutorialScreen;

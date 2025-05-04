@@ -57,7 +57,7 @@ const MemoizedLaserGates = memo(
 
 const CoinCircle = memo(({ coin, ballRadius }: { coin: Coin, ballRadius: number }) => {
   const anim = useSharedValue(0);
-  
+
   useEffect(() => {
     anim.value = withRepeat(
       withTiming(1, { duration: 1000, easing: Easing.linear }),
@@ -122,6 +122,7 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
           viewBox={`0 0 ${mazeBaseSize} ${mazeBaseSize}`}
           preserveAspectRatio="none"
         >
+          {/* Ensure SVG defs are properly included at the top level */}
           <MazeGoal
             position={maze.endPosition}
             ballRadius={ballRadius}
@@ -142,6 +143,7 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
         ))}
 
           <MazeBall
+            key="maze-ball"
             ballPositionX={ballPositionX}
             ballPositionY={ballPositionY}
             radius={ballRadius}

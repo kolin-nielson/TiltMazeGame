@@ -11,6 +11,7 @@ import Animated, {
   useDerivedValue
 } from 'react-native-reanimated';
 import { useAppSelector } from '@store';
+import { Trail } from '@store/slices/shopSlice';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -22,8 +23,9 @@ interface MazeBallProps {
 
 export const MazeBall: React.FC<MazeBallProps> = memo(
   ({ ballPositionX, ballPositionY, radius }) => {
-    const { skins, equippedSkin } = useAppSelector(state => state.shop);
+    const { skins, equippedSkin, trails, equippedTrail } = useAppSelector(state => state.shop);
     const skin = skins.find(s => s.id === equippedSkin);
+    const trail = trails.find(t => t.id === equippedTrail);
     const defaultColor = '#E53935'; // Classic Red default color
 
     const progress = useSharedValue(0);
@@ -250,7 +252,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       const speed = dynamicScale.value.speed || 0;
 
       // Only add trail points when moving at a certain speed
-      if (speed > 0.5) {
+      if (speed > 0.05) { // Lowered threshold for trail point generation
         // Add current position to trail
         trailPositions.value = [
           {
@@ -259,12 +261,12 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
             time: now
           },
           ...trailPositions.value
-        ].slice(0, 5); // Keep only the 5 most recent positions
+        ].slice(0, 10); // Keep only the 10 most recent positions
       }
 
-      // Remove old trail points (older than 300ms)
+      // Remove old trail points (older than 500ms)
       trailPositions.value = trailPositions.value.filter(
-        point => now - point.time < 300
+        point => now - point.time < 500
       );
     });
 
@@ -287,11 +289,13 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
 
         // Calculate opacity based on age and speed
         // Faster movement creates more visible trails
-        const maxOpacity = Math.min(0.4, speed * 0.05);
-        const opacity = maxOpacity * (1 - (age / 300));
+        const baseTrailOpacity = 0.15; // Minimum opacity for trail
+        const speedContribution = Math.min(0.35, speed * 0.05); // Opacity added by speed
+        const maxOpacity = baseTrailOpacity + speedContribution; // Total max opacity up to 0.5
+        const opacity = maxOpacity * (1 - (age / 500)); // Adjusted for 500ms lifetime
 
         // Calculate size based on age (older points are smaller)
-        const size = radius * (0.8 - (index * 0.15));
+        const size = radius * (0.8 - (index * 0.10)); // Less aggressive size reduction
 
         return {
           cx: point.x,
@@ -306,6 +310,8 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
     const trailProps1 = generateTrailProps(0);
     const trailProps2 = generateTrailProps(1);
     const trailProps3 = generateTrailProps(2);
+    const trailProps4 = generateTrailProps(3);
+    const trailProps5 = generateTrailProps(4);
 
     return (
       <>
@@ -355,16 +361,24 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
 
         {/* Motion trail effect for more dynamic movement */}
         <AnimatedCircle
+          animatedProps={trailProps5}
+          fill={trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
+        />
+        <AnimatedCircle
+          animatedProps={trailProps4}
+          fill={trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
+        />
+        <AnimatedCircle
           animatedProps={trailProps3}
-          fill={skin?.type === 'solid' ? skin.colors[0] : renderFill()}
+          fill={trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
         />
         <AnimatedCircle
           animatedProps={trailProps2}
-          fill={skin?.type === 'solid' ? skin.colors[0] : renderFill()}
+          fill={trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
         />
         <AnimatedCircle
           animatedProps={trailProps1}
-          fill={skin?.type === 'solid' ? skin.colors[0] : renderFill()}
+          fill={trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
         />
 
         {/* Enhanced shadow under the ball */}

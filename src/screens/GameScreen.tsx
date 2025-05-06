@@ -82,6 +82,8 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
 }) => {
   // Track previous game state to detect transitions
   const prevGameStateRef = useRef<GameState | null>(null);
+  // Track if this is the first frame after initialization
+  const isFirstFrameRef = useRef(true);
 
   useEffect(() => {
     // Detect transition to playing state
@@ -94,12 +96,27 @@ const PhysicsMaze: React.FC<PhysicsMazeProps> = ({
 
     // Pause ball movement during level transitions, death animation, or when not playing
     const frozen = isTransitioning || isDying || gameState !== 'playing';
-    const effectiveX = !frozen ? gyroX : 0;
-    const effectiveY = !frozen ? gyroY : 0;
 
-    // If we just started playing, force zero velocity by passing a special flag
+    // Always use zero tilt for the very first frame to ensure stability
+    let effectiveX = 0;
+    let effectiveY = 0;
+
+    if (!frozen && !isFirstFrameRef.current) {
+      // After the first frame, use actual gyro values if not frozen
+      effectiveX = gyroX;
+      effectiveY = gyroY;
+    }
+
+    // If we just started playing or this is the first frame, force zero velocity
+    const shouldResetVelocity = justStartedPlaying || isFirstFrameRef.current;
+
     const frameId = requestAnimationFrame(() => {
-      update(effectiveX, effectiveY, justStartedPlaying);
+      update(effectiveX, effectiveY, shouldResetVelocity);
+
+      // Mark first frame as completed
+      if (isFirstFrameRef.current) {
+        isFirstFrameRef.current = false;
+      }
     });
 
     return () => cancelAnimationFrame(frameId);
@@ -187,34 +204,27 @@ const GameScreen: React.FC = () => {
     data: gyroData,
     available: gyroscopeAvailable,
     reset: resetGyroscope,
+    forceCalibration: forceGyroscopeCalibration,
     isCalibrated: gyroIsCalibrated,
+    isCalibrating: gyroIsCalibrating,
     hasDeviceMovedSignificantly,
   } = useGyroscope(true);
 
   const { ballPositionX, ballPositionY, update, goalReached, gameOver, reset: resetPhysics } = usePhysics(currentMaze, physicsOptions);
 
   const handlePlayAgain = useCallback(() => {
+    // Reset the first level flag to ensure proper initialization on restart
+    isFirstLevelRef.current = true;
+
+    // First reset the game state
     dispatch(resetGame());
 
-    // Calibrate gyroscope when starting a new game
-    if (gyroscopeAvailable) {
-      // First reset immediately to prevent initial movement
-      resetGyroscope();
-      dispatch(setGyroscopeCalibrated(true));
+    // Reset physics first to ensure ball is in correct position
+    resetPhysics();
 
-      // Small delay to ensure game state is reset first
-      setTimeout(() => {
-        // Then recalibrate after the game state is reset
-        resetGyroscope();
-        dispatch(setGyroscopeCalibrated(true));
-
-        // Add haptic feedback for better user experience
-        if (settings.vibrationEnabled) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-      }, 150);
-    }
-  }, [dispatch, gyroscopeAvailable, resetGyroscope, settings.vibrationEnabled]);
+    // The rest of the calibration will be handled by the game loading effect
+    // which detects the 'loading' state and performs the appropriate calibration
+  }, [dispatch, resetPhysics]);
 
   const handleGameOver = useCallback(() => {
     if (levelsCompleted > (settings.highestScore || 0)) {
@@ -368,28 +378,41 @@ const GameScreen: React.FC = () => {
     dispatch(setDifficulty(nextDifficulty));
     dispatch(setCurrentMaze(nextMaze));
 
-    // Calibrate gyroscope before setting game state to playing
-    // Use a small delay to ensure the device is stable
+    // Show a calibration message to the user
+    dispatch(setShowCalibrationOverlay(true));
+
+    // Force calibrate gyroscope before setting game state to playing
     if (gyroscopeAvailable) {
-      // First reset immediately to prevent initial movement
-      resetGyroscope();
-      dispatch(setGyroscopeCalibrated(true));
+      // Force calibration with a delay to ensure device is stable
+      forceGyroscopeCalibration(200); // 200ms delay for stability
 
-      // Then set a small delay before setting the game state to playing
-      // This ensures the calibration is complete before gameplay starts
-      setTimeout(() => {
-        // Recalibrate once more for stability
-        resetGyroscope();
-        dispatch(setGyroscopeCalibrated(true));
+      // Wait for calibration to complete before setting game state
+      const checkCalibration = () => {
+        if (!gyroIsCalibrating) {
+          dispatch(setGyroscopeCalibrated(true));
+          dispatch(setShowCalibrationOverlay(false));
 
-        // Now set the game state to playing
-        dispatch(setGameState('playing'));
-      }, 150);
+          // Now set the game state to playing
+          dispatch(setGameState('playing'));
+
+          // Add haptic feedback for better user experience
+          if (settings.vibrationEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        } else {
+          // Check again in a few ms if still calibrating
+          setTimeout(checkCalibration, 16);
+        }
+      };
+
+      // Start checking calibration status
+      checkCalibration();
     } else {
       // If gyroscope is not available, just set the game state to playing
+      dispatch(setShowCalibrationOverlay(false));
       dispatch(setGameState('playing'));
     }
-  }, [dispatch, difficulty, GAME.MAX_DIFFICULTY, gyroscopeAvailable, resetGyroscope]);
+  }, [dispatch, difficulty, GAME.MAX_DIFFICULTY, gyroscopeAvailable, forceGyroscopeCalibration, gyroIsCalibrating, settings.vibrationEnabled]);
 
   const handleExit = useCallback(() => {
     // Ensure the game state is completely reset before navigating back
@@ -407,24 +430,37 @@ const GameScreen: React.FC = () => {
     // Reset the physics engine to restart the level
     resetPhysics();
 
-    // Calibrate gyroscope when continuing after ad
+    // Show a calibration message to the user
+    dispatch(setShowCalibrationOverlay(true));
+
+    // Force calibrate gyroscope when continuing after ad
     if (gyroscopeAvailable) {
-      // First reset immediately to prevent initial movement
-      resetGyroscope();
-      dispatch(setGyroscopeCalibrated(true));
+      // Force calibration with a delay to ensure device is stable
+      forceGyroscopeCalibration(200); // 200ms delay for stability
 
-      // Add haptic feedback for better user experience
-      if (settings.vibrationEnabled) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
+      // Wait for calibration to complete before proceeding
+      const checkCalibration = () => {
+        if (!gyroIsCalibrating) {
+          dispatch(setGyroscopeCalibrated(true));
+          dispatch(setShowCalibrationOverlay(false));
 
-      // Then recalibrate after a small delay to ensure stability
-      setTimeout(() => {
-        resetGyroscope();
-        dispatch(setGyroscopeCalibrated(true));
-      }, 150);
+          // Add haptic feedback for better user experience
+          if (settings.vibrationEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+        } else {
+          // Check again in a few ms if still calibrating
+          setTimeout(checkCalibration, 16);
+        }
+      };
+
+      // Start checking calibration status
+      checkCalibration();
+    } else {
+      // If gyroscope is not available, hide the calibration overlay
+      dispatch(setShowCalibrationOverlay(false));
     }
-  }, [dispatch, resetPhysics, gyroscopeAvailable, resetGyroscope, settings.vibrationEnabled]);
+  }, [dispatch, resetPhysics, gyroscopeAvailable, forceGyroscopeCalibration, gyroIsCalibrating, settings.vibrationEnabled]);
 
   const handleWatchAd = useCallback(async () => {
     const adShown = await showRewardedAd(onContinuePlaying);
@@ -459,19 +495,35 @@ const GameScreen: React.FC = () => {
   }, []);
 
   const handleCalibrationComplete = useCallback(() => {
-    resetGyroscope();
-    dispatch(setGyroscopeCalibrated(true));
-    dispatch(setShowCalibrationOverlay(false));
+    // Start the calibration process with a delay to ensure device is stable
+    forceGyroscopeCalibration(200); // 200ms delay for stability
 
-    if (settings.vibrationEnabled) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    setSnackbarVisible(true);
+    // Wait for calibration to complete
+    const checkCalibration = () => {
+      if (!gyroIsCalibrating) {
+        // Calibration complete
+        dispatch(setGyroscopeCalibrated(true));
+        dispatch(setShowCalibrationOverlay(false));
 
-    recalibrationTimeoutRef.current = setTimeout(() => {
-      dispatch(setIsManualRecalibrating(false));
-    }, 500);
-  }, [dispatch, resetGyroscope, settings.vibrationEnabled]);
+        // Provide feedback
+        if (settings.vibrationEnabled) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        setSnackbarVisible(true);
+
+        // Reset manual recalibration flag after a delay
+        recalibrationTimeoutRef.current = setTimeout(() => {
+          dispatch(setIsManualRecalibrating(false));
+        }, 500);
+      } else {
+        // Check again in a few ms if still calibrating
+        setTimeout(checkCalibration, 16);
+      }
+    };
+
+    // Start checking calibration status
+    checkCalibration();
+  }, [dispatch, forceGyroscopeCalibration, gyroIsCalibrating, settings.vibrationEnabled]);
 
   useEffect(() => {
     return () => {
@@ -483,19 +535,98 @@ const GameScreen: React.FC = () => {
 
 
 
+  // Reference to track if this is the first level load
+  const isFirstLevelRef = useRef(true);
+
   useEffect(() => {
     if (gameState === 'loading') {
+      // Initialize game state
       dispatch(setDifficulty(1));
       dispatch(setLevelsCompleted(0));
       const initialMaze = generateMaze(1);
       dispatch(setCurrentMaze(initialMaze));
-      dispatch(setGameState('playing'));
+
+      // For the first level, we need a special loading sequence
+      if (isFirstLevelRef.current) {
+        // First, just transition to playing state to initialize physics
+        dispatch(setGameState('playing'));
+
+        // Then after a short delay to ensure physics is initialized, perform calibration
+        setTimeout(() => {
+          // Show calibration overlay
+          dispatch(setShowCalibrationOverlay(true));
+
+          // Reset physics first to ensure ball is in correct position
+          resetPhysics();
+
+          if (gyroscopeAvailable) {
+            // Force calibration with an extra long delay for initial game start
+            forceGyroscopeCalibration(500); // 500ms delay for initial stability
+
+            // Wait for calibration to complete
+            const checkInitialCalibration = () => {
+              if (!gyroIsCalibrating) {
+                // Calibration complete
+                dispatch(setGyroscopeCalibrated(true));
+                dispatch(setShowCalibrationOverlay(false));
+
+                // Reset physics again after calibration to ensure proper starting state
+                resetPhysics();
+
+                // Add haptic feedback for better user experience
+                if (settings.vibrationEnabled) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+
+                // Mark first level as completed
+                isFirstLevelRef.current = false;
+              } else {
+                // Check again in a few ms if still calibrating
+                setTimeout(checkInitialCalibration, 16);
+              }
+            };
+
+            // Start checking calibration status
+            checkInitialCalibration();
+          } else {
+            // If gyroscope is not available, just hide the overlay
+            dispatch(setShowCalibrationOverlay(false));
+            isFirstLevelRef.current = false;
+          }
+        }, 300); // Wait for physics to initialize
+      } else {
+        // For subsequent game restarts, use the normal flow
+        dispatch(setShowCalibrationOverlay(true));
+
+        if (gyroscopeAvailable) {
+          forceGyroscopeCalibration(300);
+
+          const checkCalibration = () => {
+            if (!gyroIsCalibrating) {
+              dispatch(setGyroscopeCalibrated(true));
+              dispatch(setShowCalibrationOverlay(false));
+              dispatch(setGameState('playing'));
+
+              if (settings.vibrationEnabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+            } else {
+              setTimeout(checkCalibration, 16);
+            }
+          };
+
+          checkCalibration();
+        } else {
+          dispatch(setShowCalibrationOverlay(false));
+          dispatch(setGameState('playing'));
+        }
+      }
     } else if (gameState === 'playing' && gameOver) {
       // This handles the case when we continue after an ad
       // Reset the gameOver flag to allow playing again
       dispatch(setGameOver(false));
     }
-  }, [gameState, gameOver, dispatch]);
+  }, [gameState, gameOver, dispatch, gyroscopeAvailable, forceGyroscopeCalibration, gyroIsCalibrating, settings.vibrationEnabled, resetPhysics]);
 
   if (gameState === 'loading' || !currentMaze) {
     return (

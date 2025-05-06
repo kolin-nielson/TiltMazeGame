@@ -27,14 +27,14 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
   const [calibrationPhase, setCalibrationPhase] = useState('prepare');
   const [showTips, setShowTips] = useState(false);
   const lastHapticRef = useRef(0);
-  
+
   // Phone tilt animation
   const phoneTiltAnim = useRef(new Animated.Value(0)).current;
-  
+
   // Animated values for the bubble level
   const bubblePosition = useRef(new Animated.Value(0)).current;
   const bubbleSize = useRef(new Animated.Value(1)).current;
-  
+
   // Start an animated loop for the phone tilt in the instructions
   useEffect(() => {
     if (calibrationPhase === 'prepare') {
@@ -62,7 +62,7 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       phoneTiltAnim.setValue(0);
     }
   }, [calibrationPhase, phoneTiltAnim]);
-  
+
   // Start bubble level animation during calibration
   useEffect(() => {
     if (calibrationPhase === 'calibrating') {
@@ -89,7 +89,7 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       // Pulsate the bubble size slightly
       Animated.loop(
         Animated.sequence([
@@ -110,11 +110,11 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
 
   const startCalibration = () => {
     setCalibrationPhase('hold');
-    
+
     if (vibrationEnabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    
+
     setTimeout(() => {
       setCalibrationPhase('calibrating');
 
@@ -146,7 +146,7 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
 
   useEffect(() => {
     if (calibrationPhase === 'prepare') return;
-    
+
     const interval = setInterval(() => {
       animatedValue.addListener(({ value }) => {
         setProgress(value);
@@ -224,25 +224,51 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       tension: 40,
       useNativeDriver: true,
     }).start();
+
+    // Auto-start calibration immediately for better user experience
+    const autoStartTimer = setTimeout(() => {
+      if (calibrationPhase === 'prepare') {
+        startCalibration();
+      }
+    }, 300);
+
+    return () => clearTimeout(autoStartTimer);
   }, []);
-  
+
+  // Reset animation when overlay is shown again
+  useEffect(() => {
+    // Reset animations when overlay becomes visible
+    phoneTiltAnim.setValue(0);
+    bubblePosition.setValue(0);
+    bubbleSize.setValue(1);
+
+    // Auto-start calibration if not already started
+    if (calibrationPhase === 'prepare') {
+      const timer = setTimeout(() => {
+        startCalibration();
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [calibrationPhase]);
+
   const renderLevelIndicator = () => {
     if (calibrationPhase !== 'calibrating') return null;
-    
+
     return (
       <View style={styles.levelContainer}>
         <View style={[styles.levelBar, { backgroundColor: colors.surfaceVariant }]}>
-          <Animated.View 
+          <Animated.View
             style={[
-              styles.levelBubble, 
-              { 
+              styles.levelBubble,
+              {
                 backgroundColor: colors.primary,
                 transform: [
                   { translateX: bubblePosition },
                   { scale: bubbleSize }
-                ] 
+                ]
               }
-            ]} 
+            ]}
           />
           <View style={styles.centerMark} />
         </View>
@@ -252,10 +278,10 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       </View>
     );
   };
-  
+
   const renderTiltInstructions = () => {
     if (calibrationPhase !== 'prepare') return null;
-    
+
     return (
       <View style={styles.instructionsContainer}>
         <Animated.View
@@ -286,13 +312,13 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
             • After calibration, tilt to move
           </Text>
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           onPress={() => setShowTips(!showTips)}
           style={styles.tipsButton}
         >
           <MaterialCommunityIcons
-            name={showTips ? "chevron-up" : "chevron-down"} 
+            name={showTips ? "chevron-up" : "chevron-down"}
             size={20}
             color={colors.primary}
           />
@@ -300,7 +326,7 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
             {showTips ? "Hide Tips" : "Show Tips"}
           </Text>
         </TouchableOpacity>
-        
+
         {showTips && (
           <View style={styles.tipsContainer}>
             <Text style={[styles.tipText, { color: colors.onSurfaceVariant }]}>
@@ -330,10 +356,10 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
           />
           <Text style={[styles.title, { color: colors.onSurface }]}>{title}</Text>
           <Text style={[styles.subtitle, { color: colors.onSurfaceVariant }]}>{subtitle}</Text>
-          
+
           {renderTiltInstructions()}
           {renderLevelIndicator()}
-          
+
           {calibrationPhase !== 'prepare' && (
             <View style={[styles.progressContainer, { backgroundColor: colors.surfaceVariant }]}>
               <Animated.View
@@ -347,10 +373,10 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
               />
             </View>
           )}
-          
+
           {calibrationPhase === 'prepare' ? (
-            <Button 
-              mode="contained" 
+            <Button
+              mode="contained"
               onPress={startCalibration}
               style={styles.button}
               labelStyle={styles.buttonLabel}
@@ -362,10 +388,10 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
               {Math.round(progress)}%
             </Text>
           )}
-          
+
           {calibrationPhase === 'complete' && onManualRecalibrate && (
-            <Button 
-              mode="outlined" 
+            <Button
+              mode="outlined"
               onPress={onManualRecalibrate}
               style={styles.recalibrateButton}
             >

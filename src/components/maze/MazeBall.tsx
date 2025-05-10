@@ -239,9 +239,8 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
     };
 
     // Generate unique IDs for SVG elements to avoid conflicts
-    const uniqueId = `${Date.now()}`;
-    const gradientId = `ball-grad-${skin?.id || 'default'}-${uniqueId}`;
-    const patternId = `ball-pattern-${skin?.id || 'default'}-${uniqueId}`;
+    const gradientId = React.useMemo(() => `ball-grad-${skin?.id || 'default'}`, [skin?.id]);
+    const patternId = React.useMemo(() => `ball-pattern-${skin?.id || 'default'}`, [skin?.id]);
 
     // Track previous positions for motion trail effect
     const trailPositions = useSharedValue<{x: number, y: number, time: number}[]>([]);

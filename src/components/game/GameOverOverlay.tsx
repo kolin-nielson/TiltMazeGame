@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, StyleProp, TextStyle, ViewStyle } from 'react-native';
+import { View, StyleSheet, StyleProp, TextStyle, ViewStyle, ActivityIndicator } from 'react-native';
 import { Button, Card, Text } from 'react-native-paper';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,7 +13,8 @@ interface GameOverOverlayProps {
   onPlayAgain: () => void;
   onExit: () => void;
   onWatchAd: () => void;
-  onContinuePlaying: () => void
+  onContinuePlaying: () => void;
+  isLoadingAd?: boolean;
 }
 
 interface ScoreRowProps {
@@ -85,7 +86,8 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
   onPlayAgain,
   onExit,
   onWatchAd,
-  onContinuePlaying
+  onContinuePlaying,
+  isLoadingAd = false
 }) => {
   // We don't need to track if the ad was watched anymore since
   // the continue functionality is handled by the ad reward callback
@@ -130,15 +132,23 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                 <View style={styles.adButtonContainer}>
                   <Button
                     mode="contained"
-                    icon="play-circle-outline"
+                    icon={isLoadingAd ? undefined : "play-circle-outline"}
                     onPress={handleWatchAd}
                     buttonColor={colors.primary}
                     textColor={colors.onPrimary}
                     contentStyle={styles.buttonContent}
                     labelStyle={[styles.buttonLabel, { fontSize: 18 }]}
                     style={styles.watchAdButton}
+                    disabled={isLoadingAd}
                   >
-                    Continue
+                    {isLoadingAd ? (
+                      <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color={colors.onPrimary} />
+                        <Text style={[styles.loadingText, { color: colors.onPrimary }]}>Loading Ad...</Text>
+                      </View>
+                    ) : (
+                      'Continue'
+                    )}
                   </Button>
                 </View>
               )}
@@ -180,6 +190,16 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: '85%',
     maxWidth: 400,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '600',
   },
   card: {
     width: '100%',
@@ -285,3 +305,4 @@ const styles = StyleSheet.create({
 });
 
 export const GameOverOverlay = React.memo(GameOverOverlayComponent);
+

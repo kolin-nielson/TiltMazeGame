@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Tilt Maze",
-    "slug": "tilt-maze",
+    "slug": "the-tilt-maze",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,22 +13,25 @@
     },
     "updates": {
       "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/your-project-id"
+      "url": "https://u.expo.dev/9dd5d0d0-2b31-4a44-9710-feec4b2a217f"
     },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourusername.tiltmaze",
+      "bundleIdentifier": "com.kolinnielson.tiltmaze",
       "buildNumber": "1",
       "infoPlist": {
         "NSMotionUsageDescription": "This app uses motion sensors to control the game through device tilting.",
         "UIRequiresFullScreen": true,
-        "UIStatusBarHidden": true
+        "UIStatusBarHidden": true,
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -36,9 +39,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yourusername.tiltmaze",
+      "package": "com.kolinnielson.tiltmaze",
       "versionCode": 1,
-      "permissions": ["android.permission.VIBRATE"],
+      "permissions": [
+        "android.permission.VIBRATE"
+      ],
       "softwareKeyboardLayoutMode": "pan",
       "allowBackup": true
     },
@@ -64,7 +69,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "9dd5d0d0-2b31-4a44-9710-feec4b2a217f"
       }
     }
   }

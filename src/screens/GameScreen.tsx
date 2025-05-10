@@ -462,14 +462,40 @@ const GameScreen: React.FC = () => {
     }
   }, [dispatch, resetPhysics, gyroscopeAvailable, forceGyroscopeCalibration, gyroIsCalibrating, settings.vibrationEnabled]);
 
-  const handleWatchAd = useCallback(async () => {
-    const adShown = await showRewardedAd(onContinuePlaying);
+  const [isLoadingAd, setIsLoadingAd] = useState(false);
 
-    if (!adShown) {
-      // Ad failed to show, inform the user
+  const handleWatchAd = useCallback(async () => {
+    try {
+      setIsLoadingAd(true);
+      const adShown = await showRewardedAd(onContinuePlaying);
+      setIsLoadingAd(false);
+
+      if (!adShown) {
+        // Ad failed to show, inform the user
+        Alert.alert(
+          'Continue',
+          'Unable to load ad at this time. Would you like to try again?',
+          [
+            { 
+              text: 'Cancel', 
+              style: 'cancel' 
+            },
+            { 
+              text: 'Try Again', 
+              onPress: () => {
+                // Short delay before trying again
+                setTimeout(() => handleWatchAd(), 500);
+              } 
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error in handleWatchAd:', error);
+      setIsLoadingAd(false);
       Alert.alert(
-        'Continue',
-        'Unable to continue at this time. Please try again later.',
+        'Error',
+        'An error occurred. Please try again later.',
         [{ text: 'OK' }]
       );
     }
@@ -716,6 +742,7 @@ const GameScreen: React.FC = () => {
             onExit={handleExit}
             onWatchAd={handleWatchAd}
             onContinuePlaying={onContinuePlaying}
+            isLoadingAd={isLoadingAd}
           />
         </Portal>
       )}

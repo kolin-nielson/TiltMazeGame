@@ -76,7 +76,7 @@ export const initializeAds = async () => {
     try {
       // Dynamic import to avoid issues with Expo Go
       const mobileAdsModule = await import('react-native-google-mobile-ads');
-      await mobileAdsModule.mobileAds().initialize();
+      await mobileAdsModule.MobileAds().initialize();
       console.log('Mobile Ads SDK initialized successfully');
       return true;
     } catch (error) {
@@ -158,22 +158,18 @@ export const showRewardedAd = async (callback: () => void): Promise<boolean> => 
   if (isExpoGo) {
     // Mock implementation for Expo Go
     return new Promise((resolve) => {
+      // For Expo Go, always attempt to show the mock ad dialog.
+      // If the ad wasn't "loaded", we'll consider it loaded now for the purpose of the dialog.
       if (!mockAdLoaded) {
-        console.log('Mock rewarded ad not ready yet');
-        // Try to load a mock ad
-        setTimeout(() => {
-          mockAdLoaded = true;
-          console.log('Mock rewarded ad loaded');
-        }, 1000);
-        resolve(false);
-        return;
+        console.log('Mock rewarded ad was not pre-loaded, "loading" it now for dialog.');
+        mockAdLoaded = true; // Ensure it's "loaded" for the dialog
       }
 
       mockRewardCallback = callback;
 
       // Show a mock ad dialog
       Alert.alert(
-        'Mock Rewarded Ad',
+        'Mock Rewarded Ad (Expo Go)',
         'This is a mock rewarded ad for testing in Expo Go. Would you like to watch the ad to continue?',
         [
           {
@@ -212,23 +208,123 @@ export const showRewardedAd = async (callback: () => void): Promise<boolean> => 
     });
   } else {
     // Real implementation for production builds
-    if (!rewardedAd || !isRewardedAdLoaded) {
-      console.log('Rewarded ad not ready yet');
-      // Try to load a new ad
-      loadRewardedAd();
-      return false;
-    }
+    return new Promise(async (resolve) => {
+      // Function to attempt to show a loaded ad
+      const attemptToShowAd = async () => {
+        if (rewardedAd && isRewardedAdLoaded) {
+          try {
+            onRewardCallback = callback;
+            await rewardedAd.show();
+            resolve(true);
+            return true;
+          } catch (error) {
+            console.error('Error showing rewarded ad:', error);
+            onRewardCallback = null;
+            // Try to load a new ad after error
+            loadRewardedAd();
+            resolve(false);
+            return false;
+          }
+        }
+        return false;
+      };
 
-    try {
-      onRewardCallback = callback;
-      await rewardedAd.show();
-      return true;
-    } catch (error) {
-      console.error('Error showing rewarded ad:', error);
-      onRewardCallback = null;
-      // Try to load a new ad after error
-      loadRewardedAd();
-      return false;
-    }
+      // First try - attempt to show an already loaded ad
+      const adShown = await attemptToShowAd();
+      if (adShown) return;
+
+      console.log('Rewarded ad not ready, attempting to load one now...');
+      
+      // If not loaded, we'll try to load it and show once ready
+      try {
+        // Import modules directly in this scope
+        const { RewardedAd, AdEventType, RewardedAdEventType } = await import('react-native-google-mobile-ads');
+        
+        // Get the appropriate ad unit ID
+        const adUnitId = getAdUnitId('REWARDED');
+        
+        // Create a local reference to the rewarded ad
+        const localRewardedAd = RewardedAd.createForAdRequest(adUnitId);
+        
+        // Track if the ad was loaded or if we timed out
+        let wasAdLoaded = false;
+        let wasTimeout = false;
+        
+        // Create a timeout promise
+        const timeoutPromise = new Promise<void>((timeoutResolve) => {
+          setTimeout(() => {
+            if (!wasAdLoaded) {
+              wasTimeout = true;
+              console.log('Ad load timed out after 10 seconds');
+              timeoutResolve();
+            }
+          }, 10000); // 10 second timeout
+        });
+        
+        // Create a load promise
+        const loadPromise = new Promise<void>((loadResolve) => {
+          // Event listeners
+          const unsubscribeLoaded = localRewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
+            console.log('Rewarded ad loaded successfully!');
+            wasAdLoaded = true;
+            rewardedAd = localRewardedAd;
+            isRewardedAdLoaded = true;
+            loadResolve();
+          });
+          
+          const unsubscribeFailedToLoad = localRewardedAd.addAdEventListener(AdEventType.ERROR, (error: any) => {
+            console.error('Failed to load rewarded ad:', error);
+            loadResolve(); // Resolve anyway to continue the flow
+          });
+          
+          // Register callback for when ad is earned
+          const unsubscribeEarned = localRewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+            console.log('User earned reward');
+            if (onRewardCallback) {
+              onRewardCallback();
+              onRewardCallback = null;
+            }
+          });
+          
+          // Register callback for when ad is closed
+          const unsubscribeClosed = localRewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
+            isRewardedAdLoaded = false;
+            rewardedAd = null;
+            console.log('Rewarded ad closed');
+            // Preload the next ad
+            loadRewardedAd();
+          });
+          
+          // Clean up function
+          const cleanup = () => {
+            unsubscribeLoaded();
+            unsubscribeFailedToLoad();
+            unsubscribeEarned();
+            unsubscribeClosed();
+          };
+          
+          // Load the ad
+          localRewardedAd.load();
+          
+          // Return cleanup function
+          return cleanup;
+        });
+        
+        // Wait for either the ad to load or the timeout
+        await Promise.race([loadPromise, timeoutPromise]);
+        
+        // Try showing the ad if it was loaded
+        if (wasAdLoaded && !wasTimeout) {
+          await attemptToShowAd();
+        } else {
+          // If we couldn't load the ad, resolve with false
+          resolve(false);
+        }
+        
+      } catch (error) {
+        console.error('Error in ad loading process:', error);
+        resolve(false);
+      }
+    });
   }
 };

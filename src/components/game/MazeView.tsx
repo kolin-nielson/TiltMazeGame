@@ -4,16 +4,14 @@ import { Surface } from 'react-native-paper';
 import MazeElements from '@components/maze/MazeElements';
 import { Maze, ThemeColors } from '@types';
 import Animated from 'react-native-reanimated';
-
 interface MazeViewProps {
   maze: Maze;
   ballPositionX: Animated.SharedValue<number>;
   ballPositionY: Animated.SharedValue<number>;
   ballRadius: number;
   colors: ThemeColors;
-  gameState: string;
+  gameState: 'ready' | 'playing' | 'paused' | 'completed' | 'game_over';
 }
-
 const MazeView: React.FC<MazeViewProps> = ({
   maze,
   ballPositionX,
@@ -24,7 +22,15 @@ const MazeView: React.FC<MazeViewProps> = ({
 }) => {
   return (
       <Surface
-      style={{ width: '100%', height: '100%', backgroundColor: colors?.surface ?? '#fff', borderRadius: 12 }}
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundColor: colors?.surface ?? '#fff',
+          borderRadius: 12,
+          padding: 4, // Minimal padding to maximize maze size
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
         elevation={4}
       >
         <MazeElements
@@ -38,5 +44,4 @@ const MazeView: React.FC<MazeViewProps> = ({
       </Surface>
   );
 };
-
 export default React.memo(MazeView);

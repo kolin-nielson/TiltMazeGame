@@ -5,41 +5,33 @@ import { setTheme, saveTheme, setIsDark } from '@store/slices/themeSlice';
 import { ThemeColors, ThemeName } from '@types';
 import { lightTheme, darkTheme } from '@styles/themes';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 const themes: Record<ThemeName, ThemeColors> = {
   light: lightTheme,
   dark: darkTheme,
   system: lightTheme,
 };
-
 const ThemeScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const themeName = useAppSelector((state: RootState) => state.theme.themeName);
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const [selectedTheme, setSelectedTheme] = useState<ThemeName>(themeName);
   const insets = useSafeAreaInsets();
-
   useEffect(() => {
     setSelectedTheme(themeName);
   }, [themeName]);
-
   const handleSelectTheme = (name: ThemeName) => {
     setSelectedTheme(name);
     dispatch(setTheme(name));
     dispatch(saveTheme(name));
-
     if (name === 'dark') {
       dispatch(setIsDark(true));
     } else if (name === 'light') {
       dispatch(setIsDark(false));
     }
   };
-
   const renderThemeOption = (name: ThemeName, label: string) => {
     if (name === 'system') return null;
-
     const themeOptionColors = themes[name];
-
     return (
       <TouchableOpacity
         style={[
@@ -68,7 +60,6 @@ const ThemeScreen: React.FC = () => {
       </TouchableOpacity>
     );
   };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors?.background ?? '#fff' }]}>
       <ScrollView
@@ -84,7 +75,6 @@ const ThemeScreen: React.FC = () => {
         <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee', marginTop: 16 }]}>
           Choose Theme
         </Text>
-
         <View style={styles.themeOptions}>
           {renderThemeOption('light', 'Light')}
           {renderThemeOption('dark', 'Dark')}
@@ -94,7 +84,6 @@ const ThemeScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -224,5 +213,4 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 });
-
 export default ThemeScreen;

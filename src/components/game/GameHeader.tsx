@@ -6,28 +6,23 @@ import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { useAppSelector } from '@store';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-
 interface GameHeaderProps {
   score: number;
   onQuit: () => void;
   colors: ThemeColors;
 }
-
 const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
   const coins = useAppSelector(state => state.shop.coins);
   const navigation = useNavigation();
-
   const goToShop = () => {
     navigation.navigate('Shop' as never);
   };
-
   return (
     <Appbar.Header style={[styles.header, { backgroundColor: colors.surface }]}>
       <View style={styles.scoreContainer}>
         <Text style={[styles.scoreText, { color: colors.primary }]}>Score: </Text>
         <Text style={[styles.scoreValue, { color: colors.onSurface }]}>{score}</Text>
       </View>
-
       <View style={styles.rightActions}>
         <TouchableOpacity onPress={goToShop}>
           <View style={[styles.coinsDisplayContainer, { backgroundColor: colors.surfaceVariant }]}>
@@ -40,7 +35,6 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, onQuit, colors }) => {
     </Appbar.Header>
   );
 };
-
 const styles = StyleSheet.create({
   header: {
     elevation: 4,
@@ -83,5 +77,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
 export default React.memo(GameHeader);

@@ -5,8 +5,6 @@ import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppSelector, RootState } from '@store';
 import { ThemeColors } from '@types';
-
-
 interface GameOverOverlayProps {
   score: number;
   bestScore: number;
@@ -16,7 +14,6 @@ interface GameOverOverlayProps {
   onContinuePlaying: () => void;
   isLoadingAd?: boolean;
 }
-
 interface ScoreRowProps {
   label: string;
   value: number;
@@ -25,7 +22,6 @@ interface ScoreRowProps {
   valueStyle: StyleProp<TextStyle>;
   showBadge: boolean;
 }
-
 const ScoreRow: React.FC<ScoreRowProps> = ({
   label,
   value,
@@ -44,9 +40,7 @@ const ScoreRow: React.FC<ScoreRowProps> = ({
     )}
   </View>
 );
-
 type IconName = 'refresh' | 'exit-to-app' | string;
-
 interface ActionButtonProps {
   mode: 'contained' | 'outlined';
   onPress: () => void;
@@ -56,7 +50,6 @@ interface ActionButtonProps {
   colors: ThemeColors;
   labelColor: string;
 }
-
 const ActionButton: React.FC<ActionButtonProps> = ({
   mode,
   onPress,
@@ -79,7 +72,6 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     {label}
   </Button>
 );
-
 const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
   score,
   bestScore,
@@ -89,15 +81,12 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
   onContinuePlaying,
   isLoadingAd = false
 }) => {
-  // We don't need to track if the ad was watched anymore since
-  // the continue functionality is handled by the ad reward callback
   const handleWatchAd = () => {
     onWatchAd();
   };
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const hasUsedContinue = useAppSelector((state: RootState) => state.game.hasUsedContinue);
   const isNewHighScore = score > bestScore;
-
   return (
     <View style={styles.container}>
       <View style={styles.cardWrapper}>
@@ -106,7 +95,6 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
             <View style={[styles.cardHeader, { backgroundColor: colors.error }]}>
               <Text style={[styles.gameOverText, { color: colors.onError }]}>Game Over</Text>
             </View>
-
             <View style={[styles.cardContent, { backgroundColor: colors.surface }]}>
               <View style={styles.scoreContainer}>
                 <ScoreRow
@@ -117,7 +105,6 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   valueStyle={[styles.scoreValue, { color: colors.onPrimaryContainer }]}
                   showBadge={false}
                 />
-
                 <ScoreRow
                   label="Best Score"
                   value={bestScore}
@@ -127,7 +114,6 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   showBadge={isNewHighScore}
                 />
               </View>
-
               {!hasUsedContinue && (
                 <View style={styles.adButtonContainer}>
                   <Button
@@ -152,7 +138,6 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   </Button>
                 </View>
               )}
-
               <View style={styles.buttonContainer}>
                 <ActionButton
                   mode="contained"
@@ -163,7 +148,6 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   colors={colors}
                   labelColor={colors.onPrimary}
                 />
-
                 <ActionButton
                   mode="outlined"
                   onPress={onExit}
@@ -181,7 +165,6 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     ...gameScreenStyles.overlayBase,
@@ -263,7 +246,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
-
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -303,6 +285,4 @@ const styles = StyleSheet.create({
     height: 52,
   },
 });
-
 export const GameOverOverlay = React.memo(GameOverOverlayComponent);
-

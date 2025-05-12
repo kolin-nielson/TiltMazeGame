@@ -7,10 +7,8 @@ import { MazeGoal } from './MazeGoal';
 import { MazeBall } from './MazeBall';
 import { MazeLaserGate } from './MazeLaserGate';
 import { mazeRendererStyles } from '@styles/MazeRendererStyles';
-import { ThemeColors, Maze, Wall, LaserGate, Position } from '@types';
-
+import { ThemeColors, Maze, Wall, LaserGate, Position, Coin } from '@types';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
 interface MazeElementsProps {
   maze: Maze;
   ballPositionX: Animated.SharedValue<number>;
@@ -19,7 +17,6 @@ interface MazeElementsProps {
   colors: ThemeColors;
   gameState?: 'ready' | 'playing' | 'paused' | 'completed' | 'game_over';
 }
-
 const MemoizedWalls = memo(({ walls, color }: { walls: Wall[]; color: string }) => {
   return (
     <>
@@ -29,7 +26,6 @@ const MemoizedWalls = memo(({ walls, color }: { walls: Wall[]; color: string }) 
     </>
   );
 });
-
 const MemoizedLaserGates = memo(
   ({
     laserGates,
@@ -54,10 +50,8 @@ const MemoizedLaserGates = memo(
     );
   }
 );
-
 const CoinCircle = memo(({ coin, ballRadius }: { coin: Coin, ballRadius: number }) => {
   const anim = useSharedValue(0);
-
   useEffect(() => {
     anim.value = withRepeat(
       withTiming(1, { duration: 1000, easing: Easing.linear }),
@@ -65,27 +59,18 @@ const CoinCircle = memo(({ coin, ballRadius }: { coin: Coin, ballRadius: number 
       true
     );
   }, []);
-
-  // Determine if this is a special coin
   const isSpecial = coin.isSpecial || false;
-
   const glowProps = useAnimatedProps(() => {
     const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
-    // Make special coins glow larger
     return { r: ballRadius * (isSpecial ? 1.0 : 0.8) * scale };
   });
-
   const bodyProps = useAnimatedProps(() => {
     const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
-    // Make special coins larger
     return { r: ballRadius * (isSpecial ? 0.8 : 0.6) * scale };
   });
-
-  // Colors for special coins
   const glowColor = isSpecial ? "#FF5E0040" : "#FFDF0040";
   const fillColor = isSpecial ? "#FF5E00" : "#FFD700";
   const strokeColor = isSpecial ? "#FF3D00" : "#FFA500";
-
   return (
     <>
       <AnimatedCircle
@@ -109,27 +94,34 @@ const CoinCircle = memo(({ coin, ballRadius }: { coin: Coin, ballRadius: number 
     </>
   );
 });
-
 export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX, ballPositionY, ballRadius, colors, gameState = 'playing' }) => {
-    const mazeBaseSize = 300;
-  // Use coins from the passed-in maze prop (memoized)
+  const mazeBaseSize = 300;
   const coinsInMaze = useMemo(() => maze.coins ?? [], [maze.coins]);
-
-    return (
-      <View style={mazeRendererStyles.mazeElementsContainer}>
+  
+  return (
+    <View style={mazeRendererStyles.mazeElementsContainer}>
+      <View style={{
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
         <Svg
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          style={{
+            width: '100%',  // Maximum width to fill all available space
+            height: '100%', // Maximum height to fill all available space
+            aspectRatio: 1, // Force square aspect ratio
+            alignSelf: 'center',
+          }}
           viewBox={`0 0 ${mazeBaseSize} ${mazeBaseSize}`}
-          preserveAspectRatio="none"
+          preserveAspectRatio="xMidYMid meet" // Maintain aspect ratio
         >
-          {/* Ensure SVG defs are properly included at the top level */}
+          {}
           <MazeGoal
             position={maze.endPosition}
             ballRadius={ballRadius}
           />
-
           <MemoizedWalls walls={maze.walls} color={colors?.walls ?? '#333333'} />
-
           {maze.laserGates && Array.isArray(maze.laserGates) && maze.laserGates.length > 0 && (
             <MemoizedLaserGates
               laserGates={maze.laserGates}
@@ -137,11 +129,9 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
               isActive={gameState === 'playing'}
             />
           )}
-
         {coinsInMaze.map(coin => (
           <CoinCircle key={coin.id} coin={coin} ballRadius={ballRadius} />
         ))}
-
           <MazeBall
             key="maze-ball"
             ballPositionX={ballPositionX}
@@ -150,7 +140,7 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
           />
         </Svg>
       </View>
-    );
+    </View>
+  );
 };
-
 export default MazeElements;

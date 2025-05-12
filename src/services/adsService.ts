@@ -1,330 +1,621 @@
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 import { Alert } from 'react-native';
 import Constants from 'expo-constants';
+import { InterstitialAd, RewardedAd, BannerAd, TestIds, AdEventType, RewardedAdEventType } from 'react-native-google-mobile-ads';
+import * as Application from 'expo-application';
 
-// Check if we're running in Expo Go
+// Better environment detection for TestFlight and App Store
 const isExpoGo = Constants.appOwnership === 'expo';
+const isDevEnvironment = __DEV__;
 
-// Log the environment for debugging
-console.log(`App environment: ${isExpoGo ? 'Expo Go' : 'Native/Production'}`);
+// Specific environment checks
+let isTestFlight = false;
+let isAppStore = false;
 
-// NOTE: For production builds, make sure the app.json file has the correct AdMob app IDs:
-// - androidAppId: "ca-app-pub-4299404428269280~1234567890" (replace with your actual Android app ID)
-// - iosAppId: "ca-app-pub-4299404428269280~0987654321" (replace with your actual iOS app ID)
-// These are different from the ad unit IDs defined below.
+// iOS-specific environment detection
+if (Platform.OS === 'ios') {
+  const releaseChannel = Constants.manifest?.releaseChannel;
+  const bundleIdentifier = Application.applicationId;
+  
+  // Safe way to detect simulator on iOS
+  const isSimulator = Platform.OS === 'ios' && !NativeModules.DeviceInfo?.isDevice;
+  
+  // Check for TestFlight environment indicators (more strict criteria)
+  isTestFlight = !isExpoGo && !isDevEnvironment && (
+    // TestFlight specific release channel
+    (releaseChannel === 'testflight' || (releaseChannel && releaseChannel.includes('testflight'))) ||
+    // Beta/dev bundle identifiers
+    (bundleIdentifier && (bundleIdentifier.includes('.beta') || bundleIdentifier.includes('.dev'))) ||
+    // Simulator is considered TestFlight for ad purposes
+    isSimulator
+  );
+  
+  // App Store detection (live app from App Store)
+  // In a real App Store build, these conditions should be true
+  isAppStore = !isExpoGo && !isDevEnvironment && !isTestFlight && !isSimulator && 
+    // Production apps typically use a 'production' release channel or null in App Store
+    (releaseChannel === 'production' || releaseChannel === null || releaseChannel === undefined);
+}
 
-// Mock implementation for Expo Go
+// In Android, we need a different approach
+if (Platform.OS === 'android') {
+  // Add Android-specific checks here if needed
+  isAppStore = !isExpoGo && !isDevEnvironment && !isTestFlight;
+}
+
+// Production flag includes both TestFlight and App Store for backward compatibility
+const isProduction = !isExpoGo && !isDevEnvironment && (isAppStore || isTestFlight);
+
+// Log the environment for debugging (enhanced)
+console.log(`📱 Detected environment: ${isExpoGo ? 'Expo Go' : isTestFlight ? 'TestFlight' : isDevEnvironment ? 'Development' : isAppStore ? 'App Store' : 'Production'}`);
+console.log(`📱 Environment flags - isExpoGo: ${isExpoGo}, isDevEnvironment: ${isDevEnvironment}, isTestFlight: ${isTestFlight}, isAppStore: ${isAppStore}, isProduction: ${isProduction}`);
+console.log(`📱 Platform: ${Platform.OS}, Release Channel: ${Constants.manifest?.releaseChannel || 'default'}, Bundle ID: ${Application.applicationId || 'unknown'}`);
+
+// Track mock ad state for Expo Go testing
 let mockAdLoaded = false;
 let mockRewardCallback: (() => void) | null = null;
 
-// Real implementation for production builds
-let rewardedAd: any = null;
+// Ad state tracking variables
+let rewardedAd: RewardedAd | null = null;
 let isRewardedAdLoaded = false;
 let onRewardCallback: (() => void) | null = null;
+let adLoadInProgress = false;
+let lastAdLoadAttempt = 0;
+let adLoadRetryCount = 0;
+let adModulesInitialized = false;
+let mobileAdsInstance: any = null;
 
-// Define ad unit IDs
+// Ad Unit IDs for production
 const AD_UNIT_IDS = {
   REWARDED: {
-    // Real ad unit IDs for production
-    ios: 'ca-app-pub-4299404428269280/4775290270',     // iOS Extra Life Reward
-    android: 'ca-app-pub-4299404428269280/4205278782', // Android Extra Life Reward
+    ios: 'ca-app-pub-4299404428269280/4775290270',
+    android: 'ca-app-pub-4299404428269280/4205278782',
   },
-  // You can add more ad types here (banner, interstitial, etc.)
 };
 
-// Get the appropriate ad unit ID based on platform and environment
+// Test devices for better ad testing
+const TEST_DEVICES = ['EMULATOR', 'SIMULATOR'];
+
+/**
+ * Get the appropriate ad unit ID based on environment and platform
+ */
 const getAdUnitId = (adType: keyof typeof AD_UNIT_IDS) => {
-  // Import synchronously to avoid issues
-  let TestIds: any;
-  try {
-    // This will only work in native builds, not in Expo Go
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    TestIds = require('react-native-google-mobile-ads').TestIds;
-  } catch (e) {
-    // In Expo Go, we'll use mock IDs
-    TestIds = {
-      REWARDED: 'test-rewarded',
-    };
-  }
-
   const platform = Platform.OS as 'ios' | 'android';
-
-  // Use test IDs for development and real IDs for production
-  // You can change this to false to test real ads in development
-  const USE_TEST_IDS = __DEV__;
-
-  if (USE_TEST_IDS) {
-    console.log('Using test ad unit IDs');
+  
+  // IMPORTANT UPDATE: Only use test IDs in development, TestFlight, or Expo Go
+  // App Store should ALWAYS use production ads
+  const shouldUseTestIds = isDevEnvironment || isExpoGo || (isTestFlight && !isAppStore);
+  
+  if (shouldUseTestIds) {
+    console.log('🧪 Using test ad unit ID for testing environment');
+    console.log(`🔍 Environment decision factors: isDevEnvironment=${isDevEnvironment}, isExpoGo=${isExpoGo}, isTestFlight=${isTestFlight}, isAppStore=${isAppStore}`);
     return TestIds.REWARDED;
   } else {
-    console.log(`Using real ad unit ID for ${platform}`);
+    console.log(`💰 Using REAL ad unit ID for ${platform} in production (isAppStore=${isAppStore})`);
     return AD_UNIT_IDS[adType][platform];
   }
 };
-
-// Initialize the Mobile Ads SDK
+/**
+ * Initialize the AdMob SDK and prepare ads
+ */
 export const initializeAds = async () => {
+  // In Expo Go, use mock implementation instead of real ads
   if (isExpoGo) {
-    console.log('Running in Expo Go - using mock ads implementation');
-    // Simulate ad loading after a delay
+    console.log('📱 Running in Expo Go - using mock ads implementation');
     setTimeout(() => {
       mockAdLoaded = true;
-      console.log('Mock rewarded ad loaded');
+      console.log('Mock rewarded ad loaded for Expo Go testing');
     }, 1000);
     return true;
-  } else {
-    try {
-      // Dynamic import to avoid issues with Expo Go
-      const mobileAdsModule = await import('react-native-google-mobile-ads');
-      await mobileAdsModule.MobileAds().initialize();
-      console.log('Mobile Ads SDK initialized successfully');
+  }
+  
+  // Real implementation for production/TestFlight builds
+  try {
+    // Check if already initialized
+    if (adModulesInitialized) {
+      console.log('📋 AdMob SDK already initialized');
       return true;
-    } catch (error) {
-      console.error('Failed to initialize Mobile Ads SDK:', error);
-      return false;
     }
+    
+    console.log(`🚀 Initializing AdMob SDK in ${isTestFlight ? 'TestFlight' : isDevEnvironment ? 'Development' : 'Production'} mode...`);
+    
+    // Get the MobileAds instance
+    const { MobileAds } = require('react-native-google-mobile-ads');
+    mobileAdsInstance = MobileAds();
+    
+    // Initialize the SDK
+    await mobileAdsInstance.initialize();
+    
+    // Configure test devices for development and TestFlight
+    if (isDevEnvironment || isTestFlight) {
+      console.log('🧪 Configuring test devices for non-production environment');
+      
+      const testDevices = [];
+      
+      // Add appropriate test device IDs based on platform
+      if (Platform.OS === 'android') {
+        testDevices.push('EMULATOR');
+      } else if (Platform.OS === 'ios') {
+        testDevices.push('SIMULATOR');
+        // Add any physical test device IDs you have registered in AdMob
+        // testDevices.push('2077ef9a63d2b398840261c8221a0c9b'); // Example - replace with your actual device IDs
+      }
+      
+      // Apply test device configuration
+      await mobileAdsInstance.setRequestConfiguration({
+        testDeviceIdentifiers: testDevices,
+        maxAdContentRating: 'T' // Setting appropriate content rating
+      });
+      
+      console.log(`🧪 Test devices configured: ${testDevices.join(', ')}`);
+    }
+    
+    console.log('✅ AdMob SDK initialized successfully');
+    adModulesInitialized = true;
+    
+    // Pre-load an ad for better user experience (multiple attempts for TestFlight)
+    let preloadSuccess = false;
+    const maxPreloadAttempts = isTestFlight ? 3 : 1;
+    
+    for (let i = 0; i < maxPreloadAttempts && !preloadSuccess; i++) {
+      try {
+        console.log(`🔄 Preloading ad attempt ${i + 1} of ${maxPreloadAttempts}...`);
+        await loadRewardedAd();
+        console.log('🎁 Initial rewarded ad pre-loaded successfully');
+        preloadSuccess = true;
+      } catch (preloadError) {
+        console.warn(`⚠️ Ad preload attempt ${i + 1} failed:`, preloadError);
+        // Short delay between attempts
+        if (i < maxPreloadAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+    
+    if (!preloadSuccess) {
+      console.warn('⚠️ All initial ad preload attempts failed. Will try again later.');
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to initialize AdMob SDK:', error);
+    
+    // Retry initialization after delay
+    setTimeout(() => {
+      console.log('🔄 Retrying AdMob SDK initialization...');
+      initializeAds();
+    }, 5000);
+    
+    return false;
   }
 };
+/**
+ * Calculate backoff time for retries with exponential backoff and jitter
+ */
+const getBackoffTime = (retryCount: number): number => {
+  const baseDelay = 2000; // 2 seconds base delay
+  const maxDelay = 60000; // Cap at 1 minute
+  // Exponential backoff: 2^retry * baseDelay (capped at maxDelay)
+  const exponentialDelay = Math.min(maxDelay, Math.pow(2, retryCount) * baseDelay);
+  // Add jitter of ±20% to prevent synchronized retries
+  const jitter = exponentialDelay * 0.2 * (Math.random() * 2 - 1);
+  return Math.floor(exponentialDelay + jitter);
+};
 
-// Load a rewarded ad
-export const loadRewardedAd = async () => {
+/**
+ * Load a rewarded ad
+ * Returns a cleanup function to remove event listeners
+ */
+export const loadRewardedAd = async (): Promise<() => void> => {
+  // Handle Expo Go mock implementation
   if (isExpoGo) {
-    // Mock implementation for Expo Go
+    console.log('📱 Loading mock rewarded ad for Expo Go');
     setTimeout(() => {
       mockAdLoaded = true;
-      console.log('Mock rewarded ad loaded');
+      console.log('✅ Mock rewarded ad loaded successfully');
     }, 1000);
     return () => {};
-  } else {
-    try {
-      // Dynamic import to avoid issues with Expo Go
-      const { RewardedAd, AdEventType, RewardedAdEventType } = await import('react-native-google-mobile-ads');
-
-      // Get the appropriate ad unit ID
-      const adUnitId = getAdUnitId('REWARDED');
-
-      // Create and load the rewarded ad
-      rewardedAd = RewardedAd.createForAdRequest(adUnitId);
-
-      const unsubscribeLoaded = rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
-        isRewardedAdLoaded = true;
-        console.log('Rewarded ad loaded');
-      });
-
-      const unsubscribeEarned = rewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-        console.log('User earned reward');
-        if (onRewardCallback) {
-          onRewardCallback();
-          onRewardCallback = null;
-        }
-      });
-
-      const unsubscribeClosed = rewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
-        isRewardedAdLoaded = false;
-        rewardedAd = null;
-        console.log('Rewarded ad closed');
-        // Preload the next ad
-        loadRewardedAd();
-      });
-
-      const unsubscribeError = rewardedAd.addAdEventListener(AdEventType.ERROR, (error: any) => {
-        console.error('Rewarded ad error:', error);
-        isRewardedAdLoaded = false;
-
-        // Try to load another ad after error
-        setTimeout(() => {
-          loadRewardedAd();
-        }, 5000);
-      });
-
-      // Load the ad
-      rewardedAd.load();
-
-      return () => {
-        unsubscribeLoaded();
-        unsubscribeEarned();
-        unsubscribeClosed();
-        unsubscribeError();
-      };
-    } catch (error) {
-      console.error('Error loading rewarded ad:', error);
-      return () => {};
+  }
+  
+  // Special logging for TestFlight environment
+  if (isTestFlight) {
+    console.log('🛠 Loading rewarded ad in TestFlight environment');
+  }
+  
+  // Prevent multiple simultaneous load attempts
+  if (adLoadInProgress) {
+    console.log('⏳ Skipping ad load - already in progress');
+    return () => {};
+  }
+  
+  // Implement request throttling - use a shorter interval for TestFlight
+  const now = Date.now();
+  const timeSinceLastAttempt = now - lastAdLoadAttempt;
+  // Use shorter interval in TestFlight to try more frequently
+  const minimumTimeBetweenAttempts = isTestFlight ? 5000 : 10000; 
+  
+  if (timeSinceLastAttempt < minimumTimeBetweenAttempts && lastAdLoadAttempt > 0) {
+    const waitTime = (minimumTimeBetweenAttempts - timeSinceLastAttempt) / 1000;
+    console.log(`⏱️ Throttling ad load requests. Will retry in ${waitTime.toFixed(1)}s`);
+    setTimeout(() => loadRewardedAd(), minimumTimeBetweenAttempts - timeSinceLastAttempt);
+    return () => {};
+  }
+  
+  // Start load process
+  adLoadInProgress = true;
+  lastAdLoadAttempt = now;
+  
+  try {
+    // Ensure AdMob is initialized
+    if (!adModulesInitialized) {
+      console.log('🔄 AdMob SDK not initialized yet, initializing first...');
+      const initialized = await initializeAds();
+      if (!initialized) {
+        throw new Error('Failed to initialize AdMob SDK');
+      }
     }
+    
+    // Get ad unit ID based on platform and environment
+    const adUnitId = getAdUnitId('REWARDED');
+    console.log(`📋 Loading rewarded ad with ID: ${adUnitId}`);
+    
+    // Create new rewarded ad instance with additional TestFlight parameters if needed
+    const adRequestOptions = {
+      requestNonPersonalizedAdsOnly: false,
+      keywords: ['game', 'arcade', 'puzzle', 'maze', 'tilting']
+    };
+    
+    // For TestFlight, make sure we're using test ads with additional targeting
+    if (isTestFlight) {
+      // Force test ads more explicitly
+      console.log('🧪 Using enhanced test ad configuration for TestFlight');
+      
+      // Add more specific targeting for test ads
+      Object.assign(adRequestOptions, {
+        requestAgent: 'TiltMazeGame-TestFlight',
+        // Add additional parameters that might help with test ads
+        contentUrl: 'https://example.com/games/tiltmaze',
+      });
+    }
+    
+    // Create the ad request with proper options
+    rewardedAd = RewardedAd.createForAdRequest(adUnitId, adRequestOptions);
+    
+    // Track ad events
+    const unsubscribeLoaded = rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      console.log('✅ Rewarded ad loaded successfully');
+      isRewardedAdLoaded = true;
+      adLoadInProgress = false;
+      adLoadRetryCount = 0; // Reset retry count on success
+    });
+    
+    const unsubscribeEarned = rewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+      console.log('🎁 User earned reward');
+      if (onRewardCallback) {
+        onRewardCallback();
+        onRewardCallback = null;
+      }
+    });
+    
+    const unsubscribeClosed = rewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
+      console.log('👋 Rewarded ad closed');
+      isRewardedAdLoaded = false;
+      rewardedAd = null;
+      
+      // Preload next ad after a short delay
+      setTimeout(() => {
+        loadRewardedAd().catch(err => {
+          console.warn('Failed to preload next ad:', err);
+        });
+      }, 1000);
+    });
+    
+    const unsubscribeError = rewardedAd.addAdEventListener(AdEventType.ERROR, (error: any) => {
+      const errorMsg = error?.message || 'Unknown error';
+      const errorCode = error?.code || 'No code';
+      console.error(`❌ Rewarded ad error: ${errorMsg} (Code: ${errorCode})`);
+      
+      // Additional TestFlight logging
+      if (isTestFlight) {
+        // Check if we're using test ad unit IDs
+        const isTestAd = isDevEnvironment || isTestFlight || isExpoGo;
+        
+        console.error('🐞 TestFlight Ad Error Details:', {
+          errorMessage: errorMsg,
+          errorCode: errorCode,
+          adUnitId: adUnitId,
+          isTestAd: isTestAd,
+          deviceInfo: {
+            platform: Platform.OS,
+            version: Platform.Version,
+            isTestFlight: isTestFlight
+          }
+        });
+      }
+      
+      // Reset states
+      isRewardedAdLoaded = false;
+      adLoadInProgress = false;
+      
+      // Implementation of retry with backoff - shorter for TestFlight
+      adLoadRetryCount++;
+      // Use shorter backoff times in TestFlight
+      const backoffTime = isTestFlight ? 
+        Math.min(5000, getBackoffTime(adLoadRetryCount) / 2) : 
+        getBackoffTime(adLoadRetryCount);
+        
+      console.log(`⏱️ Ad load failed. Retry ${adLoadRetryCount} scheduled in ${backoffTime/1000}s`);
+      
+      setTimeout(() => {
+        loadRewardedAd().catch(err => {
+          console.warn('Retry load failed:', err);
+        });
+      }, backoffTime);
+    });
+    
+    // Start loading the ad
+    console.log('🔄 Starting ad load process...');
+    rewardedAd.load();
+    
+    // Return cleanup function
+    return () => {
+      console.log('🧹 Cleaning up ad event listeners');
+      unsubscribeLoaded();
+      unsubscribeEarned();
+      unsubscribeClosed();
+      unsubscribeError();
+    };
+  } catch (error) {
+    console.error('❌ Error setting up rewarded ad:', error);
+    adLoadInProgress = false;
+    
+    // Implementation of retry with backoff
+    adLoadRetryCount++;
+    // Use shorter backoff times in TestFlight
+    const backoffTime = isTestFlight ? 
+      Math.min(5000, getBackoffTime(adLoadRetryCount) / 2) : 
+      getBackoffTime(adLoadRetryCount);
+    
+    console.log(`⏱️ Ad setup failed. Retry ${adLoadRetryCount} scheduled in ${backoffTime/1000}s`);
+    
+    setTimeout(() => {
+      loadRewardedAd().catch(err => {
+        console.warn('Setup retry failed:', err);
+      });
+    }, backoffTime);
+    
+    return () => {};
   }
 };
-
-// Show a rewarded ad
-export const showRewardedAd = async (callback: () => void): Promise<boolean> => {
-  if (isExpoGo) {
-    // Mock implementation for Expo Go
-    return new Promise((resolve) => {
-      // For Expo Go, always attempt to show the mock ad dialog.
-      // If the ad wasn't "loaded", we'll consider it loaded now for the purpose of the dialog.
-      if (!mockAdLoaded) {
-        console.log('Mock rewarded ad was not pre-loaded, "loading" it now for dialog.');
-        mockAdLoaded = true; // Ensure it's "loaded" for the dialog
-      }
-
+export const showRewardedAd = (callback: () => void): Promise<boolean> => {
+  return new Promise<boolean>(async (resolve) => {
+    // Special handling for Expo Go environment
+    if (isExpoGo) {
+      console.log('🎟️ Show mock rewarded ad in Expo Go');
       mockRewardCallback = callback;
-
-      // Show a mock ad dialog
-      Alert.alert(
-        'Mock Rewarded Ad (Expo Go)',
-        'This is a mock rewarded ad for testing in Expo Go. Would you like to watch the ad to continue?',
-        [
-          {
-            text: 'Cancel',
-            onPress: () => {
-              console.log('Mock ad canceled');
-              mockRewardCallback = null;
-              resolve(false);
-            },
-            style: 'cancel',
-          },
-          {
-            text: 'Watch Ad',
-            onPress: () => {
-              // Simulate watching the ad
-              setTimeout(() => {
-                console.log('Mock ad completed');
+      
+      // Simulate ad viewing with a short delay
+      setTimeout(() => {
+        console.log('✅ Mock ad viewed completely');
+        Alert.alert(
+          'Mock Reward',
+          'Since this is a development build, you\'ll automatically receive the reward.',
+          [
+            {
+              text: 'Get Reward',
+              onPress: () => {
                 if (mockRewardCallback) {
                   mockRewardCallback();
                   mockRewardCallback = null;
                 }
-                // Reset mock ad state
-                mockAdLoaded = false;
-                // Reload the mock ad
-                setTimeout(() => {
-                  mockAdLoaded = true;
-                  console.log('Mock rewarded ad loaded again');
-                }, 1000);
                 resolve(true);
-              }, 1000);
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    });
-  } else {
-    // Real implementation for production builds
-    return new Promise(async (resolve) => {
-      // Function to attempt to show a loaded ad
-      const attemptToShowAd = async () => {
-        if (rewardedAd && isRewardedAdLoaded) {
-          try {
-            onRewardCallback = callback;
-            await rewardedAd.show();
-            resolve(true);
-            return true;
-          } catch (error) {
-            console.error('Error showing rewarded ad:', error);
-            onRewardCallback = null;
-            // Try to load a new ad after error
-            loadRewardedAd();
-            resolve(false);
-            return false;
-          }
-        }
-        return false;
-      };
-
-      // First try - attempt to show an already loaded ad
-      const adShown = await attemptToShowAd();
-      if (adShown) return;
-
-      console.log('Rewarded ad not ready, attempting to load one now...');
-      
-      // If not loaded, we'll try to load it and show once ready
-      try {
-        // Import modules directly in this scope
-        const { RewardedAd, AdEventType, RewardedAdEventType } = await import('react-native-google-mobile-ads');
-        
-        // Get the appropriate ad unit ID
-        const adUnitId = getAdUnitId('REWARDED');
-        
-        // Create a local reference to the rewarded ad
-        const localRewardedAd = RewardedAd.createForAdRequest(adUnitId);
-        
-        // Track if the ad was loaded or if we timed out
-        let wasAdLoaded = false;
-        let wasTimeout = false;
-        
-        // Create a timeout promise
-        const timeoutPromise = new Promise<void>((timeoutResolve) => {
-          setTimeout(() => {
-            if (!wasAdLoaded) {
-              wasTimeout = true;
-              console.log('Ad load timed out after 10 seconds');
-              timeoutResolve();
+              }
             }
-          }, 10000); // 10 second timeout
-        });
+          ]
+        );
+      }, 1000);
+      return;
+    }
+    
+    // Real ad implementation for production/TestFlight
+    try {
+      // Step 1: Ensure AdMob is initialized
+      if (!adModulesInitialized) {
+        console.log('🔄 AdMob SDK not initialized, initializing now...');
+        const success = await initializeAds();
+        if (!success) {
+          console.error('❌ Failed to initialize AdMob SDK');
+          resolve(false);
+          return;
+        }
+      }
+      
+      // Step 2: Check if we have a preloaded ad ready to show
+      if (rewardedAd && isRewardedAdLoaded) {
+        console.log('✅ Preloaded rewarded ad available, showing immediately');
+        onRewardCallback = callback;
         
-        // Create a load promise
-        const loadPromise = new Promise<void>((loadResolve) => {
-          // Event listeners
-          const unsubscribeLoaded = localRewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
-            console.log('Rewarded ad loaded successfully!');
-            wasAdLoaded = true;
-            rewardedAd = localRewardedAd;
+        try {
+          await rewardedAd.show();
+          // Will resolve through event handlers
+          return;
+        } catch (showError) {
+          console.error('❌ Error showing preloaded ad:', showError);
+          onRewardCallback = null;
+          isRewardedAdLoaded = false;
+          rewardedAd = null;
+          // Continue to load-then-show approach
+        }
+      } else {
+        console.log('⚠️ No preloaded ad available, attempting just-in-time loading');
+      }
+
+      // Step 3: Load and show a new ad on-the-fly
+      console.log('🔄 Starting load-then-show sequence...');
+      
+      // Get appropriate ad unit ID
+      const adUnitId = getAdUnitId('REWARDED');
+      console.log(`📋 Using ad unit ID: ${adUnitId}`);
+      
+      // Create a dedicated ad instance for this request
+      const dedicatedAd = RewardedAd.createForAdRequest(adUnitId, {
+        requestNonPersonalizedAdsOnly: false,
+        keywords: ['game', 'arcade', 'puzzle', 'maze', 'tilting'],
+      });
+      
+      // Set maximum wait time for ad loading
+      const MAX_WAIT_TIME = 15000; // 15 seconds
+      let loadTimedOut = false;
+      
+      // Create timeout promise
+      const timeoutPromise = new Promise<void>((timeoutResolve) => {
+        setTimeout(() => {
+          console.log(`⏰ Ad load timed out after ${MAX_WAIT_TIME/1000} seconds`);
+          loadTimedOut = true;
+          timeoutResolve();
+        }, MAX_WAIT_TIME);
+      });
+      
+      // Setup ad loading and showing
+      const loadAndShowPromise = new Promise<boolean>((adResolve) => {
+        let hasLoaded = false;
+        let cleanupCalled = false;
+        
+        // Event: Ad loaded successfully
+        const loadedUnsubscribe = dedicatedAd.addAdEventListener(
+          RewardedAdEventType.LOADED,
+          () => {
+            console.log('✅ Ad loaded successfully');
+            hasLoaded = true;
+            
+            // Update shared state
+            rewardedAd = dedicatedAd;
             isRewardedAdLoaded = true;
-            loadResolve();
-          });
-          
-          const unsubscribeFailedToLoad = localRewardedAd.addAdEventListener(AdEventType.ERROR, (error: any) => {
-            console.error('Failed to load rewarded ad:', error);
-            loadResolve(); // Resolve anyway to continue the flow
-          });
-          
-          // Register callback for when ad is earned
-          const unsubscribeEarned = localRewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-            console.log('User earned reward');
+            
+            try {
+              // Show ad immediately after loading
+              console.log('👁️ Showing ad immediately after load');
+              onRewardCallback = callback;
+              dedicatedAd.show();
+            } catch (showError) {
+              console.error('❌ Error showing ad after load:', showError);
+              
+              // Reset state on error
+              onRewardCallback = null;
+              isRewardedAdLoaded = false;
+              rewardedAd = null;
+              adResolve(false);
+            }
+          }
+        );
+        
+        // Event: Ad load/show error
+        const errorUnsubscribe = dedicatedAd.addAdEventListener(
+          AdEventType.ERROR,
+          (error: any) => {
+            const errorMsg = error?.message || 'Unknown error';
+            const errorCode = error?.code || 'No code';
+            console.error(`❌ Ad load/show error: ${errorMsg} (Code: ${errorCode})`);
+            
+            // Only resolve if not already loaded
+            if (!hasLoaded) {
+              isRewardedAdLoaded = false;
+              rewardedAd = null;
+              adResolve(false);
+            }
+          }
+        );
+        
+        // Event: User earned reward
+        const rewardUnsubscribe = dedicatedAd.addAdEventListener(
+          RewardedAdEventType.EARNED_REWARD,
+          () => {
+            console.log('🎁 User earned reward!');
+            
+            // Call reward callback if set
             if (onRewardCallback) {
               onRewardCallback();
               onRewardCallback = null;
             }
-          });
-          
-          // Register callback for when ad is closed
-          const unsubscribeClosed = localRewardedAd.addAdEventListener(AdEventType.CLOSED, () => {
+          }
+        );
+        
+        // Event: Ad closed by user
+        const closedUnsubscribe = dedicatedAd.addAdEventListener(
+          AdEventType.CLOSED,
+          () => {
+            console.log('👋 Ad closed by user');
+            
+            // Reset shared state
             isRewardedAdLoaded = false;
             rewardedAd = null;
-            console.log('Rewarded ad closed');
-            // Preload the next ad
-            loadRewardedAd();
-          });
-          
-          // Clean up function
-          const cleanup = () => {
-            unsubscribeLoaded();
-            unsubscribeFailedToLoad();
-            unsubscribeEarned();
-            unsubscribeClosed();
-          };
-          
-          // Load the ad
-          localRewardedAd.load();
-          
-          // Return cleanup function
-          return cleanup;
-        });
+            
+            // Resolve based on whether ad was loaded
+            if (hasLoaded) {
+              adResolve(true);
+            } else {
+              adResolve(false);
+            }
+            
+            // Pre-load next ad after a short delay
+            setTimeout(() => loadRewardedAd().catch(() => {}), 1000);
+          }
+        );
         
-        // Wait for either the ad to load or the timeout
-        await Promise.race([loadPromise, timeoutPromise]);
+        // Start ad loading
+        console.log('🔄 Initiating ad load...');
+        dedicatedAd.load();
         
-        // Try showing the ad if it was loaded
-        if (wasAdLoaded && !wasTimeout) {
-          await attemptToShowAd();
-        } else {
-          // If we couldn't load the ad, resolve with false
-          resolve(false);
+        // Return cleanup function
+        return () => {
+          if (cleanupCalled) return;
+          cleanupCalled = true;
+          
+          loadedUnsubscribe();
+          errorUnsubscribe();
+          rewardUnsubscribe();
+          closedUnsubscribe();
+          console.log('🧹 Ad event listeners cleaned up');
+        };
+      });
+      
+      // Race between loading ad and timeout
+      const result = await Promise.race([
+        loadAndShowPromise,
+        timeoutPromise.then(() => false)
+      ]);
+      
+      // Handle timeout case
+      if (loadTimedOut) {
+        console.log('⏰ Ad load-and-show process timed out');
+        
+        // Clean up state
+        if (onRewardCallback) {
+          onRewardCallback = null;
         }
+        isRewardedAdLoaded = false;
+        rewardedAd = null;
         
-      } catch (error) {
-        console.error('Error in ad loading process:', error);
+        // Resolve as false and try to preload for next time
         resolve(false);
+        setTimeout(() => loadRewardedAd().catch(() => {}), 1000);
+      } else {
+        // Resolve with the result from the ad loading process
+        resolve(result === true);
       }
-    });
-  }
+    } catch (error) {
+      console.error('❌ Critical error in showRewardedAd:', error);
+      
+      // Reset all state
+      if (onRewardCallback) {
+        onRewardCallback = null;
+      }
+      isRewardedAdLoaded = false;
+      rewardedAd = null;
+      
+      // Resolve as false and schedule a preload for next time
+      resolve(false);
+      setTimeout(() => loadRewardedAd().catch(() => {}), 5000);
+    }
+  });
 };

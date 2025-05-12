@@ -12,10 +12,8 @@ import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle, Defs, LinearGradient, RadialGradient, Stop, Pattern, Rect } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, } from 'react-native-reanimated';
 import { Trail } from '@store/slices/shopSlice';
-
 type ItemType = 'skin' | 'trail';
 type Item = Skin | Trail;
-// Updated ItemPreview to handle gradients, patterns and trails
 const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemType }) => {
   const rotation = useSharedValue(0);
   React.useEffect(() => {
@@ -24,10 +22,8 @@ const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemT
   const style = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value * 360}deg` }],
   }));
-
   const gradientId = `grad-${item.id}`;
   const patternId = `pattern-${item.id}`;
-
     const renderFill = () => {
       if (itemType === 'skin') {
         const skin = item as Skin;
@@ -44,13 +40,9 @@ const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemT
           return `url(#${gradientId})`
       }
     };
-
   return (
     <Animated.View style={style}>
       <Svg width="60" height="60" viewBox="0 0 40 40">
-
-
-
         <Defs>
           {itemType === 'skin' && (item as Skin).type === 'gradient' && (
           (item as Skin).gradientDirection === 'radial' ? (
@@ -95,26 +87,19 @@ const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemT
     </Animated.View>
   );
 };
-
-// Tab values
 type TabValue = 'skins' | 'trails';
-
 const ShopScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
   const navigation = useNavigation<ShopScreenNavigationProp>();
   const paperTheme = useTheme();
   const [activeTab, setActiveTab] = useState<TabValue>('skins');
-
   const { coins, skins, purchasedSkins, equippedSkin, trails, purchasedTrails, equippedTrail } = useAppSelector(
     (state: RootState) => state.shop
   );
-
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const isDark = useAppSelector((state: RootState) => state.theme.isDark);
   const windowWidth = Dimensions.get('window').width;
-
-  // Handler for buying an item
   const handleBuyItem = (item: Item, itemType: ItemType) => {
     if (itemType === 'skin') {
       dispatch(purchaseSkinAndSave(item.id));
@@ -122,8 +107,6 @@ const ShopScreen: React.FC = () => {
       dispatch(purchaseTrailAndSave(item.id));
     }
   };
-
-  // Handler for equipping an item
   const handleEquipItem = (item: Item, itemType: ItemType) => {
     if (itemType === 'skin') {
       dispatch(equipSkinAndSave(item.id));
@@ -131,17 +114,13 @@ const ShopScreen: React.FC = () => {
       dispatch(equipTrailAndSave(item.id));
     }
   };
-
-  // Render a shop item (skin or trail)
   const renderShopItem = (item: Item, itemType: ItemType) => {
     const isPurchased = itemType === 'skin'
       ? purchasedSkins.includes(item.id)
       : purchasedTrails.includes(item.id);
-
     const isEquipped = itemType === 'skin'
       ? equippedSkin === item.id
       : equippedTrail === item.id;
-
     return (
       <View style={[
         styles.cardContainer,
@@ -163,7 +142,6 @@ const ShopScreen: React.FC = () => {
             <View style={[styles.swatchWrapper, { borderColor: item.colors[0] }]}>
               <ItemPreview itemType={itemType} item={item} />
             </View>
-
             <View style={styles.itemInfo}>
               <Text
                 style={[
@@ -179,7 +157,6 @@ const ShopScreen: React.FC = () => {
               >
                 {item.name}
               </Text>
-
               <View style={styles.costContainer}>
                 <FontAwesome5 name="coins" size={14} color="#FFD700" solid />
                 <Text
@@ -195,7 +172,6 @@ const ShopScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-
             {isEquipped ? (
               <Button
                 mode="contained"
@@ -236,7 +212,6 @@ const ShopScreen: React.FC = () => {
       </View>
     );
   };
-
   return (
     <SafeAreaView
       style={[
@@ -245,8 +220,7 @@ const ShopScreen: React.FC = () => {
       ]}
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />
-
-      {/* App Bar with Coins Display */}
+      {}
       <Appbar.Header style={{ backgroundColor: colors.surface, elevation: 4 }}>
         <Appbar.Content title="Shop" />
         <View style={[styles.coinsContainer, { backgroundColor: colors.surfaceVariant }]}>
@@ -254,8 +228,7 @@ const ShopScreen: React.FC = () => {
           <Text style={[styles.coinsText, { color: colors.primary }]}>{coins}</Text>
         </View>
       </Appbar.Header>
-
-      {/* Tabs */}
+      {}
       <View style={[styles.tabContainer, { backgroundColor: colors.surface }]}>
         <SegmentedButtons
           value={activeTab}
@@ -275,8 +248,7 @@ const ShopScreen: React.FC = () => {
           style={styles.segmentedButtons}
         />
       </View>
-
-      {/* Tab Content */}
+      {}
       <View style={styles.tabContent}>
         {activeTab === 'skins' && (
           <FlatList
@@ -289,7 +261,6 @@ const ShopScreen: React.FC = () => {
             renderItem={({ item }) => renderShopItem(item, 'skin')}
           />
         )}
-
         {activeTab === 'trails' && (
           <FlatList
             data={[...trails].sort((a, b) => a.cost - b.cost)}
@@ -305,7 +276,6 @@ const ShopScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -391,5 +361,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-
 export default ShopScreen;

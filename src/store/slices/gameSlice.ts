@@ -1,7 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
 export type GameState = 'loading' | 'ready' | 'playing' | 'paused' | 'game_over' | 'completed';
-
 interface GameStateInterface {
   gameState: GameState;
   difficulty: number;
@@ -14,9 +12,8 @@ interface GameStateInterface {
   deathPosition: { x: number; y: number };
   gyroscopeCalibrated: boolean;
   isManualRecalibrating: boolean;
-  hasUsedContinue: boolean; // Track if player has used continue option in current run
+  hasUsedContinue: boolean; 
 }
-
 const initialState: GameStateInterface = {
   gameState: 'loading',
   difficulty: 1,
@@ -29,9 +26,8 @@ const initialState: GameStateInterface = {
   deathPosition: { x: 0, y: 0 },
   gyroscopeCalibrated: false,
   isManualRecalibrating: false,
-  hasUsedContinue: false, // Initialize to false for each new game
+  hasUsedContinue: false, 
 };
-
 const gameSlice = createSlice({
   name: 'game',
   initialState,
@@ -80,18 +76,17 @@ const gameSlice = createSlice({
       state.gameOver = false;
       state.showLevelTransition = false;
       state.showDeathAnimation = false;
-      state.hasUsedContinue = false; // Reset the continue flag when starting a new game
+      state.hasUsedContinue = false; 
     },
     continueAfterAd: state => {
       state.gameState = 'playing';
       state.goalReached = false;
       state.gameOver = false;
       state.showDeathAnimation = false;
-      state.hasUsedContinue = true; // Mark that the player has used their continue option
+      state.hasUsedContinue = true; 
     },
   },
 });
-
 export const {
   setGameState,
   setDifficulty,

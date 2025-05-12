@@ -1,11 +1,9 @@
 import React from 'react';
 import { Circle, Rect } from 'react-native-svg';
-
 interface LogoBackgroundProps {
   size: number;
   shadowOffset: number;
 }
-
 const LogoBackground: React.FC<LogoBackgroundProps> = ({ size, shadowOffset }) => {
   return (
     <>
@@ -15,7 +13,6 @@ const LogoBackground: React.FC<LogoBackgroundProps> = ({ size, shadowOffset }) =
         r={size * 0.44}
         fill="url(#shadowGradient)"
       />
-
       <Rect
         x={size * 0.1}
         y={size * 0.1}
@@ -27,7 +24,6 @@ const LogoBackground: React.FC<LogoBackgroundProps> = ({ size, shadowOffset }) =
         stroke="url(#primaryGradient)"
         strokeWidth={size * 0.015}
       />
-
       <Rect
         x={size * 0.1}
         y={size * 0.1}
@@ -41,5 +37,4 @@ const LogoBackground: React.FC<LogoBackgroundProps> = ({ size, shadowOffset }) =
     </>
   );
 };
-
 export default LogoBackground;

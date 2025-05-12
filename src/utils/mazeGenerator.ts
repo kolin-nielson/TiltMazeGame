@@ -1,19 +1,16 @@
 import { Maze, Wall, Position, LaserGate, Coin } from '@types';
 import { GAME } from '@config/constants';
-
 const BASE_GRID_SIZE = 5;
 const GRID_INCREMENT = 1;
 const CELL_SIZE = 40;
 const WALL_THICKNESS = 4;
 const MAZE_AREA_SIZE = 300;
-
 interface Cell {
   x: number;
   y: number;
   visited: boolean;
   walls: { top: boolean; right: boolean; bottom: boolean; left: boolean };
 }
-
 function isPathPossible(
   grid: Cell[][],
   rows: number,
@@ -26,24 +23,19 @@ function isPathPossible(
   const endRow = rows - 1;
   const endCol = cols - 1;
   const cellSizeScaled = CELL_SIZE * scale;
-
   if (!hasPath(grid, startRow, startCol, endRow, endCol)) {
     return false;
   }
-
   if (!laserGates || laserGates.length === 0) {
     return true;
   }
-
   for (const gate of laserGates) {
     if (gate.onDuration >= 1) {
       return false;
     }
   }
-
   return true;
 }
-
 function hasPath(
   grid: Cell[][],
   startRow: number,
@@ -53,32 +45,25 @@ function hasPath(
 ): boolean {
   const rows = grid.length;
   const cols = grid[0].length;
-
   const visited: boolean[][] = Array(rows)
     .fill(0)
     .map(() => Array(cols).fill(false));
-
   const queue: [number, number][] = [[startRow, startCol]];
   visited[startRow][startCol] = true;
-
   const directions = [
     [0, 1],
     [1, 0],
     [0, -1],
     [-1, 0],
   ];
-
   while (queue.length > 0) {
     const [row, col] = queue.shift()!;
-
     if (row === endRow && col === endCol) {
       return true;
     }
-
     for (let i = 0; i < 4; i++) {
       const newRow = row + directions[i][0];
       const newCol = col + directions[i][1];
-
       if (
         newRow >= 0 &&
         newRow < rows &&
@@ -87,12 +72,10 @@ function hasPath(
         !visited[newRow][newCol]
       ) {
         let canMove = false;
-
         if (i === 0 && !grid[row][col].walls.right) canMove = true;
         if (i === 1 && !grid[row][col].walls.bottom) canMove = true;
         if (i === 2 && col > 0 && !grid[row][col - 1].walls.right) canMove = true;
         if (i === 3 && row > 0 && !grid[row - 1][col].walls.bottom) canMove = true;
-
         if (canMove) {
           visited[newRow][newCol] = true;
           queue.push([newRow, newCol]);
@@ -100,10 +83,8 @@ function hasPath(
       }
     }
   }
-
   return false;
 }
-
 function initializeGrid(rows: number, cols: number): Cell[][] {
   const grid: Cell[][] = [];
   for (let y = 0; y < rows; y++) {
@@ -119,23 +100,18 @@ function initializeGrid(rows: number, cols: number): Cell[][] {
   }
   return grid;
 }
-
 function getNeighbors(cell: Cell, grid: Cell[][], rows: number, cols: number): Cell[] {
   const neighbors: Cell[] = [];
   const { x, y } = cell;
-
   if (y > 0 && !grid[y - 1][x].visited) neighbors.push(grid[y - 1][x]);
   if (x < cols - 1 && !grid[y][x + 1].visited) neighbors.push(grid[y][x + 1]);
   if (y < rows - 1 && !grid[y + 1][x].visited) neighbors.push(grid[y + 1][x]);
   if (x > 0 && !grid[y][x - 1].visited) neighbors.push(grid[y][x - 1]);
-
   return neighbors;
 }
-
 function removeWall(current: Cell, next: Cell): void {
   const dx = current.x - next.x;
   const dy = current.y - next.y;
-
   if (dx === 1) {
     current.walls.left = false;
     next.walls.right = false;
@@ -143,7 +119,6 @@ function removeWall(current: Cell, next: Cell): void {
     current.walls.right = false;
     next.walls.left = false;
   }
-
   if (dy === 1) {
     current.walls.top = false;
     next.walls.bottom = false;
@@ -152,26 +127,21 @@ function removeWall(current: Cell, next: Cell): void {
     next.walls.top = false;
   }
 }
-
 function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number): Wall[] {
   const walls: Wall[] = [];
   const wallThicknessScaled = WALL_THICKNESS * scale;
   const cellSizeScaled = CELL_SIZE * scale;
-
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const cell = grid[y][x];
       const cellX = x * cellSizeScaled;
       const cellY = y * cellSizeScaled;
-
       if (y === 0 && cell.walls.top) {
         walls.push({ x: cellX, y: cellY, width: cellSizeScaled, height: wallThicknessScaled });
       }
-
       if (x === 0 && cell.walls.left) {
         walls.push({ x: cellX, y: cellY, width: wallThicknessScaled, height: cellSizeScaled });
       }
-
       if (cell.walls.bottom) {
         walls.push({
           x: cellX,
@@ -180,7 +150,6 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
           height: wallThicknessScaled,
         });
       }
-
       if (cell.walls.right) {
         walls.push({
           x: cellX + cellSizeScaled - wallThicknessScaled,
@@ -193,43 +162,34 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
   }
   return walls;
 }
-
 export const generateMaze = (difficulty: number): Maze => {
   const structureDifficulty = Math.min(difficulty, 4);
   const gridSize = BASE_GRID_SIZE + (structureDifficulty - 1) * GRID_INCREMENT;
   const rows = gridSize;
   const cols = gridSize;
-
   const totalWidth = cols * CELL_SIZE;
   const totalHeight = rows * CELL_SIZE;
   const scale = MAZE_AREA_SIZE / Math.max(totalWidth, totalHeight);
-
   const grid = initializeGrid(rows, cols);
   const stack: Cell[] = [];
   let currentCell = grid[0][0];
   currentCell.visited = true;
   stack.push(currentCell);
-
   while (stack.length > 0) {
     currentCell = stack.pop()!;
     const neighbors = getNeighbors(currentCell, grid, rows, cols);
-
     if (neighbors.length > 0) {
       stack.push(currentCell);
       const randomIndex = Math.floor(Math.random() * neighbors.length);
       const nextCell = neighbors[randomIndex];
-
       removeWall(currentCell, nextCell);
       nextCell.visited = true;
       stack.push(nextCell);
     }
   }
-
   const id = `endless-${difficulty}-${Date.now()}`;
   const name = `Endless Level ${difficulty}`;
-
   const walls = gridToWalls(grid, rows, cols, scale);
-
   const startPosition: Position = {
     x: (CELL_SIZE / 2) * scale,
     y: (CELL_SIZE / 2) * scale,
@@ -238,7 +198,6 @@ export const generateMaze = (difficulty: number): Maze => {
     x: ((cols - 1) * CELL_SIZE + CELL_SIZE / 2) * scale,
     y: ((rows - 1) * CELL_SIZE + CELL_SIZE / 2) * scale,
   };
-
   let difficultyLevel: 'easy' | 'medium' | 'hard';
   if (structureDifficulty <= 2) {
     difficultyLevel = 'easy';
@@ -247,14 +206,11 @@ export const generateMaze = (difficulty: number): Maze => {
   } else {
     difficultyLevel = 'hard';
   }
-
   const laserGates: LaserGate[] = [];
   const maxPossibleLasers = 8;
-
   if (difficulty > 3) {
     const laserThickness = 4;
     const numLasers = Math.max(1, Math.min(maxPossibleLasers, 1 + Math.floor((difficulty - 1) / 5)));
-
     const corridors: {
       x1: number;
       y1: number;
@@ -263,12 +219,10 @@ export const generateMaze = (difficulty: number): Maze => {
       direction: 'horizontal' | 'vertical';
       length: number;
     }[] = [];
-
     const numHorizontalCorridors = 1 + Math.floor(Math.random() * 2);
     for (let i = 0; i < numHorizontalCorridors; i++) {
       const y = Math.floor(rows * 0.3) + Math.floor(Math.random() * (rows * 0.4));
       const cellY = y * CELL_SIZE * scale;
-
       corridors.push({
         x1: 0,
         y1: cellY + (CELL_SIZE * scale) / 2,
@@ -278,12 +232,10 @@ export const generateMaze = (difficulty: number): Maze => {
         length: MAZE_AREA_SIZE,
       });
     }
-
     const numVerticalCorridors = 1 + Math.floor(Math.random() * 2);
     for (let i = 0; i < numVerticalCorridors; i++) {
       const x = Math.floor(cols * 0.3) + Math.floor(Math.random() * (cols * 0.4));
       const cellX = x * CELL_SIZE * scale;
-
       corridors.push({
         x1: cellX + (CELL_SIZE * scale) / 2,
         y1: 0,
@@ -293,27 +245,19 @@ export const generateMaze = (difficulty: number): Maze => {
         length: MAZE_AREA_SIZE,
       });
     }
-
     for (let i = corridors.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [corridors[i], corridors[j]] = [corridors[j], corridors[i]];
     }
-
     const actualNumLasers = Math.min(numLasers, corridors.length);
-
     const tempLaserGates: LaserGate[] = [];
-
     for (let i = 0; i < actualNumLasers; i++) {
       const corridor = corridors[i];
-
       if (corridor.direction === 'horizontal') {
         const laserY = corridor.y1 - laserThickness / 2;
-
         const widthFactor = 0.6 + Math.random() * 0.2;
         const laserWidth = corridor.length * widthFactor;
-
         const laserX = corridor.x1 + (corridor.length - laserWidth) / 2;
-
         tempLaserGates.push({
           id: `laser-h-${id}-${i}`,
           x: laserX,
@@ -327,12 +271,9 @@ export const generateMaze = (difficulty: number): Maze => {
         });
       } else {
         const laserX = corridor.x1 - laserThickness / 2;
-
         const heightFactor = 0.6 + Math.random() * 0.2;
         const laserHeight = corridor.length * heightFactor;
-
         const laserY = corridor.y1 + (corridor.length - laserHeight) / 2;
-
         tempLaserGates.push({
           id: `laser-v-${id}-${i}`,
           x: laserX,
@@ -346,7 +287,6 @@ export const generateMaze = (difficulty: number): Maze => {
         });
       }
     }
-
     if (isPathPossible(grid, rows, cols, tempLaserGates, scale)) {
       laserGates.push(...tempLaserGates);
       console.log(`Added ${tempLaserGates.length} laser gates - maze is solvable`);
@@ -363,8 +303,6 @@ export const generateMaze = (difficulty: number): Maze => {
       }
     }
   }
-
-  // generate random coin positions
   const maxCoins = Math.min(20, Math.ceil(GAME.COINS_PER_LEVEL * (1 + difficulty / 10)));
   const flatCells: Position[] = [];
   for (let y = 0; y < rows; y++) {
@@ -373,7 +311,6 @@ export const generateMaze = (difficulty: number): Maze => {
         x: (x * CELL_SIZE + CELL_SIZE / 2) * scale,
         y: (y * CELL_SIZE + CELL_SIZE / 2) * scale,
       };
-      // skip start and end positions
       if (
         (pos.x === startPosition.x && pos.y === startPosition.y) ||
         (pos.x === endPosition.x && pos.y === endPosition.y)
@@ -383,32 +320,27 @@ export const generateMaze = (difficulty: number): Maze => {
       flatCells.push(pos);
     }
   }
-  // shuffle the cells
   for (let i = flatCells.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [flatCells[i], flatCells[j]] = [flatCells[j], flatCells[i]];
   }
   const coinPositions = flatCells.slice(0, maxCoins);
   const coins: Coin[] = coinPositions.map((pos, idx) => ({ id: `${id}-coin-${idx}`, position: pos }));
-
-  // Add a special high-value coin if we have enough cells
   if (flatCells.length > maxCoins) {
-    // Get a position that's not already used for regular coins
     const specialCoinPosition = flatCells[maxCoins];
     const specialCoin: Coin = {
       id: `${id}-special-coin`,
       position: specialCoinPosition,
-      value: 10, // Special coin worth 10 regular coins
+      value: 10,
       isSpecial: true
     };
     coins.push(specialCoin);
   }
-
   return {
     id,
     name,
     walls,
-    laserGates: laserGates.length > 0 ? laserGates : [], // Always return an array, even if empty
+    laserGates: laserGates.length > 0 ? laserGates : [], 
     startPosition,
     endPosition,
     coins,

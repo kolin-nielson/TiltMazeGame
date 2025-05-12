@@ -19,10 +19,10 @@ module.exports = {
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   collectCoverage: true,
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/*.stories.{ts,tsx}',
-    '!src/**/index.{ts,tsx}',
+    'src*.{ts,tsx}',
+    '!src*.d.ts',
+    '!src*.stories.{ts,tsx}',
+    '!srcindex.{ts,tsx}',
     '!**/node_modules/**',
   ],
   coverageThreshold: {

@@ -1,5 +1,4 @@
 import { Maze } from '@types';
-
 export const defaultMazes: Maze[] = [
   {
     id: 'easy-1',
@@ -11,7 +10,6 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
     ],
-
     laserGates: [],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
@@ -27,13 +25,12 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 10, y: 150, width: 90, height: 10 },
       { x: 200, y: 150, width: 90, height: 10 },
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -46,13 +43,12 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 150, y: 10, width: 10, height: 120 },
       { x: 10, y: 150, width: 120, height: 10 },
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -65,13 +61,12 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 10, y: 100, width: 200, height: 10 },
       { x: 90, y: 190, width: 200, height: 10 },
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 260, y: 260 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -84,16 +79,14 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 135, y: 135, width: 30, height: 30 },
     ],
     startPosition: { x: 40, y: 40 },
     endPosition: { x: 260, y: 260 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
-
   {
     id: 'medium-1',
     name: 'Zigzag',
@@ -103,14 +96,13 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 10, y: 80, width: 180, height: 10 },
       { x: 110, y: 160, width: 180, height: 10 },
       { x: 10, y: 240, width: 180, height: 10 },
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 260, y: 260 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -123,7 +115,6 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 60, y: 60, width: 180, height: 10 },
       { x: 60, y: 60, width: 10, height: 180 },
       { x: 60, y: 230, width: 150, height: 10 },
@@ -131,7 +122,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 250, y: 250 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -144,7 +135,6 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 150, y: 30, width: 10, height: 100 },
       { x: 150, y: 170, width: 10, height: 100 },
     ],
@@ -160,7 +150,6 @@ export const defaultMazes: Maze[] = [
         phase: 0,
         onDuration: 0.4,
       },
-
       {
         id: 'laser-2',
         x: 160,
@@ -187,7 +176,6 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 10, y: 120, width: 80, height: 10 },
       { x: 210, y: 120, width: 80, height: 10 },
       { x: 10, y: 180, width: 80, height: 10 },
@@ -199,7 +187,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 270, y: 270 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -212,18 +200,16 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 10, y: 80, width: 200, height: 10 },
       { x: 90, y: 160, width: 200, height: 10 },
       { x: 10, y: 240, width: 200, height: 10 },
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 30, y: 270 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
-
   {
     id: 'hard-1',
     name: 'Corridors',
@@ -233,14 +219,13 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 75, y: 40, width: 10, height: 200 },
       { x: 150, y: 60, width: 10, height: 180 },
       { x: 225, y: 40, width: 10, height: 200 },
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 265, y: 265 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -253,12 +238,10 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 60, y: 60, width: 180, height: 10 },
       { x: 60, y: 60, width: 10, height: 180 },
       { x: 60, y: 230, width: 140, height: 10 },
       { x: 230, y: 60, width: 10, height: 140 },
-
       { x: 110, y: 110, width: 80, height: 10 },
       { x: 110, y: 110, width: 10, height: 80 },
       { x: 110, y: 180, width: 40, height: 10 },
@@ -266,7 +249,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 150, y: 150 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -279,7 +262,6 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 40, y: 75, width: 35, height: 10 },
       { x: 115, y: 75, width: 70, height: 10 },
       { x: 225, y: 75, width: 35, height: 10 },
@@ -301,7 +283,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 35, y: 35 },
     endPosition: { x: 265, y: 265 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },
@@ -314,7 +296,6 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 40, y: 60, width: 200, height: 10 },
       { x: 230, y: 60, width: 10, height: 60 },
       { x: 60, y: 120, width: 170, height: 10 },
@@ -335,7 +316,6 @@ export const defaultMazes: Maze[] = [
         phase: 0,
         onDuration: 0.4,
       },
-
       {
         id: 'laser-4',
         x: 160,
@@ -347,7 +327,6 @@ export const defaultMazes: Maze[] = [
         phase: 0.3,
         onDuration: 0.3,
       },
-
       {
         id: 'laser-5',
         x: 85,
@@ -359,7 +338,6 @@ export const defaultMazes: Maze[] = [
         phase: 0.6,
         onDuration: 0.35,
       },
-
       {
         id: 'laser-6',
         x: 160,
@@ -386,12 +364,10 @@ export const defaultMazes: Maze[] = [
       { x: 0, y: 290, width: 300, height: 10 },
       { x: 0, y: 0, width: 10, height: 300 },
       { x: 290, y: 0, width: 10, height: 300 },
-
       { x: 40, y: 60, width: 190, height: 10 },
       { x: 40, y: 120, width: 190, height: 10 },
       { x: 40, y: 180, width: 190, height: 10 },
       { x: 40, y: 240, width: 190, height: 10 },
-
       { x: 70, y: 40, width: 10, height: 20 },
       { x: 70, y: 120, width: 10, height: 60 },
       { x: 70, y: 240, width: 10, height: 50 },
@@ -403,7 +379,7 @@ export const defaultMazes: Maze[] = [
     ],
     startPosition: { x: 30, y: 30 },
     endPosition: { x: 260, y: 260 },
-    laserGates: [], // Ensure laserGates is always defined
+    laserGates: [], 
     createdAt: 0,
     updatedAt: 0,
   },

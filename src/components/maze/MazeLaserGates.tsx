@@ -1,8 +1,6 @@
 import React, { memo } from 'react';
 import { LaserGate } from '../../types';
 import { MazeLaserGate } from './MazeLaserGate';
-
-// Memoized laser gates component to reduce render overhead
 export const MemoizedLaserGates = memo(({ laserGates, color, isActive }: {
   laserGates: LaserGate[],
   color: string,

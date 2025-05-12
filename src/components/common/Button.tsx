@@ -10,32 +10,20 @@ import {
   Platform,
 } from 'react-native';
 import { useAppSelector, RootState } from '@store';
-
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text';
 export type ButtonSize = 'small' | 'medium' | 'large';
-
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
-
   containerStyle?: ViewStyle;
-
   textStyle?: TextStyle;
-
   variant?: ButtonVariant;
-
   size?: ButtonSize;
-
   loading?: boolean;
-
   loadingColor?: string;
-
   disabled?: boolean;
-
   leftIcon?: React.ReactNode;
-
   rightIcon?: React.ReactNode;
 }
-
 const Button: React.FC<ButtonProps> = ({
   title,
   containerStyle,
@@ -51,12 +39,10 @@ const Button: React.FC<ButtonProps> = ({
   ...rest
 }) => {
   const themeColors = useAppSelector((state: RootState) => state.theme.colors);
-
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
       opacity: disabled ? 0.5 : 1,
     };
-
     switch (variant) {
       case 'primary':
         return {
@@ -92,7 +78,6 @@ const Button: React.FC<ButtonProps> = ({
         return baseStyle;
     }
   };
-
   const getShadowStyle = (elevation: number): ViewStyle => {
     if (Platform.OS === 'ios') {
       return {
@@ -107,7 +92,6 @@ const Button: React.FC<ButtonProps> = ({
       };
     }
   };
-
   const getSizeStyle = (): ViewStyle => {
     switch (size) {
       case 'small':
@@ -128,7 +112,6 @@ const Button: React.FC<ButtonProps> = ({
         };
     }
   };
-
   const getTextColor = (): string => {
     switch (variant) {
       case 'outline':
@@ -138,7 +121,6 @@ const Button: React.FC<ButtonProps> = ({
         return themeColors.onPrimary;
     }
   };
-
   const getTextSize = (): number => {
     switch (size) {
       case 'small':
@@ -150,7 +132,6 @@ const Button: React.FC<ButtonProps> = ({
         return 16;
     }
   };
-
   return (
     <TouchableOpacity
       style={[styles.button, getButtonStyle(), getSizeStyle(), containerStyle]}
@@ -190,7 +171,6 @@ const Button: React.FC<ButtonProps> = ({
     </TouchableOpacity>
   );
 };
-
 const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
@@ -204,5 +184,4 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 });
-
 export default Button;

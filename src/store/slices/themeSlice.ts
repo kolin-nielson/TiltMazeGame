@@ -3,9 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ThemeColors } from '@types';
 import { lightTheme, darkTheme } from '@styles/themes';
-
 export type ThemeName = 'light' | 'dark' | 'system';
-
 export interface ThemeState {
   themeName: ThemeName;
   isDark: boolean;
@@ -13,7 +11,6 @@ export interface ThemeState {
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
-
 const initialState: ThemeState = {
   themeName: 'system',
   isDark: false,
@@ -21,7 +18,6 @@ const initialState: ThemeState = {
   status: 'idle',
   error: null,
 };
-
 export const loadTheme = createAsyncThunk('theme/loadTheme', async (_, { rejectWithValue }) => {
   try {
     const themeJson = await AsyncStorage.getItem('theme');
@@ -34,7 +30,6 @@ export const loadTheme = createAsyncThunk('theme/loadTheme', async (_, { rejectW
     return rejectWithValue('Failed to load theme');
   }
 });
-
 export const saveTheme = createAsyncThunk(
   'theme/saveTheme',
   async (themeName: ThemeName, { rejectWithValue }) => {
@@ -46,7 +41,6 @@ export const saveTheme = createAsyncThunk(
     }
   }
 );
-
 const themeSlice = createSlice({
   name: 'theme',
   initialState,
@@ -81,6 +75,5 @@ const themeSlice = createSlice({
       });
   },
 });
-
 export const { setTheme, setIsDark } = themeSlice.actions;
 export default themeSlice.reducer;

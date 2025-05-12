@@ -9,13 +9,11 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { ThemeColors } from '@types';
-
 interface SimpleDeathScreenProps {
   visible: boolean;
   onAnimationComplete: () => void;
   colors: ThemeColors;
 }
-
 const ANIMATION_DURATION = 1200;
 const SimpleDeathScreen: React.FC<SimpleDeathScreenProps> = ({
   visible,
@@ -25,7 +23,6 @@ const SimpleDeathScreen: React.FC<SimpleDeathScreenProps> = ({
   const opacity = useSharedValue(0);
   const scale = useSharedValue(1.2);
   const iconScale = useSharedValue(0.5);
-
   useEffect(() => {
     if (visible) {
       opacity.value = 0;
@@ -47,36 +44,30 @@ const SimpleDeathScreen: React.FC<SimpleDeathScreenProps> = ({
           }
         )
       );
-
       scale.value = withTiming(1, {
         duration: 400,
         easing: Easing.out(Easing.cubic),
       });
-
       iconScale.value = withTiming(1, {
         duration: 500,
         easing: Easing.elastic(1.2),
       });
     }
   }, [visible, opacity, scale, iconScale, onAnimationComplete]);
-
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ scale: scale.value }],
   }));
-
   const iconStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ scale: iconScale.value }],
   }));
   if (!visible) return null;
-
   return (
     <View style={styles.container} pointerEvents="none">
       <Animated.View
         style={[styles.overlay, { backgroundColor: colors.errorContainer }, overlayStyle]}
       />
-
       <Animated.View style={[styles.iconContainer, iconStyle]}>
         <View style={[styles.xLine, { backgroundColor: colors.onErrorContainer }]} />
         <View
@@ -86,7 +77,6 @@ const SimpleDeathScreen: React.FC<SimpleDeathScreenProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
@@ -130,5 +120,4 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-45deg' }],
   },
 });
-
 export default React.memo(SimpleDeathScreen);

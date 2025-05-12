@@ -12,11 +12,7 @@ import { TutorialScreenNavigationProp } from '@navigation/types';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-// Cap maze to 300px for consistent layout
 const MAZE_SIZE = Math.min(Dimensions.get('window').width - 40, 300);
-
-// Define static slide deck for onboarding
 const slides = [
   {
     key: 'tilt',
@@ -49,27 +45,22 @@ const slides = [
     description: 'Use the sensitivity slider in Settings to fine-tune control.',
   },
 ];
-
 const TutorialScreen: React.FC = () => {
   const [index, setIndex] = useState(0);
   const navigation = useNavigation<TutorialScreenNavigationProp>();
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const dispatch = useAppDispatch();
-
   const handleNext = () => {
     if (index < slides.length - 1) {
       setIndex(index + 1);
     } else {
-      // finish tutorial and go to Game
       dispatch(setHasSeenTutorial(true));
       navigation.replace('Game');
     }
   };
-
   const handleBack = () => {
     if (index > 0) setIndex(index - 1);
   };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <Card mode="elevated" style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -101,7 +92,6 @@ const TutorialScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   card: {
@@ -119,5 +109,4 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 });
-
 export default TutorialScreen;

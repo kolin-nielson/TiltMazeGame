@@ -1,13 +1,11 @@
 import React from 'react';
 import { Text as SvgText, TSpan } from 'react-native-svg';
 import { ThemeColors } from '@types';
-
 interface LogoTextProps {
   size: number;
   fontSize: number;
   colors: ThemeColors;
 }
-
 const LogoText: React.FC<LogoTextProps> = ({ size, fontSize, colors }) => (
   <SvgText
     x={size / 2}
@@ -26,5 +24,4 @@ const LogoText: React.FC<LogoTextProps> = ({ size, fontSize, colors }) => (
     </TSpan>
   </SvgText>
 );
-
 export default LogoText;

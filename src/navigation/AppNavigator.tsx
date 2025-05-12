@@ -4,16 +4,13 @@ import { StatusBar } from 'expo-status-bar';
 import { useAppSelector, RootState } from '@store';
 import { RootStackParamList } from './types';
 import { View, ActivityIndicator } from 'react-native';
-
 const HomeScreen = React.lazy(() => import('@screens/HomeScreen'));
 const TutorialScreen = React.lazy(() => import('@screens/TutorialScreen'));
 const GameScreen = React.lazy(() => import('@screens/GameScreen'));
 const SettingsScreen = React.lazy(() => import('@screens/SettingsScreen'));
 const ThemeScreen = React.lazy(() => import('@screens/ThemeScreen'));
 const ShopScreen = React.lazy(() => import('@screens/ShopScreen'));
-
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
 const ScreenLoader: React.FC = () => {
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   return (
@@ -29,11 +26,9 @@ const ScreenLoader: React.FC = () => {
     </View>
   );
 };
-
 const AppNavigator: React.FC = () => {
   const isDark = useAppSelector((state: RootState) => state.theme.isDark);
   const colors = useAppSelector((state: RootState) => state.theme.colors);
-
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -103,5 +98,4 @@ const AppNavigator: React.FC = () => {
     </>
   );
 };
-
 export default AppNavigator;

@@ -1,13 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-
 import settingsReducer from './slices/settingsSlice';
 import mazeReducer from './slices/mazeSlice';
 import gameReducer from './slices/gameSlice';
 import themeReducer from './slices/themeSlice';
 import shopReducer from './slices/shopSlice';
-
 export const store = configureStore({
   reducer: {
     settings: settingsReducer,
@@ -25,11 +23,8 @@ export const store = configureStore({
       },
     }),
 });
-
 setupListeners(store.dispatch);
-
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
-
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;

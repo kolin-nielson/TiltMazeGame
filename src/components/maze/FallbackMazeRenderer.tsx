@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Maze, ThemeColors } from '@types';
-
 interface FallbackMazeRendererProps {
   maze: Maze;
   ballPositionX: Animated.SharedValue<number>;
@@ -11,7 +10,6 @@ interface FallbackMazeRendererProps {
   colors: ThemeColors;
   gameState?: 'ready' | 'playing' | 'paused' | 'completed' | 'game_over';
 }
-
 const FallbackMazeRenderer: React.FC<FallbackMazeRendererProps> = ({
   maze,
   ballPositionX,
@@ -50,7 +48,6 @@ const FallbackMazeRenderer: React.FC<FallbackMazeRendererProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -63,5 +60,4 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 });
-
 export default React.memo(FallbackMazeRenderer);

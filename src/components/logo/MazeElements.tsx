@@ -1,12 +1,10 @@
 import React from 'react';
 import { G, Rect, Circle } from 'react-native-svg';
-
 interface MazeElementsProps {
   size: number;
   ballSize: number;
   wallThickness: number;
 }
-
 const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickness }) => {
   return (
     <>
@@ -20,7 +18,6 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
           rx={wallThickness / 2}
           ry={wallThickness / 2}
         />
-
         <Rect
           x={size * 0.25}
           y={size * 0.25}
@@ -30,7 +27,6 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
           rx={wallThickness / 2}
           ry={wallThickness / 2}
         />
-
         <Rect
           x={size * 0.5}
           y={size * 0.25}
@@ -40,7 +36,6 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
           rx={wallThickness / 2}
           ry={wallThickness / 2}
         />
-
         <Rect
           x={size * 0.75 - wallThickness / 2}
           y={size * 0.25}
@@ -50,7 +45,6 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
           rx={wallThickness / 2}
           ry={wallThickness / 2}
         />
-
         <Rect
           x={size * 0.35}
           y={size * 0.5 - wallThickness / 2}
@@ -60,7 +54,6 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
           rx={wallThickness / 2}
           ry={wallThickness / 2}
         />
-
         <Rect
           x={size * 0.35}
           y={size * 0.5}
@@ -70,7 +63,6 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
           rx={wallThickness / 2}
           ry={wallThickness / 2}
         />
-
         <Rect
           x={size * 0.35}
           y={size * 0.65}
@@ -81,7 +73,6 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
           ry={wallThickness / 2}
         />
       </G>
-
       <Circle
         cx={size * 0.75}
         cy={size * 0.75}
@@ -91,7 +82,6 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
         strokeWidth={wallThickness * 0.5}
         strokeDasharray={[wallThickness * 0.6, wallThickness * 0.4]}
       />
-
       <Circle
         cx={size * 0.75}
         cy={size * 0.75}
@@ -99,9 +89,7 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
         fill="url(#goalGradient)"
         opacity={0.7}
       />
-
       <Circle cx={size * 0.3} cy={size * 0.35} r={ballSize} fill="url(#ballGradient)" />
-
       <Circle
         cx={size * 0.3 - ballSize * 0.3}
         cy={size * 0.35 - ballSize * 0.3}
@@ -112,5 +100,4 @@ const MazeElements: React.FC<MazeElementsProps> = ({ size, ballSize, wallThickne
     </>
   );
 };
-
 export default MazeElements;

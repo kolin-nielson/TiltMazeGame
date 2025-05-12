@@ -3,20 +3,17 @@ import { View, StyleSheet } from 'react-native';
 import { Button, Card } from 'react-native-paper';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { useAppSelector, RootState } from '@store';
-
 interface GamePausedOverlayProps {
   onResume: () => void;
   onRestart: () => void;
   onExit: () => void;
 }
-
 export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
   onResume,
   onRestart,
   onExit,
 }) => {
   const colors = useAppSelector((state: RootState) => state.theme.colors);
-
   return (
     <View style={[gameScreenStyles.overlay, { backgroundColor: `${colors.background}CC` }]}>
       <Card
@@ -61,7 +58,6 @@ export const GamePausedOverlay: React.FC<GamePausedOverlayProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   button: {
     width: '100%',

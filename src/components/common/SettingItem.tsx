@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppSelector, RootState } from '@store';
 import { ThemeColors } from '@types';
-
 export interface SettingItemProps {
   label: string;
   iconName: keyof typeof MaterialIcons.glyphMap;
@@ -12,7 +11,6 @@ export interface SettingItemProps {
   onPress?: () => void;
   children?: React.ReactNode;
 }
-
 const SettingItem: React.FC<SettingItemProps> = ({ label, iconName, iconColor, labelColor, onPress, children }) => {
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const itemIconColor = iconColor || colors.primary;
@@ -29,9 +27,7 @@ const SettingItem: React.FC<SettingItemProps> = ({ label, iconName, iconColor, l
   if (onPress) return <TouchableOpacity onPress={onPress}>{Content}</TouchableOpacity>;
   return Content;
 };
-
 export default SettingItem;
-
 const styles = StyleSheet.create({
   settingRow: {
     flexDirection: 'row',

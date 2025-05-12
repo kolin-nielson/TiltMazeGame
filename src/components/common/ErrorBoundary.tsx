@@ -2,17 +2,14 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Button, Text, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
 }
-
 interface State {
   hasError: boolean;
   error: Error | null;
 }
-
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -21,50 +18,41 @@ class ErrorBoundary extends Component<Props, State> {
       error: null,
     };
   }
-
   static getDerivedStateFromError(error: Error): State {
     return {
       hasError: true,
       error,
     };
   }
-
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('Error caught by ErrorBoundary:', error, errorInfo);
   }
-
   resetError = (): void => {
     this.setState({
       hasError: false,
       error: null,
     });
   };
-
   render(): ReactNode {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;
       }
-
       return (
         <View style={styles.container}>
           <Surface style={styles.errorCard}>
             <View style={styles.iconContainer}>
               <MaterialCommunityIcons name="alert-circle" size={64} color="#F44336" />
             </View>
-
             <Text style={styles.title}>Something went wrong</Text>
-
             <Text style={styles.message}>
               The app encountered an unexpected error. Please try again.
             </Text>
-
             <ScrollView style={styles.errorDetails}>
               <Text style={styles.errorText}>
                 {this.state.error?.toString() || 'Unknown error'}
               </Text>
             </ScrollView>
-
             <Button mode="contained" onPress={this.resetError} style={styles.button}>
               Try Again
             </Button>
@@ -72,11 +60,9 @@ class ErrorBoundary extends Component<Props, State> {
         </View>
       );
     }
-
     return this.props.children;
   }
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -126,5 +112,4 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
 });
-
 export default ErrorBoundary;

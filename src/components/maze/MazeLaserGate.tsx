@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Circle, Line } from 'react-native-svg';
 import { LaserGate } from '@types';
-
 interface MazeLaserGateProps {
   laserGate: LaserGate;
   color: string;
   isActive: boolean;
 }
-
 export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, isActive }) => {
   const [visible, setVisible] = useState(false);
   const MAZE_SIZE = 300;
   const BEAM_THICKNESS = 4;
-
   useEffect(() => {
     let frameId: number;
     const updateVisibility = () => {
@@ -28,10 +25,8 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
     }
     return () => cancelAnimationFrame(frameId);
   }, [isActive, laserGate.interval, laserGate.phase, laserGate.onDuration]);
-
   const emitterSize = 6;
   let emitter1X, emitter1Y, emitter2X, emitter2Y;
-
   if (laserGate.direction === 'horizontal') {
     emitter1X = laserGate.x;
     emitter1Y = laserGate.y + laserGate.height / 2;
@@ -43,9 +38,7 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
     emitter2X = laserGate.x + laserGate.width / 2;
     emitter2Y = laserGate.y + laserGate.height;
   }
-
   if (!isActive) return null;
-
   return (
     <>
       <Circle
@@ -64,7 +57,6 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
         strokeWidth={2}
         opacity={visible ? 1 : 0.5}
       />
-
       <Line
         x1={emitter1X}
         y1={emitter1Y}
@@ -75,7 +67,6 @@ export const MazeLaserGate: React.FC<MazeLaserGateProps> = ({ laserGate, color, 
         strokeLinecap="round"
         opacity={visible ? 1 : 0.3}
       />
-
       <Circle
         cx={emitter2X}
         cy={emitter2Y}

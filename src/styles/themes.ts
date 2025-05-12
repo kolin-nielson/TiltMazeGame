@@ -1,6 +1,5 @@
 import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 import { ThemeColors } from '@types';
-
 export const lightTheme: ThemeColors = {
   ...MD3LightTheme.colors,
   primary: '#6200EE',
@@ -29,13 +28,11 @@ export const lightTheme: ThemeColors = {
   surfaceDisabled: '#C4C7C5',
   onSurfaceDisabled: '#484848',
   backdrop: 'rgba(0, 0, 0, 0.5)',
-
   walls: MD3LightTheme.colors.onSurfaceVariant,
-  ball: '#E53935', // Classic Red default color
+  ball: '#E53935', 
   laser: MD3LightTheme.colors.error,
   goal: MD3LightTheme.colors.secondary,
 };
-
 export const darkTheme: ThemeColors = {
   ...MD3DarkTheme.colors,
   primary: '#BB86FC',
@@ -64,18 +61,15 @@ export const darkTheme: ThemeColors = {
   surfaceDisabled: '#232323',
   onSurfaceDisabled: '#AAAAAA',
   backdrop: 'rgba(0, 0, 0, 0.8)',
-
   walls: MD3DarkTheme.colors.onSurfaceVariant,
-  ball: '#E53935', // Classic Red default color
+  ball: '#E53935', 
   laser: MD3DarkTheme.colors.error,
   goal: MD3DarkTheme.colors.secondary,
 };
-
 export const lightPaperTheme = {
   ...MD3LightTheme,
   colors: lightTheme,
 };
-
 export const darkPaperTheme = {
   ...MD3DarkTheme,
   colors: darkTheme,

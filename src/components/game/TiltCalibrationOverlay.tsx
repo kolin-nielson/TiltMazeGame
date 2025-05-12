@@ -4,7 +4,6 @@ import { Text, Surface, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { ThemeColors } from '@types';
-
 interface TiltCalibrationOverlayProps {
   onCalibrationComplete: () => void;
   colors: ThemeColors;
@@ -12,13 +11,11 @@ interface TiltCalibrationOverlayProps {
   vibrationEnabled?: boolean;
   onManualRecalibrate?: () => void;
 }
-
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
   onCalibrationComplete,
   colors,
-  duration = 3000, // Increased for more reliable calibration
+  duration = 3000, 
   vibrationEnabled = true,
   onManualRecalibrate,
 }) => {
@@ -27,15 +24,9 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
   const [calibrationPhase, setCalibrationPhase] = useState('prepare');
   const [showTips, setShowTips] = useState(false);
   const lastHapticRef = useRef(0);
-
-  // Phone tilt animation
   const phoneTiltAnim = useRef(new Animated.Value(0)).current;
-
-  // Animated values for the bubble level
   const bubblePosition = useRef(new Animated.Value(0)).current;
   const bubbleSize = useRef(new Animated.Value(1)).current;
-
-  // Start an animated loop for the phone tilt in the instructions
   useEffect(() => {
     if (calibrationPhase === 'prepare') {
       Animated.loop(
@@ -58,15 +49,11 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
         ])
       ).start();
     } else {
-      // Stop the animation when calibration starts
       phoneTiltAnim.setValue(0);
     }
   }, [calibrationPhase, phoneTiltAnim]);
-
-  // Start bubble level animation during calibration
   useEffect(() => {
     if (calibrationPhase === 'calibrating') {
-      // Animate the bubble to simulate finding level
       Animated.sequence([
         Animated.timing(bubblePosition, {
           toValue: -15,
@@ -89,8 +76,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-
-      // Pulsate the bubble size slightly
       Animated.loop(
         Animated.sequence([
           Animated.timing(bubbleSize, {
@@ -107,35 +92,27 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       ).start();
     }
   }, [calibrationPhase, bubblePosition, bubbleSize]);
-
   const startCalibration = () => {
     setCalibrationPhase('hold');
-
     if (vibrationEnabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-
     setTimeout(() => {
       setCalibrationPhase('calibrating');
-
       if (vibrationEnabled) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
-
       const animationRef = Animated.timing(animatedValue, {
         toValue: 100,
         duration,
         useNativeDriver: false,
       });
-
       animationRef.start(({ finished }) => {
         if (finished) {
           setCalibrationPhase('complete');
-
           if (vibrationEnabled) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           }
-
           setTimeout(() => {
             onCalibrationComplete();
           }, 500);
@@ -143,18 +120,14 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       });
     }, 1000);
   };
-
   useEffect(() => {
     if (calibrationPhase === 'prepare') return;
-
     const interval = setInterval(() => {
       animatedValue.addListener(({ value }) => {
         setProgress(value);
-
         if (vibrationEnabled && value > 0) {
-          const progressStep = Math.floor(value / 20); // More frequent feedback
+          const progressStep = Math.floor(value / 20); 
           const now = Date.now();
-
           if (
             progressStep > Math.floor(lastHapticRef.current / 20) &&
             now - lastHapticRef.current > 300
@@ -165,18 +138,15 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
         }
       });
     }, 50);
-
     return () => {
       clearInterval(interval);
       animatedValue.removeAllListeners();
     };
   }, [animatedValue, duration, onCalibrationComplete, vibrationEnabled, calibrationPhase]);
-
   const progressWidth = animatedValue.interpolate({
     inputRange: [0, 100],
     outputRange: ['0%', '100%'],
   });
-
   const getPhaseContent = () => {
     switch (calibrationPhase) {
       case 'prepare':
@@ -212,11 +182,8 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
         };
     }
   };
-
   const { icon, title, subtitle, buttonText } = getPhaseContent();
-
   const containerScale = useRef(new Animated.Value(0.95)).current;
-
   useEffect(() => {
     Animated.spring(containerScale, {
       toValue: 1,
@@ -224,37 +191,26 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       tension: 40,
       useNativeDriver: true,
     }).start();
-
-    // Auto-start calibration immediately for better user experience
     const autoStartTimer = setTimeout(() => {
       if (calibrationPhase === 'prepare') {
         startCalibration();
       }
     }, 300);
-
     return () => clearTimeout(autoStartTimer);
   }, []);
-
-  // Reset animation when overlay is shown again
   useEffect(() => {
-    // Reset animations when overlay becomes visible
     phoneTiltAnim.setValue(0);
     bubblePosition.setValue(0);
     bubbleSize.setValue(1);
-
-    // Auto-start calibration if not already started
     if (calibrationPhase === 'prepare') {
       const timer = setTimeout(() => {
         startCalibration();
       }, 300);
-
       return () => clearTimeout(timer);
     }
   }, [calibrationPhase]);
-
   const renderLevelIndicator = () => {
     if (calibrationPhase !== 'calibrating') return null;
-
     return (
       <View style={styles.levelContainer}>
         <View style={[styles.levelBar, { backgroundColor: colors.surfaceVariant }]}>
@@ -278,10 +234,8 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       </View>
     );
   };
-
   const renderTiltInstructions = () => {
     if (calibrationPhase !== 'prepare') return null;
-
     return (
       <View style={styles.instructionsContainer}>
         <Animated.View
@@ -312,7 +266,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
             • After calibration, tilt to move
           </Text>
         </View>
-
         <TouchableOpacity
           onPress={() => setShowTips(!showTips)}
           style={styles.tipsButton}
@@ -326,7 +279,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
             {showTips ? "Hide Tips" : "Show Tips"}
           </Text>
         </TouchableOpacity>
-
         {showTips && (
           <View style={styles.tipsContainer}>
             <Text style={[styles.tipText, { color: colors.onSurfaceVariant }]}>
@@ -343,7 +295,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
       </View>
     );
   };
-
   return (
     <View style={styles.overlay}>
       <Animated.View style={{ transform: [{ scale: containerScale }] }}>
@@ -356,10 +307,8 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
           />
           <Text style={[styles.title, { color: colors.onSurface }]}>{title}</Text>
           <Text style={[styles.subtitle, { color: colors.onSurfaceVariant }]}>{subtitle}</Text>
-
           {renderTiltInstructions()}
           {renderLevelIndicator()}
-
           {calibrationPhase !== 'prepare' && (
             <View style={[styles.progressContainer, { backgroundColor: colors.surfaceVariant }]}>
               <Animated.View
@@ -373,7 +322,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
               />
             </View>
           )}
-
           {calibrationPhase === 'prepare' ? (
             <Button
               mode="contained"
@@ -388,7 +336,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
               {Math.round(progress)}%
             </Text>
           )}
-
           {calibrationPhase === 'complete' && onManualRecalibrate && (
             <Button
               mode="outlined"
@@ -403,7 +350,6 @@ const TiltCalibrationOverlay: React.FC<TiltCalibrationOverlayProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
@@ -534,5 +480,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-
 export default React.memo(TiltCalibrationOverlay);

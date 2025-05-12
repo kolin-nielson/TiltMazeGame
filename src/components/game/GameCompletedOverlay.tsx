@@ -3,14 +3,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Button, Card, Surface } from 'react-native-paper';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { useAppSelector, RootState } from '@store';
-
 interface GameCompletedOverlayProps {
   elapsedTime: string;
   onNextLevel: () => void;
   onRestart: () => void;
   onExit: () => void;
 }
-
 export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
   elapsedTime,
   onNextLevel,
@@ -18,7 +16,6 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
   onExit,
 }) => {
   const colors = useAppSelector((state: RootState) => state.theme.colors);
-
   return (
     <View style={[gameScreenStyles.overlay, { backgroundColor: `${colors.background}CC` }]}>
       <Card
@@ -100,7 +97,6 @@ export const GameCompletedOverlay: React.FC<GameCompletedOverlayProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   button: {
     width: '100%',

@@ -26,12 +26,18 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kolinnielson.tiltmaze",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSMotionUsageDescription": "This app uses motion sensors to control the game through device tilting.",
         "UIRequiresFullScreen": true,
         "UIStatusBarHidden": true,
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait"
+        ]
       }
     },
     "android": {
@@ -61,8 +67,8 @@
         "react-native-google-mobile-ads",
         {
           "userTrackingPermission": "This identifier will be used to deliver personalized ads to you.",
-          "androidAppId": "ca-app-pub-4299404428269280~1234567890",
-          "iosAppId": "ca-app-pub-4299404428269280~0987654321",
+          "androidAppId": "ca-app-pub-4299404428269280~8903477157",
+          "iosAppId": "ca-app-pub-4299404428269280~6018845391",
           "skipProguardConfigGeneration": false
         }
       ]

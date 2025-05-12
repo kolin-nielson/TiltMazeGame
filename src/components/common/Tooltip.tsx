@@ -8,7 +8,6 @@ import Animated, {
   withDelay,
   Easing,
 } from 'react-native-reanimated';
-
 interface TooltipProps {
   text: string;
   children: React.ReactNode;
@@ -18,7 +17,6 @@ interface TooltipProps {
   showDuration?: number;
   width?: number;
 }
-
 const Tooltip: React.FC<TooltipProps> = ({
   text,
   children,
@@ -31,27 +29,22 @@ const Tooltip: React.FC<TooltipProps> = ({
   const [visible, setVisible] = useState(false);
   const opacity = useSharedValue(0);
   const tooltipTimeout = React.useRef<NodeJS.Timeout | null>(null);
-
   const showTooltip = () => {
     if (tooltipTimeout.current) {
       clearTimeout(tooltipTimeout.current);
     }
-
     setVisible(true);
     opacity.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
-
     tooltipTimeout.current = setTimeout(() => {
       opacity.value = withTiming(0, { duration: 200, easing: Easing.in(Easing.cubic) }, () => {
         setVisible(false);
       });
     }, showDuration);
   };
-
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ scale: opacity.value * 0.05 + 0.95 }],
   }));
-
   const getPositionStyle = () => {
     switch (position) {
       case 'top':
@@ -66,13 +59,11 @@ const Tooltip: React.FC<TooltipProps> = ({
         return { top: '100%', marginTop: 8, alignSelf: 'center' };
     }
   };
-
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={showTooltip} activeOpacity={0.8}>
         {children}
       </TouchableOpacity>
-
       {visible && (
         <Animated.View
           style={[styles.tooltip, { backgroundColor, width }, getPositionStyle(), animatedStyle]}
@@ -83,7 +74,6 @@ const Tooltip: React.FC<TooltipProps> = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
@@ -99,5 +89,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
 export default Tooltip;

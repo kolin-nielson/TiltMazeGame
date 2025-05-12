@@ -10,7 +10,6 @@ import { useNavigation } from '@react-navigation/native';
 import { SettingsScreenNavigationProp } from '@navigation/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resetShopData } from '@store/slices/shopSlice';
-
 type SettingItemProps = {
   label: string;
   iconName: keyof typeof MaterialIcons.glyphMap;
@@ -19,7 +18,6 @@ type SettingItemProps = {
   onPress?: () => void;
   children?: React.ReactNode;
 };
-
 const SettingItem: React.FC<SettingItemProps> = ({
   label,
   iconName,
@@ -31,7 +29,6 @@ const SettingItem: React.FC<SettingItemProps> = ({
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const itemIconColor = iconColor || colors?.primary || '#6200ee';
   const itemLabelColor = labelColor || colors?.onSurface || '#000000';
-
   const Content = (
     <View
       style={[
@@ -49,14 +46,11 @@ const SettingItem: React.FC<SettingItemProps> = ({
       {children}
     </View>
   );
-
   if (onPress) {
     return <TouchableOpacity onPress={onPress}>{Content}</TouchableOpacity>;
   }
-
   return Content;
 };
-
 const SettingsScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<SettingsScreenNavigationProp>();
@@ -64,30 +58,24 @@ const SettingsScreen: React.FC = () => {
   const themeName = useAppSelector((state: RootState) => state.theme.themeName);
   const settings = useAppSelector((state: RootState) => state.settings);
   const insets = useSafeAreaInsets();
-
   const handleSoundToggle = (value: boolean) => {
     dispatch(updateSettings({ soundEnabled: value }));
     dispatch(saveSettings({ soundEnabled: value }));
   };
-
   const handleVibrationToggle = (value: boolean) => {
     dispatch(updateSettings({ vibrationEnabled: value }));
     dispatch(saveSettings({ vibrationEnabled: value }));
   };
-
   const [sliderValue, setSliderValue] = useState<number>(settings.sensitivity);
   const [isSliding, setIsSliding] = useState<boolean>(false);
-
   useEffect(() => {
     if (!isSliding) {
       setSliderValue(settings.sensitivity);
     }
   }, [settings.sensitivity, isSliding]);
-
   const handleSensitivityChange = useCallback((value: number) => {
     setSliderValue(value);
   }, []);
-
   const handleSlidingComplete = useCallback(
     (value: number) => {
       setIsSliding(false);
@@ -96,11 +84,9 @@ const SettingsScreen: React.FC = () => {
     },
     [dispatch]
   );
-
   const handleSlidingStart = useCallback(() => {
     setIsSliding(true);
   }, []);
-
   const handleResetProgress = () => {
     Alert.alert(
       'Reset Progress',
@@ -111,11 +97,9 @@ const SettingsScreen: React.FC = () => {
           text: 'Reset',
           style: 'destructive',
           onPress: async () => {
-            // Clear persisted data
             await AsyncStorage.removeItem('settings');
             await AsyncStorage.removeItem('shopData');
             await AsyncStorage.removeItem('mazeProgress');
-            // Reset slices to initial state
             dispatch(resetSettings());
             await dispatch(resetMazeProgress());
             await dispatch(resetShopData());
@@ -125,7 +109,6 @@ const SettingsScreen: React.FC = () => {
       ]
     );
   };
-
   return (
     <View
       style={[
@@ -140,7 +123,6 @@ const SettingsScreen: React.FC = () => {
         <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>
           Game Settings
         </Text>
-
         <SettingItem label="Sensitivity" iconName="speed">
           <View style={styles.sliderContainer}>
             <Slider
@@ -168,7 +150,6 @@ const SettingsScreen: React.FC = () => {
             </View>
           </View>
         </SettingItem>
-
         <SettingItem label="Sound" iconName="volume-up">
           <Switch
             trackColor={{
@@ -185,7 +166,6 @@ const SettingsScreen: React.FC = () => {
             value={settings.soundEnabled}
           />
         </SettingItem>
-
         <SettingItem label="Vibration" iconName="vibration">
           <Switch
             trackColor={{
@@ -203,12 +183,10 @@ const SettingsScreen: React.FC = () => {
           />
         </SettingItem>
       </View>
-
       <View style={styles.settingsGroup}>
         <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>
           Appearance
         </Text>
-
         <SettingItem label="Theme" iconName="palette" onPress={() => navigation.navigate('Theme')}>
           <View style={styles.valueContainer}>
             <Text style={[styles.settingValue, { color: colors?.onSurface ?? '#000000' }]}>
@@ -223,10 +201,8 @@ const SettingsScreen: React.FC = () => {
           </View>
         </SettingItem>
       </View>
-
       <View style={styles.settingsGroup}>
         <Text style={[styles.sectionTitle, { color: colors?.primary ?? '#6200ee' }]}>Data</Text>
-
         <SettingItem
           label="Reset Progress"
           iconName="delete-forever"
@@ -235,7 +211,6 @@ const SettingsScreen: React.FC = () => {
           onPress={handleResetProgress}
         ></SettingItem>
       </View>
-
       <View style={styles.footer}>
         <Text style={[styles.footerText, { color: colors?.onSurfaceVariant ?? '#444444' }]}>
           Tilt Maze v1.0.0
@@ -244,7 +219,6 @@ const SettingsScreen: React.FC = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -333,5 +307,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.25,
   },
 });
-
 export default SettingsScreen;

@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-
 export const gameScreenStyles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -15,14 +14,23 @@ export const gameScreenStyles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  mazeOuterContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4, // Minimal side padding
+    paddingVertical: 4,   // Minimal vertical padding
+    marginBottom: 4,      // Minimal bottom margin
+  },
   mazeSurface: {
     width: '100%',
     aspectRatio: 1,
-    maxWidth: 500,
-    maxHeight: '100%',
+    maxWidth: 800, // Significantly increased maximum width for larger screens
+    maxHeight: '98%', // Maximized height limit
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 10, // Slightly reduced to gain more space
+    overflow: 'hidden', // Prevent content from overflowing the container
   },
   timerContainer: {
     marginBottom: 15,
@@ -150,7 +158,6 @@ export const gameScreenStyles = StyleSheet.create({
   iconButton: {
     margin: 0,
   },
-
   gameContainer: {
     flex: 1,
     justifyContent: 'center',

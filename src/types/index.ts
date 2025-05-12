@@ -2,7 +2,7 @@ export interface Maze {
   id: string;
   name: string;
   walls: Wall[];
-  laserGates: LaserGate[]; // No longer optional, always an array (can be empty)
+  laserGates: LaserGate[]; 
   startPosition: Position;
   endPosition: Position;
   createdAt: number;
@@ -10,14 +10,12 @@ export interface Maze {
   difficulty: 'easy' | 'medium' | 'hard';
   coins?: Coin[];
 }
-
 export interface Wall {
   x: number;
   y: number;
   width: number;
   height: number;
 }
-
 export interface LaserGate {
   id: string;
   x: number;
@@ -29,24 +27,20 @@ export interface LaserGate {
   phase: number;
   onDuration: number;
 }
-
 export interface Position {
   x: number;
   y: number;
 }
-
 export interface Coin {
   id: string;
   position: Position;
-  value?: number; // Default is 1
-  isSpecial?: boolean; // Special high-value coin
+  value?: number; 
+  isSpecial?: boolean; 
 }
-
 export interface Ball {
   position: Position;
   radius: number;
 }
-
 export interface ThemeColors {
   primary: string;
   onPrimary: string;
@@ -80,15 +74,12 @@ export interface ThemeColors {
   surfaceDisabled: string;
   onSurfaceDisabled: string;
   backdrop: string;
-
   walls?: string;
   ball?: string;
   goal?: string;
   laser?: string;
 }
-
 export type ThemeName = 'light' | 'dark' | 'system';
-
 export interface AppSettings {
   vibrationEnabled: boolean;
   soundEnabled: boolean;
@@ -96,14 +87,12 @@ export interface AppSettings {
   highestScore?: number;
   qualityLevel: 'low' | 'medium' | 'high';
 }
-
 export interface LevelStats {
   mazeId: string;
   bestTime?: number;
   completedCount: number;
   lastPlayed?: number;
 }
-
 export interface UserProgress {
   levels: Record<string, LevelStats>;
   totalCompleted: number;

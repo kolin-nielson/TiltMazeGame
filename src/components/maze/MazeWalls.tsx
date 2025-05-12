@@ -9,8 +9,6 @@ import { MazeGoal } from './maze/MazeGoal';
 import { MazeBall } from './maze/MazeBall';
 import { MazeLaserGate } from './maze/MazeLaserGate';
 import { MazeWall } from './maze/MazeWall';
-
-// Memoized wall component to reduce render overhead
 export const MemoizedWalls = memo(
   ({ walls, color }: { walls: Wall[]; color: string }) => {
     return (
@@ -22,7 +20,6 @@ export const MemoizedWalls = memo(
     );
   }
 );
-
 interface MazeRendererProps {
   maze: Maze;
   ballPositionX: Animated.SharedValue<number>;
@@ -32,7 +29,6 @@ interface MazeRendererProps {
   colors: ThemeColors;
   gameState?: 'ready' | 'playing' | 'paused' | 'completed' | 'game_over';
 }
-
 const MazeRenderer: React.FC<MazeRendererProps> = ({
   maze,
   ballPositionX,
@@ -44,7 +40,6 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
 }) => {
   const { theme, colors: themeColors } = useTheme();
   const mazeSize = 300;
-
   const containerStyles = useMemo(
     () => [
       mazeRendererStyles.container,
@@ -57,7 +52,6 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
     ],
     [containerStyle, themeColors?.surface]
   );
-
   return (
     <View style={containerStyles}>
       <MazeElements
@@ -92,7 +86,6 @@ const MazeRenderer: React.FC<MazeRendererProps> = ({
     </View>
   );
 };
-
 export default memo(MazeRenderer, (prevProps, nextProps) => {
   const mazeChanged = prevProps.maze.id !== nextProps.maze.id;
   const radiusChanged = prevProps.ballRadius !== nextProps.ballRadius;
@@ -102,8 +95,6 @@ export default memo(MazeRenderer, (prevProps, nextProps) => {
     prevProps.colors?.ball !== nextProps.colors?.ball ||
     prevProps.colors?.goal !== nextProps.colors?.goal ||
     prevProps.colors?.laser !== nextProps.colors?.laser;
-
   const gameStateChanged = prevProps.gameState !== nextProps.gameState;
-
   return !(mazeChanged || radiusChanged || colorsChanged || gameStateChanged);
 });

@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-
 export interface SettingsState {
   sensitivity: number;
   soundEnabled: boolean;
@@ -12,7 +11,6 @@ export interface SettingsState {
   error: string | null;
   hasSeenTutorial: boolean;
 }
-
 const initialState: SettingsState = {
   sensitivity: 1.0,
   soundEnabled: true,
@@ -23,7 +21,6 @@ const initialState: SettingsState = {
   error: null,
   hasSeenTutorial: false,
 };
-
 export const loadSettings = createAsyncThunk(
   'settings/loadSettings',
   async (_, { rejectWithValue }) => {
@@ -38,16 +35,13 @@ export const loadSettings = createAsyncThunk(
     }
   }
 );
-
 export const saveSettings = createAsyncThunk(
   'settings/saveSettings',
   async (settings: Partial<SettingsState>, { getState, rejectWithValue }) => {
     try {
       const state = getState() as { settings: SettingsState };
       const updatedSettings = { ...state.settings, ...settings };
-
       const { status, error, ...settingsToSave } = updatedSettings;
-
       await AsyncStorage.setItem('settings', JSON.stringify(settingsToSave));
       return settings;
     } catch (error) {
@@ -55,7 +49,6 @@ export const saveSettings = createAsyncThunk(
     }
   }
 );
-
 const settingsSlice = createSlice({
   name: 'settings',
   initialState,
@@ -86,6 +79,5 @@ const settingsSlice = createSlice({
       });
   },
 });
-
 export const { updateSettings, resetSettings, setHasSeenTutorial } = settingsSlice.actions;
 export default settingsSlice.reducer;

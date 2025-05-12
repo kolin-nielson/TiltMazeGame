@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-
 export const mazeRendererStyles = StyleSheet.create({
   container: {
     width: '100%',
@@ -15,6 +14,10 @@ export const mazeRendererStyles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
+    aspectRatio: 1, // Force square aspect ratio
+    maxWidth: '90%', // Prevent the maze from getting too large on tablets
+    maxHeight: '90%', // Maintain proportional height
   },
   wall: {
     position: 'absolute',

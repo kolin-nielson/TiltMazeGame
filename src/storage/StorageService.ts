@@ -1,13 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '@config/constants';
 import { isDevelopment } from '@config/env';
-
 class StorageService {
   async save<T>(key: string, value: T): Promise<void> {
     try {
       const jsonValue = JSON.stringify(value);
       await AsyncStorage.setItem(key, jsonValue);
-
       if (isDevelopment) {
         console.log(`[Storage] Saved data for key: ${key}`);
       }
@@ -16,7 +14,6 @@ class StorageService {
       throw error;
     }
   }
-
   async load<T>(key: string, defaultValue?: T): Promise<T | null> {
     try {
       const jsonValue = await AsyncStorage.getItem(key);
@@ -26,18 +23,15 @@ class StorageService {
         }
         return defaultValue || null;
       }
-
       return JSON.parse(jsonValue) as T;
     } catch (error) {
       console.error(`[Storage] Error loading data for key: ${key}`, error);
       return defaultValue || null;
     }
   }
-
   async remove(key: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(key);
-
       if (isDevelopment) {
         console.log(`[Storage] Removed data for key: ${key}`);
       }
@@ -46,12 +40,10 @@ class StorageService {
       throw error;
     }
   }
-
   async clearAll(): Promise<void> {
     try {
       const keys = Object.values(STORAGE_KEYS);
       await AsyncStorage.multiRemove(keys);
-
       if (isDevelopment) {
         console.log(`[Storage] Cleared all app storage`);
       }
@@ -60,7 +52,6 @@ class StorageService {
       throw error;
     }
   }
-
   async getAllKeys(): Promise<string[]> {
     try {
       return await AsyncStorage.getAllKeys();
@@ -69,7 +60,6 @@ class StorageService {
       return [];
     }
   }
-
   async hasKey(key: string): Promise<boolean> {
     try {
       const keys = await AsyncStorage.getAllKeys();
@@ -80,6 +70,5 @@ class StorageService {
     }
   }
 }
-
 export const storageService = new StorageService();
 export default storageService;

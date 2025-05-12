@@ -2,26 +2,20 @@ import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import Svg, { Rect, Path, Circle, Text as SvgText, G } from 'react-native-svg';
 import { useAppSelector, RootState } from '@store';
-
 interface GameLogoProps {
   size?: number;
   showText?: boolean;
 }
-
 const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
   const colors = useAppSelector((state: RootState) => state.theme.colors);
-
   const baseSize = 100;
   const scale = size / baseSize;
   const strokeWidth = 4 * scale;
   const tiltAngle = -15;
-
   const rectSize = baseSize * 0.8;
   const rectOriginX = (baseSize - rectSize) / 2;
   const rectOriginY = (baseSize - rectSize) / 2;
-
   const totalHeight = showText ? baseSize + baseSize * 0.18 : baseSize;
-
   return (
     <View style={styles.container}>
       <Svg width={size} height={size} viewBox={`0 0 ${baseSize} ${baseSize}`}>
@@ -54,7 +48,6 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
           />
         </G>
       </Svg>
-
       {showText && (
         <View style={[styles.textContainer, { marginTop: size * 0.02 }]}>
           <Svg
@@ -79,16 +72,14 @@ const GameLogo: React.FC<GameLogoProps> = ({ size = 120, showText = true }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   textContainer: {
-    paddingHorizontal: 10, // Add padding to contain the text
+    paddingHorizontal: 10, 
     alignItems: "center",
   } as ViewStyle,
 });
-
 export default GameLogo;

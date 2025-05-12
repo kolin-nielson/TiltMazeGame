@@ -1,14 +1,12 @@
 import React from 'react';
 import { Button, Dialog, Text } from 'react-native-paper';
 import { ThemeColors } from '@types';
-
 interface QuitConfirmDialogProps {
   visible: boolean;
   onDismiss: () => void;
   onConfirm: () => void;
   colors: ThemeColors;
 }
-
 const QuitConfirmDialog: React.FC<QuitConfirmDialogProps> = ({
   visible,
   onDismiss,
@@ -34,5 +32,4 @@ const QuitConfirmDialog: React.FC<QuitConfirmDialogProps> = ({
     </Dialog>
   );
 };
-
 export default React.memo(QuitConfirmDialog);

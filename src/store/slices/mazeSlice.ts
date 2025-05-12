@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { Maze, Wall, LaserGate } from '@types';
 import { generateMaze } from '@utils/mazeGenerator';
-
 export interface MazeState {
   currentMaze: Maze | null;
   highestEndlessLevel: number;
@@ -11,7 +10,6 @@ export interface MazeState {
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
-
 const initialState: MazeState = {
   currentMaze: null,
   highestEndlessLevel: 0,
@@ -19,7 +17,6 @@ const initialState: MazeState = {
   status: 'idle',
   error: null,
 };
-
 export const loadMazeProgress = createAsyncThunk(
   'maze/loadMazeProgress',
   async (_, { rejectWithValue }) => {
@@ -34,26 +31,22 @@ export const loadMazeProgress = createAsyncThunk(
     }
   }
 );
-
 export const saveMazeProgress = createAsyncThunk(
   'maze/saveMazeProgress',
   async (_, { getState, rejectWithValue }) => {
     try {
       const state = getState() as { maze: MazeState };
       const { highestEndlessLevel, completedMazes } = state.maze;
-
       await AsyncStorage.setItem(
         'mazeProgress',
         JSON.stringify({ highestEndlessLevel, completedMazes })
       );
-
       return { highestEndlessLevel, completedMazes };
     } catch (error) {
       return rejectWithValue('Failed to save maze progress');
     }
   }
 );
-
 export const resetMazeProgress = createAsyncThunk(
   'maze/resetMazeProgress',
   async (_, { rejectWithValue }) => {
@@ -65,17 +58,15 @@ export const resetMazeProgress = createAsyncThunk(
     }
   }
 );
-
 const mazeSlice = createSlice({
   name: 'maze',
   initialState,
   reducers: {
     setCurrentMaze: (state, action: PayloadAction<Maze | null>) => {
-      // Ensure maze has laserGates array if it's not null
       if (action.payload) {
         state.currentMaze = {
           ...action.payload,
-          laserGates: action.payload.laserGates || [] // Ensure laserGates is always an array
+          laserGates: action.payload.laserGates || [] 
         };
       } else {
         state.currentMaze = null;
@@ -126,7 +117,6 @@ const mazeSlice = createSlice({
       });
   },
 });
-
 export const {
   setCurrentMaze,
   generateNewMaze,

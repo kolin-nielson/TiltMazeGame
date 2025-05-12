@@ -8,7 +8,6 @@ import { HomeScreenNavigationProp } from '@navigation/types';
 import GameLogo from '@components/logo/GameLogo';
 import { StatusBar } from 'expo-status-bar';
 import { Button, Text } from 'react-native-paper';
-
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const colors = useAppSelector((state: RootState) => state.theme.colors);
@@ -16,7 +15,6 @@ const HomeScreen: React.FC = () => {
   const highestScore = useAppSelector((state: RootState) => state.settings.highestScore);
   const hasSeenTutorial = useAppSelector((state: RootState) => state.settings.hasSeenTutorial);
   const insets = useSafeAreaInsets();
-
   const handlePlay = useCallback(() => {
     if (!hasSeenTutorial) {
       navigation.navigate('Tutorial');
@@ -24,7 +22,6 @@ const HomeScreen: React.FC = () => {
       navigation.navigate('Game');
     }
   }, [hasSeenTutorial, navigation]);
-
   return (
     <SafeAreaView
       style={[
@@ -38,12 +35,10 @@ const HomeScreen: React.FC = () => {
       ]}
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />
-
       <View style={styles.mainContent}>
         <View style={styles.logoContainer}>
           <GameLogo size={150} showText={true} />
         </View>
-
         <View style={styles.statsContainer}>
           <Text
             style={[
@@ -71,7 +66,6 @@ const HomeScreen: React.FC = () => {
             {highestScore ?? 0}
           </Text>
         </View>
-
         <View style={styles.menuContainer}>
           <Button
             mode="contained"
@@ -83,7 +77,6 @@ const HomeScreen: React.FC = () => {
           >
             Play
           </Button>
-
           <Button
             mode="outlined"
             icon={({ size, color }) => <MaterialIcons name="settings" size={size} color={color} />}
@@ -94,7 +87,6 @@ const HomeScreen: React.FC = () => {
           >
             Settings
           </Button>
-
           <Button
             mode="outlined"
             icon={({ size, color }) => <MaterialIcons name="store" size={size} color={color} />}
@@ -110,7 +102,6 @@ const HomeScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -152,5 +143,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-
 export default HomeScreen;

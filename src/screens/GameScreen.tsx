@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, BackHandler, Alert } from 'react-native';
+import { View, BackHandler, Alert, AppState, AppStateStatus } from 'react-native';
 import { Text, Snackbar, Portal } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
@@ -129,6 +129,11 @@ const GameScreen: React.FC = () => {
   );
   const showLevelTransition = useAppSelector((state: RootState) => state.game.showLevelTransition);
   const showDeathAnimation = useAppSelector((state: RootState) => state.game.showDeathAnimation);
+  
+  // Track app state for handling background/foreground transitions
+  const [appState, setAppState] = useState(AppState.currentState);
+  const prevAppStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const wasPlayingBeforeBackgroundRef = useRef<boolean>(false);
   const [isQuitConfirmVisible, setIsQuitConfirmVisible] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const recalibrationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -495,13 +500,87 @@ const GameScreen: React.FC = () => {
     };
     checkCalibration();
   }, [dispatch, forceGyroscopeCalibration, gyroIsCalibrating, settings.vibrationEnabled]);
+  // Handle app state changes (background/foreground)
   useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      console.log(`App state changed from ${prevAppStateRef.current} to ${nextAppState}`);
+      
+      // App going to background
+      if (
+        (prevAppStateRef.current === 'active' || prevAppStateRef.current.match(/inactive/)) &&
+        (nextAppState === 'background' || nextAppState.match(/inactive/))
+      ) {
+        console.log('App is going to background');
+        // Save current game state if we're playing
+        wasPlayingBeforeBackgroundRef.current = (gameState === 'playing');
+        
+        // If we're in the middle of a game, pause physics and animations
+        if (gameState === 'playing') {
+          console.log('Pausing game as app goes to background');
+          // We don't want to create a pause state, just remember we were playing
+        }
+      }
+      
+      // App coming back to foreground
+      if (
+        (prevAppStateRef.current === 'background' || prevAppStateRef.current.match(/inactive/)) &&
+        nextAppState === 'active'
+      ) {
+        console.log('App is coming back to foreground');
+        
+        // If we were playing before going to background, restore the game
+        if (wasPlayingBeforeBackgroundRef.current && gameState === 'playing') {
+          console.log('Resuming game after background');
+          
+          // Reset physics (this ensures the ball position is reset properly)
+          resetPhysics();
+          
+          // Show a brief calibration overlay to reset tilt orientation
+          dispatch(setShowCalibrationOverlay(true));
+          
+          // Reset the gyroscope
+          if (gyroscopeAvailable) {
+            forceGyroscopeCalibration(200);
+            
+            const checkCalibration = () => {
+              if (!gyroIsCalibrating) {
+                dispatch(setGyroscopeCalibrated(true));
+                dispatch(setShowCalibrationOverlay(false));
+                if (settings.vibrationEnabled) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+              } else {
+                setTimeout(checkCalibration, 16);
+              }
+            };
+            
+            checkCalibration();
+          } else {
+            // No gyroscope available, just hide the overlay
+            setTimeout(() => {
+              dispatch(setShowCalibrationOverlay(false));
+            }, 300);
+          }
+        }
+      }
+      
+      prevAppStateRef.current = nextAppState;
+      setAppState(nextAppState);
+    };
+
+    // Subscribe to AppState change events
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
     return () => {
+      // Unsubscribe from AppState events
+      subscription.remove();
+      
+      // Also clear any timeouts
       if (recalibrationTimeoutRef.current) {
         clearTimeout(recalibrationTimeoutRef.current);
       }
     };
-  }, []);
+  }, [gameState, dispatch, resetPhysics, gyroscopeAvailable, forceGyroscopeCalibration, gyroIsCalibrating, settings.vibrationEnabled]);
   const isFirstLevelRef = useRef(true);
   useEffect(() => {
     if (gameState === 'loading') {

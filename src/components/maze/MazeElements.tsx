@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useEffect } from 'react';
 import { View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Polygon } from 'react-native-svg';
 import Animated, { FadeOut, FadeIn, useSharedValue, useAnimatedProps, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { MazeWall } from './MazeWall';
 import { MazeGoal } from './MazeGoal';
@@ -9,6 +9,7 @@ import { MazeLaserGate } from './MazeLaserGate';
 import { mazeRendererStyles } from '@styles/MazeRendererStyles';
 import { ThemeColors, Maze, Wall, LaserGate, Position, Coin } from '@types';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
 interface MazeElementsProps {
   maze: Maze;
   ballPositionX: Animated.SharedValue<number>;
@@ -60,39 +61,95 @@ const CoinCircle = memo(({ coin, ballRadius }: { coin: Coin, ballRadius: number 
     );
   }, []);
   const isSpecial = coin.isSpecial || false;
+  
+  // Regular coin glow and body props
   const glowProps = useAnimatedProps(() => {
     const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
-    return { r: ballRadius * (isSpecial ? 1.0 : 0.8) * scale };
+    return { r: ballRadius * 0.8 * scale };
   });
   const bodyProps = useAnimatedProps(() => {
     const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
-    return { r: ballRadius * (isSpecial ? 0.8 : 0.6) * scale };
+    return { r: ballRadius * 0.6 * scale };
   });
-  const glowColor = isSpecial ? "#FF5E0040" : "#FFDF0040";
-  const fillColor = isSpecial ? "#FF5E00" : "#FFD700";
-  const strokeColor = isSpecial ? "#FF3D00" : "#FFA500";
-  return (
-    <>
-      <AnimatedCircle
-        entering={FadeIn.duration(200)}
-        exiting={FadeOut.duration(300)}
-        animatedProps={glowProps}
-        cx={coin.position.x}
-        cy={coin.position.y}
-        fill={glowColor}
-      />
-      <AnimatedCircle
-        entering={FadeIn.duration(200)}
-        exiting={FadeOut.duration(300)}
-        animatedProps={bodyProps}
-        cx={coin.position.x}
-        cy={coin.position.y}
-        fill={fillColor}
-        stroke={strokeColor}
-        strokeWidth={isSpecial ? 2 : 1}
-      />
-    </>
-  );
+  
+  // Special diamond props
+  const diamondAnimProps = useAnimatedProps(() => {
+    const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
+    const size = ballRadius * 1.6 * scale; // Size of the diamond
+    
+    // Calculate the four points of the diamond
+    const points = [
+      `${coin.position.x},${coin.position.y - size}`,      // Top
+      `${coin.position.x + size},${coin.position.y}`,       // Right
+      `${coin.position.x},${coin.position.y + size}`,       // Bottom
+      `${coin.position.x - size},${coin.position.y}`        // Left
+    ].join(' ');
+    
+    return { points };
+  });
+  
+  const diamondGlowProps = useAnimatedProps(() => {
+    const scale = Math.sin(anim.value * 2 * Math.PI) * 0.1 + 1;
+    const size = ballRadius * 2.0 * scale; // Size of the glow diamond
+    
+    const points = [
+      `${coin.position.x},${coin.position.y - size}`,      // Top
+      `${coin.position.x + size},${coin.position.y}`,       // Right
+      `${coin.position.x},${coin.position.y + size}`,       // Bottom
+      `${coin.position.x - size},${coin.position.y}`        // Left
+    ].join(' ');
+    
+    return { points };
+  });
+  
+  // Colors
+  const glowColor = isSpecial ? "#4B0082AA" : "#FFDF0040"; // Purple glow for diamond
+  const fillColor = isSpecial ? "#9370DB" : "#FFD700";    // Medium purple fill for diamond
+  const strokeColor = isSpecial ? "#6A0DAD" : "#FFA500";  // Darker purple stroke for diamond
+  
+  if (isSpecial) {
+    return (
+      <>
+        <AnimatedPolygon
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(300)}
+          animatedProps={diamondGlowProps}
+          fill={glowColor}
+        />
+        <AnimatedPolygon
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(300)}
+          animatedProps={diamondAnimProps}
+          fill={fillColor}
+          stroke={strokeColor}
+          strokeWidth={2}
+        />
+      </>
+    );
+  } else {
+    return (
+      <>
+        <AnimatedCircle
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(300)}
+          animatedProps={glowProps}
+          cx={coin.position.x}
+          cy={coin.position.y}
+          fill={glowColor}
+        />
+        <AnimatedCircle
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(300)}
+          animatedProps={bodyProps}
+          cx={coin.position.x}
+          cy={coin.position.y}
+          fill={fillColor}
+          stroke={strokeColor}
+          strokeWidth={1}
+        />
+      </>
+    );
+  }
 });
 export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX, ballPositionY, ballRadius, colors, gameState = 'playing' }) => {
   const mazeBaseSize = 300;

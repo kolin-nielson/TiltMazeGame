@@ -4,51 +4,28 @@ import Constants from 'expo-constants';
 import { InterstitialAd, RewardedAd, BannerAd, TestIds, AdEventType, RewardedAdEventType } from 'react-native-google-mobile-ads';
 import * as Application from 'expo-application';
 
-// Better environment detection for TestFlight and App Store
+// Environment detection for ad serving
 const isExpoGo = Constants.appOwnership === 'expo';
 const isDevEnvironment = __DEV__;
 
-// Specific environment checks
-let isTestFlight = false;
-let isAppStore = false;
+// Determine device type (simulator vs real device)
+const isSimulator = Platform.OS === 'ios' && !NativeModules.DeviceInfo?.isDevice;
 
-// iOS-specific environment detection
-if (Platform.OS === 'ios') {
-  const releaseChannel = Constants.manifest?.releaseChannel;
-  const bundleIdentifier = Application.applicationId;
-  
-  // Safe way to detect simulator on iOS
-  const isSimulator = Platform.OS === 'ios' && !NativeModules.DeviceInfo?.isDevice;
-  
-  // Check for TestFlight environment indicators (more strict criteria)
-  isTestFlight = !isExpoGo && !isDevEnvironment && (
-    // TestFlight specific release channel
-    (releaseChannel === 'testflight' || (releaseChannel && releaseChannel.includes('testflight'))) ||
-    // Beta/dev bundle identifiers
-    (bundleIdentifier && (bundleIdentifier.includes('.beta') || bundleIdentifier.includes('.dev'))) ||
-    // Simulator is considered TestFlight for ad purposes
-    isSimulator
-  );
-  
-  // App Store detection (live app from App Store)
-  // In a real App Store build, these conditions should be true
-  isAppStore = !isExpoGo && !isDevEnvironment && !isTestFlight && !isSimulator && 
-    // Production apps typically use a 'production' release channel or null in App Store
-    (releaseChannel === 'production' || releaseChannel === null || releaseChannel === undefined);
-}
+// Simplified production detection - any non-dev, non-Expo Go build is considered production
+// This means TestFlight and App Store will both get production ads
+const isProduction = !isExpoGo && !isDevEnvironment;
 
-// In Android, we need a different approach
-if (Platform.OS === 'android') {
-  // Add Android-specific checks here if needed
-  isAppStore = !isExpoGo && !isDevEnvironment && !isTestFlight;
-}
-
-// Production flag includes both TestFlight and App Store for backward compatibility
-const isProduction = !isExpoGo && !isDevEnvironment && (isAppStore || isTestFlight);
+// Log detection results for debugging
+console.log(`📱 App environment detection:`); 
+console.log(`- Is Expo Go: ${isExpoGo}`); 
+console.log(`- Is Development: ${isDevEnvironment}`); 
+console.log(`- Is Simulator: ${isSimulator}`); 
+console.log(`- Is Production Build: ${isProduction}`); 
+console.log(`- Release Channel: ${Constants.manifest?.releaseChannel || 'default'}`); 
+console.log(`- Bundle ID: ${Application.applicationId || 'unknown'}`);
 
 // Log the environment for debugging (enhanced)
-console.log(`📱 Detected environment: ${isExpoGo ? 'Expo Go' : isTestFlight ? 'TestFlight' : isDevEnvironment ? 'Development' : isAppStore ? 'App Store' : 'Production'}`);
-console.log(`📱 Environment flags - isExpoGo: ${isExpoGo}, isDevEnvironment: ${isDevEnvironment}, isTestFlight: ${isTestFlight}, isAppStore: ${isAppStore}, isProduction: ${isProduction}`);
+console.log(`📱 Detected environment: ${isExpoGo ? 'Expo Go' : isDevEnvironment ? 'Development' : 'Production'}`);
 console.log(`📱 Platform: ${Platform.OS}, Release Channel: ${Constants.manifest?.releaseChannel || 'default'}, Bundle ID: ${Application.applicationId || 'unknown'}`);
 
 // Track mock ad state for Expo Go testing
@@ -82,16 +59,16 @@ const TEST_DEVICES = ['EMULATOR', 'SIMULATOR'];
 const getAdUnitId = (adType: keyof typeof AD_UNIT_IDS) => {
   const platform = Platform.OS as 'ios' | 'android';
   
-  // IMPORTANT UPDATE: Only use test IDs in development, TestFlight, or Expo Go
-  // App Store should ALWAYS use production ads
-  const shouldUseTestIds = isDevEnvironment || isExpoGo || (isTestFlight && !isAppStore);
+  // SIMPLIFIED LOGIC: Use test IDs ONLY in development or Expo Go
+  // This ensures TestFlight and App Store builds ALWAYS use production ads
+  const shouldUseTestIds = isDevEnvironment || isExpoGo;
   
   if (shouldUseTestIds) {
-    console.log('🧪 Using test ad unit ID for testing environment');
-    console.log(`🔍 Environment decision factors: isDevEnvironment=${isDevEnvironment}, isExpoGo=${isExpoGo}, isTestFlight=${isTestFlight}, isAppStore=${isAppStore}`);
+    console.log('🧪 Using test ad unit ID for development/Expo Go environment');
+    console.log(`🔍 Environment decision: isDevEnvironment=${isDevEnvironment}, isExpoGo=${isExpoGo}`);
     return TestIds.REWARDED;
   } else {
-    console.log(`💰 Using REAL ad unit ID for ${platform} in production (isAppStore=${isAppStore})`);
+    console.log(`💰 Using REAL ad unit ID for ${platform} in production build`);
     return AD_UNIT_IDS[adType][platform];
   }
 };
@@ -117,7 +94,7 @@ export const initializeAds = async () => {
       return true;
     }
     
-    console.log(`🚀 Initializing AdMob SDK in ${isTestFlight ? 'TestFlight' : isDevEnvironment ? 'Development' : 'Production'} mode...`);
+    console.log(`🚀 Initializing AdMob SDK in ${isDevEnvironment ? 'Development' : 'Production'} mode...`);
     
     // Get the MobileAds instance
     const { MobileAds } = require('react-native-google-mobile-ads');
@@ -126,8 +103,8 @@ export const initializeAds = async () => {
     // Initialize the SDK
     await mobileAdsInstance.initialize();
     
-    // Configure test devices for development and TestFlight
-    if (isDevEnvironment || isTestFlight) {
+    // Configure test devices for development only
+    if (isDevEnvironment) {
       console.log('🧪 Configuring test devices for non-production environment');
       
       const testDevices = [];
@@ -153,9 +130,9 @@ export const initializeAds = async () => {
     console.log('✅ AdMob SDK initialized successfully');
     adModulesInitialized = true;
     
-    // Pre-load an ad for better user experience (multiple attempts for TestFlight)
+    // Pre-load an ad for better user experience (multiple attempts for production builds)
     let preloadSuccess = false;
-    const maxPreloadAttempts = isTestFlight ? 3 : 1;
+    const maxPreloadAttempts = isProduction ? 3 : 1;
     
     for (let i = 0; i < maxPreloadAttempts && !preloadSuccess; i++) {
       try {
@@ -217,9 +194,9 @@ export const loadRewardedAd = async (): Promise<() => void> => {
     return () => {};
   }
   
-  // Special logging for TestFlight environment
-  if (isTestFlight) {
-    console.log('🛠 Loading rewarded ad in TestFlight environment');
+  // Enhanced logging for production builds
+  if (isProduction) {
+    console.log('🛠 Loading rewarded ad in production environment');
   }
   
   // Prevent multiple simultaneous load attempts
@@ -228,11 +205,11 @@ export const loadRewardedAd = async (): Promise<() => void> => {
     return () => {};
   }
   
-  // Implement request throttling - use a shorter interval for TestFlight
+  // Implement request throttling - use a shorter interval for production builds
   const now = Date.now();
   const timeSinceLastAttempt = now - lastAdLoadAttempt;
-  // Use shorter interval in TestFlight to try more frequently
-  const minimumTimeBetweenAttempts = isTestFlight ? 5000 : 10000; 
+  // Use shorter interval in production to try more frequently
+  const minimumTimeBetweenAttempts = isProduction ? 5000 : 10000; 
   
   if (timeSinceLastAttempt < minimumTimeBetweenAttempts && lastAdLoadAttempt > 0) {
     const waitTime = (minimumTimeBetweenAttempts - timeSinceLastAttempt) / 1000;
@@ -265,14 +242,14 @@ export const loadRewardedAd = async (): Promise<() => void> => {
       keywords: ['game', 'arcade', 'puzzle', 'maze', 'tilting']
     };
     
-    // For TestFlight, make sure we're using test ads with additional targeting
-    if (isTestFlight) {
-      // Force test ads more explicitly
-      console.log('🧪 Using enhanced test ad configuration for TestFlight');
+    // For production builds, add additional targeting parameters
+    if (isProduction) {
+      // Enhanced targeting for production ads
+      console.log('💰 Using enhanced ad configuration for production');
       
-      // Add more specific targeting for test ads
+      // Add more specific targeting for better ad performance
       Object.assign(adRequestOptions, {
-        requestAgent: 'TiltMazeGame-TestFlight',
+        requestAgent: 'TiltMazeGame-Production',
         // Add additional parameters that might help with test ads
         contentUrl: 'https://example.com/games/tiltmaze',
       });
@@ -315,12 +292,12 @@ export const loadRewardedAd = async (): Promise<() => void> => {
       const errorCode = error?.code || 'No code';
       console.error(`❌ Rewarded ad error: ${errorMsg} (Code: ${errorCode})`);
       
-      // Additional TestFlight logging
-      if (isTestFlight) {
+      // Add helpful debug timeout for production builds to track issues
+      if (isProduction) {
         // Check if we're using test ad unit IDs
-        const isTestAd = isDevEnvironment || isTestFlight || isExpoGo;
+        const isTestAd = isDevEnvironment || isExpoGo;
         
-        console.error('🐞 TestFlight Ad Error Details:', {
+        console.error('🐞 Production Ad Error Details:', {
           errorMessage: errorMsg,
           errorCode: errorCode,
           adUnitId: adUnitId,
@@ -328,7 +305,7 @@ export const loadRewardedAd = async (): Promise<() => void> => {
           deviceInfo: {
             platform: Platform.OS,
             version: Platform.Version,
-            isTestFlight: isTestFlight
+            isProduction: isProduction
           }
         });
       }
@@ -337,10 +314,10 @@ export const loadRewardedAd = async (): Promise<() => void> => {
       isRewardedAdLoaded = false;
       adLoadInProgress = false;
       
-      // Implementation of retry with backoff - shorter for TestFlight
+      // Implementation of retry with backoff - shorter for production
       adLoadRetryCount++;
-      // Use shorter backoff times in TestFlight
-      const backoffTime = isTestFlight ? 
+      // Use shorter backoff times in production
+      const backoffTime = isProduction ? 
         Math.min(5000, getBackoffTime(adLoadRetryCount) / 2) : 
         getBackoffTime(adLoadRetryCount);
         
@@ -371,8 +348,8 @@ export const loadRewardedAd = async (): Promise<() => void> => {
     
     // Implementation of retry with backoff
     adLoadRetryCount++;
-    // Use shorter backoff times in TestFlight
-    const backoffTime = isTestFlight ? 
+    // Use shorter backoff times in production
+    const backoffTime = isProduction ? 
       Math.min(5000, getBackoffTime(adLoadRetryCount) / 2) : 
       getBackoffTime(adLoadRetryCount);
     
@@ -387,7 +364,7 @@ export const loadRewardedAd = async (): Promise<() => void> => {
     return () => {};
   }
 };
-export const showRewardedAd = (callback: () => void): Promise<boolean> => {
+export const showRewardedAd = async (callback: () => void): Promise<boolean> => {
   return new Promise<boolean>(async (resolve) => {
     // Special handling for Expo Go environment
     if (isExpoGo) {
@@ -417,7 +394,7 @@ export const showRewardedAd = (callback: () => void): Promise<boolean> => {
       return;
     }
     
-    // Real ad implementation for production/TestFlight
+    // Real ad implementation for production builds
     try {
       // Step 1: Ensure AdMob is initialized
       if (!adModulesInitialized) {

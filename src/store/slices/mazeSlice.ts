@@ -85,11 +85,9 @@ const mazeSlice = createSlice({
         state.completedMazes.push(action.payload);
       }
     },
-    removeCoin: (state, action: PayloadAction<string>) => {
+    collectCoin: (state, action: PayloadAction<string>) => {
       if (state.currentMaze?.coins) {
-        const updatedCoins = state.currentMaze.coins.filter(
-          coin => coin.id !== action.payload
-        );
+        const updatedCoins = state.currentMaze.coins.filter(coin => coin.id !== action.payload);
         state.currentMaze = { ...state.currentMaze, coins: updatedCoins };
       }
     },
@@ -122,6 +120,6 @@ export const {
   generateNewMaze,
   updateHighestEndlessLevel,
   addCompletedMaze,
-  removeCoin,
+  collectCoin,
 } = mazeSlice.actions;
 export default mazeSlice.reducer;

@@ -113,34 +113,48 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   logoContainer: {
-    marginBottom: 40,
+    marginBottom: 48,
     alignItems: 'center',
   },
   statsContainer: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 56,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 16,
   },
   statLabel: {
-    marginBottom: 4,
+    marginBottom: 8,
     opacity: 0.8,
+    letterSpacing: 0.5,
   },
-  statNumber: {},
+  statNumber: {
+    letterSpacing: -0.25,
+  },
   menuContainer: {
-    width: '85%',
+    width: '100%',
+    maxWidth: 400,
     alignItems: 'center',
+    paddingHorizontal: 24,
+    gap: 16,
   },
   menuButton: {
     width: '100%',
-    marginVertical: 10,
-    borderRadius: 30,
+    marginVertical: 0,
+    borderRadius: 24,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   buttonContent: {
-    height: 48,
+    height: 56,
     justifyContent: 'center',
   },
   buttonLabel: {
     fontSize: 16,
     fontWeight: '500',
+    letterSpacing: 0.1,
   },
 });
 export default HomeScreen;

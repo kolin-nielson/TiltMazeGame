@@ -304,6 +304,7 @@ export const generateMaze = (difficulty: number): Maze => {
     }
   }
   const maxCoins = Math.min(20, Math.ceil(GAME.COINS_PER_LEVEL * (1 + difficulty / 10)));
+
   const flatCells: Position[] = [];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -320,32 +321,41 @@ export const generateMaze = (difficulty: number): Maze => {
       flatCells.push(pos);
     }
   }
+
   for (let i = flatCells.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [flatCells[i], flatCells[j]] = [flatCells[j], flatCells[i]];
   }
-  const coinPositions = flatCells.slice(0, maxCoins);
-  const coins: Coin[] = coinPositions.map((pos, idx) => ({ id: `${id}-coin-${idx}`, position: pos }));
-  if (flatCells.length > maxCoins) {
-    const specialCoinPosition = flatCells[maxCoins];
+
+  const regularCoins = Math.min(maxCoins - 1, flatCells.length - 1);
+  const coinPositions = flatCells.slice(0, regularCoins);
+  const coins: Coin[] = coinPositions.map((pos, idx) => ({ 
+    id: `${id}-coin-${idx}`, 
+    position: pos,
+    value: 1,
+    isSpecial: false
+  }));
+
+  if (flatCells.length > regularCoins) {
     const specialCoin: Coin = {
       id: `${id}-special-coin`,
-      position: specialCoinPosition,
+      position: flatCells[regularCoins],
       value: 10,
       isSpecial: true
     };
     coins.push(specialCoin);
   }
+
   return {
     id,
     name,
     walls,
-    laserGates: laserGates.length > 0 ? laserGates : [], 
+    laserGates,
     startPosition,
     endPosition,
-    coins,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     difficulty: difficultyLevel,
+    coins,
   };
 };

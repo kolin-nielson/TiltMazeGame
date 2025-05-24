@@ -22,12 +22,14 @@ import GameLogo from '@components/logo/GameLogo';
 import { View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
 import ErrorBoundary from '@components/common/ErrorBoundary';
 import { initializeAds, loadRewardedAd } from './src/services/adsService';
+
 const { LightTheme, DarkTheme } = adaptNavigationTheme({
   reactNavigationLight: NavigationDefaultTheme,
   reactNavigationDark: NavigationDarkTheme,
   materialLight: MD3LightTheme,
   materialDark: MD3DarkTheme,
 });
+
 const SplashScreen = () => {
   const colors = useAppSelector(state => state.theme.colors);
   return (
@@ -37,6 +39,7 @@ const SplashScreen = () => {
     </View>
   );
 };
+
 const AppContent: React.FC = () => {
   const dispatch = useAppDispatch();
   const colorScheme = useColorScheme();
@@ -44,6 +47,7 @@ const AppContent: React.FC = () => {
   const isDark = useAppSelector(state => state.theme.isDark);
   const colors = useAppSelector(state => state.theme.colors);
   const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -66,6 +70,7 @@ const AppContent: React.FC = () => {
     };
     loadInitialData();
   }, [dispatch]);
+
   useEffect(() => {
     if (themeName === 'system') {
       dispatch(setIsDark(colorScheme === 'dark'));
@@ -73,17 +78,21 @@ const AppContent: React.FC = () => {
       dispatch(setIsDark(themeName === 'dark'));
     }
   }, [themeName, colorScheme, dispatch]);
+
   if (isLoading) {
     return <SplashScreen />;
   }
+
   const combinedTheme = {
     ...(isDark ? DarkTheme : LightTheme),
     colors: colors,
   };
+
   const paperTheme = {
     ...(isDark ? MD3DarkTheme : MD3LightTheme),
     colors: colors,
   };
+
   return (
     <PaperProvider theme={paperTheme}>
       <NavigationContainer theme={combinedTheme}>
@@ -94,6 +103,7 @@ const AppContent: React.FC = () => {
     </PaperProvider>
   );
 };
+
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -105,6 +115,7 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
 const styles = StyleSheet.create({
   splashContainer: {
     flex: 1,

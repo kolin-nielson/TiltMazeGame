@@ -1,12 +1,17 @@
 import { StyleSheet } from 'react-native';
+
 export const mazeRendererStyles = StyleSheet.create({
   container: {
     width: '100%',
     height: '100%',
     position: 'relative',
-    borderRadius: 12,
+    borderRadius: 16, // MD3 rounded corner (large)
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 1, // MD3 elevation level 1
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   mazeElementsContainer: {
     position: 'relative',
@@ -16,8 +21,8 @@ export const mazeRendererStyles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     aspectRatio: 1, // Force square aspect ratio
-    maxWidth: '90%', // Prevent the maze from getting too large on tablets
-    maxHeight: '90%', // Maintain proportional height
+    maxWidth: '95%', // Optimal size for gameplay
+    maxHeight: '95%', // Maintain proportional height
   },
   wall: {
     position: 'absolute',
@@ -29,13 +34,11 @@ export const mazeRendererStyles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.2, // MD3 shadow opacity
+    shadowRadius: 4, // MD3 shadow blur
   },
   goal: {
     position: 'absolute',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.7)',
-    opacity: 0.85,
+    opacity: 0.9, // Slightly more visible
   },
 });

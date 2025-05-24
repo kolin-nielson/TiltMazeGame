@@ -21,9 +21,10 @@ interface MazeBallProps {
 export const MazeBall: React.FC<MazeBallProps> = memo(
   ({ ballPositionX, ballPositionY, radius }) => {
     const { skins, equippedSkin, trails, equippedTrail } = useAppSelector(state => state.shop);
+    const colors = useAppSelector(state => state.theme.colors);
     const skin = skins.find(s => s.id === equippedSkin);
     const trail = trails.find(t => t.id === equippedTrail);
-    const defaultColor = '#E53935'; 
+    const defaultColor = colors.ball || colors.error; 
     const progress = useSharedValue(0);
     const pulseAnim = useSharedValue(0);
     const lastPositionX = useSharedValue(0);

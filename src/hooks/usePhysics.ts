@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { Maze, LaserGate, Wall, Coin } from '../types';
 import { useAppDispatch } from '@store';
 import { collectCoinAndSave } from '@store/slices/shopSlice';
-import { removeCoin as mazeRemoveCoin } from '@store/slices/mazeSlice';
+import { collectCoin as mazeCollectCoin } from '@store/slices/mazeSlice';
 
 const BALL_RADIUS = 7;
 const BALL_DENSITY = 0.12; 
@@ -60,19 +60,20 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
   const dispatch = useAppDispatch();
 
-  const engineRef = useRef<Matter.Engine>();
-  const worldRef = useRef<Matter.World>();
-  const ballRef = useRef<Matter.Body>();
+  const engineRef = useRef<Matter.Engine | null>(null);
+  const worldRef = useRef<Matter.World | null>(null);
+  const ballRef = useRef<Matter.Body | null>(null);
   const wallsRef = useRef<Matter.Body[]>([]); 
   const laserGatesRef = useRef<Matter.Body[]>([]);
-  const goalRef = useRef<Matter.Body>();
-  const coinCompositeRef = useRef<Matter.Composite>();
+  const goalRef = useRef<Matter.Body | null>(null);
+  const coinCompositeRef = useRef<Matter.Composite | null>(null);
+  const laserGateCompositeRef = useRef<Matter.Composite | null>(null);
   const tickerRef = useRef<number | null>(null);
   const [goalReached, setGoalReached] = useState<boolean>(false);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const lastTimeRef = useRef<number>(0);
   const collectedCoinsRef = useRef<Set<string>>(new Set());
-  const gameOverTriggeredRef = useRef(false); 
+  const gameOverTriggeredRef = useRef(false);
 
   const ballPositionX = useSharedValue(maze?.startPosition.x ?? 0);
   const ballPositionY = useSharedValue(maze?.startPosition.y ?? 0);
@@ -214,13 +215,39 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       });
     }
 
+    const laserGateComposite = Matter.Composite.create({ label: 'laserGates' });
+    if (maze.laserGates && maze.laserGates.length > 0) {
+      maze.laserGates.forEach((laserGate: LaserGate) => {
+        const laserBody = Matter.Bodies.rectangle(
+          laserGate.x + laserGate.width / 2,
+          laserGate.y + laserGate.height / 2,
+          laserGate.width,
+          laserGate.height,
+          {
+            label: `laser-${laserGate.id}`,
+            isStatic: true,
+            isSensor: true, 
+            collisionFilter: {
+              category: 0x0004, 
+              mask: 0x0002, 
+            },
+            plugin: { 
+              laserGate: laserGate,
+            },
+          }
+        );
+        Matter.Composite.add(laserGateComposite, laserBody);
+      });
+    }
+    
     Matter.Composite.add(world, [
       ball,
       ...walls,
       ...boundWalls,
       ...laserGates,
       goal,
-      coinComposite, 
+      coinComposite,
+      laserGateComposite,
     ]);
 
     engineRef.current = engine;
@@ -230,6 +257,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     laserGatesRef.current = laserGates;
     goalRef.current = goal;
     coinCompositeRef.current = coinComposite;
+    laserGateCompositeRef.current = laserGateComposite;
 
     const handleCollision = (event: Matter.IEventCollision<Matter.Engine>, type: 'start' | 'active') => {
       if (gameOverTriggeredRef.current) return; 
@@ -252,23 +280,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
             }
           }
         }
-        else if (otherBody.label?.startsWith('laser-')) {
-          const laserGate = otherBody.plugin?.laserGate as LaserGate;
-          if (laserGate) {
-            const now = Date.now();
-            const cyclePosition = ((now % laserGate.interval) / laserGate.interval + laserGate.phase) % 1;
-            const isLaserActive = cyclePosition < laserGate.onDuration;
-            if (isLaserActive && !gameOverTriggeredRef.current) {
-              gameOverTriggeredRef.current = true; 
-              setGameOver(true);
-              if (vibrationEnabled) {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              }
-              break; 
-            }
-          }
-        }
-        else if (type === 'start' && otherBody.label?.startsWith('coin-')) {
+        else if (otherBody.label?.startsWith('coin-')) {
           const coinId = otherBody.label.replace(/^coin-/, '');
           if (collectedCoinsRef.current.has(coinId)) continue;
           collectedCoinsRef.current.add(coinId);
@@ -286,7 +298,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           for (let j = 0; j < value; j++) {
             dispatch(collectCoinAndSave());
           }
-          dispatch(mazeRemoveCoin(coinId)); 
+          dispatch(mazeCollectCoin(coinId)); 
           if (vibrationEnabled) {
             const impactStyle = coin?.isSpecial ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light;
             Haptics.impactAsync(impactStyle);
@@ -360,21 +372,23 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     tickerRef.current = requestAnimationFrame(tick);
 
     return () => {
-      if (tickerRef.current !== null) {
+      if (tickerRef.current) {
         cancelAnimationFrame(tickerRef.current);
         tickerRef.current = null;
-      }
-      if (engineRef.current) {
-        Matter.Events.off(engineRef.current, 'collisionStart');
-        Matter.Events.off(engineRef.current, 'collisionActive');
-        Matter.Engine.clear(engineRef.current);
-        engineRef.current = undefined; 
-        worldRef.current = undefined;
-        ballRef.current = undefined;
-        wallsRef.current = [];
-        laserGatesRef.current = [];
-        goalRef.current = undefined;
-        coinCompositeRef.current = undefined;
+
+        if (engineRef.current) {
+          Matter.Events.off(engineRef.current, 'collisionStart');
+          Matter.Events.off(engineRef.current, 'collisionActive');
+          Matter.Engine.clear(engineRef.current);
+          engineRef.current = null;
+          worldRef.current = null;
+          ballRef.current = null;
+          wallsRef.current = [];
+          laserGatesRef.current = [];
+          goalRef.current = null;
+          coinCompositeRef.current = null;
+          laserGateCompositeRef.current = null;
+        }
       }
     };
   }, [

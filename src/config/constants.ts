@@ -34,7 +34,7 @@ export const SCREENS = {
 };
 export const GAME = {
   INITIAL_LIVES: 3,
-  POINTS_PER_COIN: 1,
+  POINTS_PER_COIN: 3,
   COINS_PER_LEVEL: 8,
   MAX_DIFFICULTY: 50,
   MAZE_AREA_SIZE: 300,

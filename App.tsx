@@ -72,6 +72,10 @@ const AppContent: React.FC = () => {
   }, [dispatch]);
 
   useEffect(() => {
+    // Apply theme based on user preference:
+    // - 'system': Follow device dark/light mode
+    // - 'light'/'dark': Use explicit theme choice
+    // Default is now 'light' mode for new users
     if (themeName === 'system') {
       dispatch(setIsDark(colorScheme === 'dark'));
     } else {

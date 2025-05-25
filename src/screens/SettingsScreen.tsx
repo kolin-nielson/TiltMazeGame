@@ -10,6 +10,8 @@ import { useNavigation } from '@react-navigation/native';
 import { SettingsScreenNavigationProp } from '@navigation/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { resetShopData } from '@store/slices/shopSlice';
+import BannerAd from '@components/common/BannerAd';
+
 type SettingItemProps = {
   label: string;
   iconName: keyof typeof MaterialIcons.glyphMap;
@@ -216,6 +218,7 @@ const SettingsScreen: React.FC = () => {
           Tilt Maze v1.0.0
         </Text>
       </View>
+      <BannerAd />
     </View>
   );
 };

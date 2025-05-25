@@ -12,7 +12,7 @@ export interface ThemeState {
   error: string | null;
 }
 const initialState: ThemeState = {
-  themeName: 'system',
+  themeName: 'light',
   isDark: false,
   colors: lightTheme,
   status: 'idle',
@@ -25,7 +25,7 @@ export const loadTheme = createAsyncThunk('theme/loadTheme', async (_, { rejectW
       const savedTheme = JSON.parse(themeJson);
       return savedTheme;
     }
-    return { themeName: 'system' };
+    return { themeName: 'light' };
   } catch (error) {
     return rejectWithValue('Failed to load theme');
   }

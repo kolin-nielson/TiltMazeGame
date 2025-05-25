@@ -23,33 +23,6 @@ export const MazeGoal: React.FC<MazeGoalProps> = ({ position, ballRadius, colors
   }, []);
 
   const goalRadius = ballRadius * 1.5;
-  
-  // More dynamic and satisfying animations
-  const outerScaleProps = useAnimatedProps(() => {
-    const scale = Math.sin(anim.value * 2 * Math.PI) * 0.15 + 1;
-    return { r: goalRadius * scale };
-  });
-  
-  const innerScaleProps = useAnimatedProps(() => {
-    const scale = Math.sin(anim.value * 2 * Math.PI + Math.PI) * 0.12 + 1;
-    return { r: goalRadius * 0.6 * scale };
-  });
-  
-  const pulseProps = useAnimatedProps(() => {
-    const pulse = Math.sin(anim.value * 3 * Math.PI) * 0.25 + 0.75;
-    return { r: goalRadius * 0.3 * pulse };
-  });
-
-  // Sparkle animations
-  const sparkleProps1 = useAnimatedProps(() => {
-    const sparkle = Math.sin(anim.value * 4 * Math.PI) * 0.4 + 0.6;
-    return { r: goalRadius * 0.12 * sparkle };
-  });
-
-  const sparkleProps2 = useAnimatedProps(() => {
-    const sparkle = Math.sin(anim.value * 3 * Math.PI + Math.PI/3) * 0.3 + 0.7;
-    return { r: goalRadius * 0.08 * sparkle };
-  });
 
   return (
     <>
@@ -67,21 +40,21 @@ export const MazeGoal: React.FC<MazeGoalProps> = ({ position, ballRadius, colors
         </RadialGradient>
       </Defs>
       
-      {/* Outer glow effect */}
+      {/* Static outer glow for performance */}
       <AnimatedCircle
-        animatedProps={useAnimatedProps(() => {
-          const scale = Math.sin(anim.value * 2 * Math.PI) * 0.2 + 1;
-          return { r: goalRadius * 1.2 * scale };
-        })}
         cx={position.x}
         cy={position.y}
+        r={goalRadius * 1.15}
         fill="#86EFAC"
-        opacity="0.3"
+        opacity="0.25"
       />
       
-      {/* Main goal ring with vibrant gradient */}
+      {/* Main goal ring with optimized animation */}
       <AnimatedCircle
-        animatedProps={outerScaleProps}
+        animatedProps={useAnimatedProps(() => {
+          const outerScale = Math.sin(anim.value * 2 * Math.PI) * 0.15 + 1;
+          return { r: goalRadius * outerScale };
+        })}
         cx={position.x}
         cy={position.y}
         fill="url(#goal-gradient)"
@@ -89,9 +62,12 @@ export const MazeGoal: React.FC<MazeGoalProps> = ({ position, ballRadius, colors
         strokeWidth={4}
       />
       
-      {/* Inner ring for depth */}
+      {/* Inner ring with shared animation calculation */}
       <AnimatedCircle
-        animatedProps={innerScaleProps}
+        animatedProps={useAnimatedProps(() => {
+          const innerScale = Math.sin(anim.value * 2 * Math.PI + Math.PI) * 0.12 + 1;
+          return { r: goalRadius * 0.6 * innerScale };
+        })}
         cx={position.x}
         cy={position.y}
         fill="url(#goal-inner-gradient)"
@@ -100,19 +76,25 @@ export const MazeGoal: React.FC<MazeGoalProps> = ({ position, ballRadius, colors
         opacity="0.9"
       />
       
-      {/* Pulsing center */}
+      {/* Pulsing center with shared calculation */}
       <AnimatedCircle
-        animatedProps={pulseProps}
+        animatedProps={useAnimatedProps(() => {
+          const pulse = Math.sin(anim.value * 3 * Math.PI) * 0.25 + 0.75;
+          return { r: goalRadius * 0.3 * pulse };
+        })}
         cx={position.x}
         cy={position.y}
         fill="#FFFFFF"
       />
       
-      {/* Sparkle effects for satisfaction */}
+      {/* Only 2 optimized sparkles for performance */}
       <AnimatedCircle
         cx={position.x - goalRadius * 0.5}
         cy={position.y - goalRadius * 0.4}
-        animatedProps={sparkleProps1}
+        animatedProps={useAnimatedProps(() => {
+          const sparkle1 = Math.sin(anim.value * 4 * Math.PI) * 0.4 + 0.6;
+          return { r: goalRadius * 0.12 * sparkle1 };
+        })}
         fill="#FFFFFF"
         opacity="0.9"
       />
@@ -120,31 +102,12 @@ export const MazeGoal: React.FC<MazeGoalProps> = ({ position, ballRadius, colors
       <AnimatedCircle
         cx={position.x + goalRadius * 0.4}
         cy={position.y - goalRadius * 0.3}
-        animatedProps={sparkleProps2}
+        animatedProps={useAnimatedProps(() => {
+          const sparkle2 = Math.sin(anim.value * 3 * Math.PI + Math.PI/3) * 0.3 + 0.7;
+          return { r: goalRadius * 0.08 * sparkle2 };
+        })}
         fill="#FFFFFF"
         opacity="0.8"
-      />
-      
-      <AnimatedCircle
-        cx={position.x + goalRadius * 0.2}
-        cy={position.y + goalRadius * 0.5}
-        animatedProps={useAnimatedProps(() => {
-          const sparkle = Math.sin(anim.value * 5 * Math.PI + Math.PI/2) * 0.3 + 0.7;
-          return { r: goalRadius * 0.06 * sparkle };
-        })}
-        fill="#FFFFFF"
-        opacity="0.7"
-      />
-      
-      <AnimatedCircle
-        cx={position.x - goalRadius * 0.3}
-        cy={position.y + goalRadius * 0.3}
-        animatedProps={useAnimatedProps(() => {
-          const sparkle = Math.sin(anim.value * 4 * Math.PI + Math.PI) * 0.25 + 0.75;
-          return { r: goalRadius * 0.05 * sparkle };
-        })}
-        fill="#FFFFFF"
-        opacity="0.6"
       />
     </>
   );

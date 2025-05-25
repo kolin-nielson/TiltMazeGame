@@ -23,17 +23,47 @@ function isPathPossible(
   const endRow = rows - 1;
   const endCol = cols - 1;
   const cellSizeScaled = CELL_SIZE * scale;
+
   if (!hasPath(grid, startRow, startCol, endRow, endCol)) {
     return false;
   }
+
   if (!laserGates || laserGates.length === 0) {
     return true;
   }
+
+  // Enhanced path validation for strategic laser placement
+  // Check if any laser completely blocks all possible paths
   for (const gate of laserGates) {
-    if (gate.onDuration >= 1) {
+    // Only block path if laser is on for more than 80% of the time (too difficult)
+    if (gate.onDuration >= 0.8) {
       return false;
     }
+    
+    // Check if laser is placed in a critical chokepoint that would be impossible to pass
+    const laserCenterX = gate.x + gate.width / 2;
+    const laserCenterY = gate.y + gate.height / 2;
+    const cellX = Math.floor(laserCenterX / cellSizeScaled);
+    const cellY = Math.floor(laserCenterY / cellSizeScaled);
+    
+    // Ensure laser doesn't block the only path in a corridor
+    if (cellX >= 0 && cellX < cols && cellY >= 0 && cellY < rows) {
+      const cell = grid[cellY][cellX];
+      const openDirections = [
+        !cell.walls.top && cellY > 0,
+        !cell.walls.bottom && cellY < rows - 1,
+        !cell.walls.left && cellX > 0,
+        !cell.walls.right && cellX < cols - 1
+      ].filter(Boolean).length;
+      
+      // If this is a critical single-path corridor with very long laser duration, it's too hard
+      if (openDirections === 2 && gate.onDuration > 0.6) {
+        // Allow it but reduce the on duration to make it passable
+        gate.onDuration = Math.min(gate.onDuration, 0.5);
+      }
+    }
   }
+
   return true;
 }
 function hasPath(
@@ -131,17 +161,36 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
   const walls: Wall[] = [];
   const wallThicknessScaled = WALL_THICKNESS * scale;
   const cellSizeScaled = CELL_SIZE * scale;
+  
+  // Clean wall generation without overlaps - walls meet precisely at edges
+  // Each wall positioned exactly at cell boundaries for perfect connections
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const cell = grid[y][x];
       const cellX = x * cellSizeScaled;
       const cellY = y * cellSizeScaled;
+      
+      // Top wall (only for first row - maze boundary)
       if (y === 0 && cell.walls.top) {
-        walls.push({ x: cellX, y: cellY, width: cellSizeScaled, height: wallThicknessScaled });
+        walls.push({ 
+          x: cellX, 
+          y: cellY, 
+          width: cellSizeScaled, 
+          height: wallThicknessScaled 
+        });
       }
+      
+      // Left wall (only for first column - maze boundary)
       if (x === 0 && cell.walls.left) {
-        walls.push({ x: cellX, y: cellY, width: wallThicknessScaled, height: cellSizeScaled });
+        walls.push({ 
+          x: cellX, 
+          y: cellY, 
+          width: wallThicknessScaled, 
+          height: cellSizeScaled 
+        });
       }
+      
+      // Bottom wall - position precisely at cell edge
       if (cell.walls.bottom) {
         walls.push({
           x: cellX,
@@ -150,6 +199,8 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
           height: wallThicknessScaled,
         });
       }
+      
+      // Right wall - position precisely at cell edge
       if (cell.walls.right) {
         walls.push({
           x: cellX + cellSizeScaled - wallThicknessScaled,
@@ -160,8 +211,245 @@ function gridToWalls(grid: Cell[][], rows: number, cols: number, scale: number):
       }
     }
   }
+  
   return walls;
 }
+
+// Enhanced laser generation with strategic placement and varied patterns
+interface LaserPattern {
+  type: 'burst' | 'steady' | 'pulse' | 'rapid';
+  interval: number;
+  onDuration: number;
+  phase: number;
+}
+
+interface StrategicPosition {
+  x: number;
+  y: number;
+  direction: 'horizontal' | 'vertical';
+  importance: number; // 0-1, higher means more strategic
+  length: number;
+}
+
+// Define laser patterns for different gameplay styles
+const LASER_PATTERNS: Record<string, LaserPattern> = {
+  // Quick burst - easy to time
+  burst: {
+    type: 'burst',
+    interval: 3000,
+    onDuration: 0.3,
+    phase: 0
+  },
+  // Long steady beam - requires patience
+  steady: {
+    type: 'steady',
+    interval: 4000,
+    onDuration: 0.7,
+    phase: 0
+  },
+  // Rhythmic pulse - creates rhythm-based gameplay
+  pulse: {
+    type: 'pulse',
+    interval: 2000,
+    onDuration: 0.4,
+    phase: 0
+  },
+  // Rapid fire - high difficulty
+  rapid: {
+    type: 'rapid',
+    interval: 1500,
+    onDuration: 0.2,
+    phase: 0
+  }
+};
+
+function findStrategicLaserPositions(
+  grid: Cell[][], 
+  rows: number, 
+  cols: number, 
+  scale: number,
+  startPos: Position,
+  endPos: Position
+): StrategicPosition[] {
+  const positions: StrategicPosition[] = [];
+  const cellSize = CELL_SIZE * scale;
+  
+  // Find chokepoints and corridor intersections
+  for (let y = 1; y < rows - 1; y++) {
+    for (let x = 1; x < cols - 1; x++) {
+      const cell = grid[y][x];
+      
+      // Count open directions for this cell
+      const openDirections = [
+        !cell.walls.top && y > 0,
+        !cell.walls.bottom && y < rows - 1,
+        !cell.walls.left && x > 0,
+        !cell.walls.right && x < cols - 1
+      ].filter(Boolean).length;
+      
+      // Strategic positions: corridors with 2 openings (chokepoints)
+      if (openDirections === 2) {
+        const cellX = x * cellSize + cellSize / 2;
+        const cellY = y * cellSize + cellSize / 2;
+        
+        // Calculate distance from start and end to determine importance
+        const distFromStart = Math.sqrt(Math.pow(cellX - startPos.x, 2) + Math.pow(cellY - startPos.y, 2));
+        const distFromEnd = Math.sqrt(Math.pow(cellX - endPos.x, 2) + Math.pow(cellY - endPos.y, 2));
+        const maxDist = Math.sqrt(Math.pow(MAZE_AREA_SIZE, 2) + Math.pow(MAZE_AREA_SIZE, 2));
+        
+        // Higher importance for positions in the middle of the path
+        const importance = 1 - Math.abs(distFromStart - distFromEnd) / maxDist;
+        
+        // Determine laser direction based on corridor orientation
+        if ((!cell.walls.left || !cell.walls.right) && (cell.walls.top && cell.walls.bottom)) {
+          // Horizontal corridor - vertical laser
+          positions.push({
+            x: cellX,
+            y: cellY - cellSize * 0.4,
+            direction: 'vertical',
+            importance: importance + 0.2, // Bonus for crossing corridors
+            length: cellSize * 0.8
+          });
+        } else if ((cell.walls.left && cell.walls.right) && (!cell.walls.top || !cell.walls.bottom)) {
+          // Vertical corridor - horizontal laser
+          positions.push({
+            x: cellX - cellSize * 0.4,
+            y: cellY,
+            direction: 'horizontal',
+            importance: importance + 0.2,
+            length: cellSize * 0.8
+          });
+        }
+      }
+      
+      // Junction positions (3+ openings) for advanced levels
+      if (openDirections >= 3) {
+        const cellX = x * cellSize + cellSize / 2;
+        const cellY = y * cellSize + cellSize / 2;
+        
+        // Place crossing lasers at junctions for high difficulty
+        const distFromStart = Math.sqrt(Math.pow(cellX - startPos.x, 2) + Math.pow(cellY - startPos.y, 2));
+        const distFromEnd = Math.sqrt(Math.pow(cellX - endPos.x, 2) + Math.pow(cellY - endPos.y, 2));
+        const maxDist = Math.sqrt(Math.pow(MAZE_AREA_SIZE, 2) + Math.pow(MAZE_AREA_SIZE, 2));
+        const importance = 0.8 - Math.abs(distFromStart - distFromEnd) / maxDist;
+        
+        // Add both horizontal and vertical lasers for junction challenges
+        if (openDirections === 4) { // 4-way intersection
+          positions.push({
+            x: cellX - cellSize * 0.3,
+            y: cellY,
+            direction: 'horizontal',
+            importance: importance + 0.3,
+            length: cellSize * 0.6
+          });
+          positions.push({
+            x: cellX,
+            y: cellY - cellSize * 0.3,
+            direction: 'vertical',
+            importance: importance + 0.3,
+            length: cellSize * 0.6
+          });
+        }
+      }
+    }
+  }
+  
+  // Sort by importance (highest first)
+  return positions.sort((a, b) => b.importance - a.importance);
+}
+
+function generateSmartLasers(
+  grid: Cell[][],
+  rows: number,
+  cols: number,
+  scale: number,
+  difficulty: number,
+  startPos: Position,
+  endPos: Position,
+  mazeId: string
+): LaserGate[] {
+  if (difficulty <= 3) {
+    return []; // No lasers for easy levels
+  }
+
+  const strategicPositions = findStrategicLaserPositions(grid, rows, cols, scale, startPos, endPos);
+  const laserGates: LaserGate[] = [];
+  
+  // Calculate number of lasers based on difficulty with better progression
+  const baseLasers = Math.min(difficulty - 3, 3); // 0-3 base lasers
+  const bonusLasers = Math.floor((difficulty - 6) / 2); // +1 every 2 levels after level 6
+  const maxLasers = Math.min(baseLasers + bonusLasers, Math.min(8, strategicPositions.length));
+  
+  // Select patterns based on difficulty
+  const availablePatterns = [];
+  if (difficulty >= 4) availablePatterns.push('burst', 'pulse');
+  if (difficulty >= 6) availablePatterns.push('steady');
+  if (difficulty >= 8) availablePatterns.push('rapid');
+  
+  // Place lasers at strategic positions
+  for (let i = 0; i < maxLasers && i < strategicPositions.length; i++) {
+    const position = strategicPositions[i];
+    const patternName = availablePatterns[Math.floor(Math.random() * availablePatterns.length)];
+    const pattern = { ...LASER_PATTERNS[patternName] };
+    
+    // Add some randomization to timing to prevent predictable patterns
+    pattern.interval += (Math.random() - 0.5) * 500;
+    pattern.phase = Math.random();
+    
+    // Adjust pattern based on difficulty
+    if (difficulty >= 10) {
+      pattern.onDuration = Math.min(pattern.onDuration + 0.1, 0.8); // Longer beams at high difficulty
+    }
+    if (difficulty >= 12) {
+      pattern.interval = Math.max(pattern.interval - 200, 1000); // Faster cycling
+    }
+    
+    const laserThickness = 4;
+    
+    if (position.direction === 'horizontal') {
+      laserGates.push({
+        id: `laser-h-${mazeId}-${i}`,
+        x: position.x,
+        y: position.y - laserThickness / 2,
+        width: position.length,
+        height: laserThickness,
+        direction: 'horizontal',
+        interval: pattern.interval,
+        phase: pattern.phase,
+        onDuration: pattern.onDuration,
+      });
+    } else {
+      laserGates.push({
+        id: `laser-v-${mazeId}-${i}`,
+        x: position.x - laserThickness / 2,
+        y: position.y,
+        width: laserThickness,
+        height: position.length,
+        direction: 'vertical',
+        interval: pattern.interval,
+        phase: pattern.phase,
+        onDuration: pattern.onDuration,
+      });
+    }
+  }
+  
+  // Add synchronized laser pairs for very high difficulty
+  if (difficulty >= 15 && laserGates.length >= 2) {
+    // Synchronize every other pair of lasers for coordinated challenges
+    for (let i = 0; i < laserGates.length - 1; i += 2) {
+      const sharedPhase = Math.random();
+      const sharedInterval = 2500 + Math.random() * 1000;
+      
+      laserGates[i].phase = sharedPhase;
+      laserGates[i].interval = sharedInterval;
+      laserGates[i + 1].phase = sharedPhase + 0.5; // Offset by half cycle
+      laserGates[i + 1].interval = sharedInterval;
+    }
+  }
+  
+  return laserGates;
+}
+
 export const generateMaze = (difficulty: number): Maze => {
   const structureDifficulty = Math.min(difficulty, 4);
   const gridSize = BASE_GRID_SIZE + (structureDifficulty - 1) * GRID_INCREMENT;
@@ -206,103 +494,7 @@ export const generateMaze = (difficulty: number): Maze => {
   } else {
     difficultyLevel = 'hard';
   }
-  const laserGates: LaserGate[] = [];
-  const maxPossibleLasers = 8;
-  if (difficulty > 3) {
-    const laserThickness = 4;
-    const numLasers = Math.max(1, Math.min(maxPossibleLasers, 1 + Math.floor((difficulty - 1) / 5)));
-    const corridors: {
-      x1: number;
-      y1: number;
-      x2: number;
-      y2: number;
-      direction: 'horizontal' | 'vertical';
-      length: number;
-    }[] = [];
-    const numHorizontalCorridors = 1 + Math.floor(Math.random() * 2);
-    for (let i = 0; i < numHorizontalCorridors; i++) {
-      const y = Math.floor(rows * 0.3) + Math.floor(Math.random() * (rows * 0.4));
-      const cellY = y * CELL_SIZE * scale;
-      corridors.push({
-        x1: 0,
-        y1: cellY + (CELL_SIZE * scale) / 2,
-        x2: MAZE_AREA_SIZE,
-        y2: cellY + (CELL_SIZE * scale) / 2,
-        direction: 'horizontal',
-        length: MAZE_AREA_SIZE,
-      });
-    }
-    const numVerticalCorridors = 1 + Math.floor(Math.random() * 2);
-    for (let i = 0; i < numVerticalCorridors; i++) {
-      const x = Math.floor(cols * 0.3) + Math.floor(Math.random() * (cols * 0.4));
-      const cellX = x * CELL_SIZE * scale;
-      corridors.push({
-        x1: cellX + (CELL_SIZE * scale) / 2,
-        y1: 0,
-        x2: cellX + (CELL_SIZE * scale) / 2,
-        y2: MAZE_AREA_SIZE,
-        direction: 'vertical',
-        length: MAZE_AREA_SIZE,
-      });
-    }
-    for (let i = corridors.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [corridors[i], corridors[j]] = [corridors[j], corridors[i]];
-    }
-    const actualNumLasers = Math.min(numLasers, corridors.length);
-    const tempLaserGates: LaserGate[] = [];
-    for (let i = 0; i < actualNumLasers; i++) {
-      const corridor = corridors[i];
-      if (corridor.direction === 'horizontal') {
-        const laserY = corridor.y1 - laserThickness / 2;
-        const widthFactor = 0.6 + Math.random() * 0.2;
-        const laserWidth = corridor.length * widthFactor;
-        const laserX = corridor.x1 + (corridor.length - laserWidth) / 2;
-        tempLaserGates.push({
-          id: `laser-h-${id}-${i}`,
-          x: laserX,
-          y: laserY,
-          width: laserWidth,
-          height: laserThickness,
-          direction: 'horizontal',
-          interval: 2500 + Math.random() * 1500,
-          phase: Math.random(),
-          onDuration: 0.5,
-        });
-      } else {
-        const laserX = corridor.x1 - laserThickness / 2;
-        const heightFactor = 0.6 + Math.random() * 0.2;
-        const laserHeight = corridor.length * heightFactor;
-        const laserY = corridor.y1 + (corridor.length - laserHeight) / 2;
-        tempLaserGates.push({
-          id: `laser-v-${id}-${i}`,
-          x: laserX,
-          y: laserY,
-          width: laserThickness,
-          height: laserHeight,
-          direction: 'vertical',
-          interval: 2500 + Math.random() * 1500,
-          phase: Math.random(),
-          onDuration: 0.5,
-        });
-      }
-    }
-    if (isPathPossible(grid, rows, cols, tempLaserGates, scale)) {
-      laserGates.push(...tempLaserGates);
-      console.log(`Added ${tempLaserGates.length} laser gates - maze is solvable`);
-    } else {
-      if (tempLaserGates.length > 0) {
-        if (isPathPossible(grid, rows, cols, [tempLaserGates[0]], scale)) {
-          laserGates.push(tempLaserGates[0]);
-          console.log('Added only one laser gate to ensure maze is solvable');
-        } else {
-          console.log('Even one laser gate makes it unsolvable, adding none.');
-        }
-      } else {
-        console.log('No laser gates generated.');
-      }
-    }
-  }
+  const laserGates: LaserGate[] = generateSmartLasers(grid, rows, cols, scale, difficulty, startPosition, endPosition, id);
   const maxCoins = Math.min(20, Math.ceil(GAME.COINS_PER_LEVEL * (1 + difficulty / 10)));
 
   const flatCells: Position[] = [];

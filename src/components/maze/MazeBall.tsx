@@ -1,5 +1,5 @@
 import React, { memo, useEffect } from 'react';
-import Svg, { Circle, Defs, LinearGradient, RadialGradient, Stop, Pattern, Rect } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, RadialGradient, Stop, Pattern, Rect, Path, G } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
   useSharedValue,
@@ -37,33 +37,25 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       const dx = ballPositionX.value - lastPositionX.value;
       lastPositionX.value = ballPositionX.value;
       return dx;
-    });
+    }, []);
     const velocityY = useDerivedValue(() => {
       const dy = ballPositionY.value - lastPositionY.value;
       lastPositionY.value = ballPositionY.value;
       return dy;
-    });
-    const ballSpeed = useDerivedValue(() => {
-      return Math.sqrt(velocityX.value * velocityX.value + velocityY.value * velocityY.value);
-    });
-    const shadowOffsetX = useDerivedValue(() => {
-      return velocityX.value * 0.8;
-    });
-    const shadowOffsetY = useDerivedValue(() => {
-      return velocityY.value * 0.8;
-    });
-    const dynamicScale = useDerivedValue(() => {
-      const baseScale = 1.0;
+    }, []);
+    const ballProps = useDerivedValue(() => {
       const speed = Math.sqrt(velocityX.value * velocityX.value + velocityY.value * velocityY.value);
+      const baseScale = 1.0;
       const directionFactor = speed > 0.1 ? 0.15 : 0;
-      const xContribution = Math.abs(velocityX.value) / (speed + 0.01); 
+      const xContribution = Math.abs(velocityX.value) / (speed + 0.01);
       const yContribution = Math.abs(velocityY.value) / (speed + 0.01);
-      const xScale = 1 - (Math.min(0.15, Math.abs(velocityX.value) * 0.015) * xContribution * directionFactor);
-      const yScale = 1 - (Math.min(0.15, Math.abs(velocityY.value) * 0.015) * yContribution * directionFactor);
+      
       return {
-        x: xScale * baseScale,
-        y: yScale * baseScale,
-        speed: speed 
+        speed,
+        xScale: 1 - (Math.min(0.15, Math.abs(velocityX.value) * 0.015) * xContribution * directionFactor),
+        yScale: 1 - (Math.min(0.15, Math.abs(velocityY.value) * 0.015) * yContribution * directionFactor),
+        shadowOffsetX: velocityX.value * 0.8,
+        shadowOffsetY: velocityY.value * 0.8,
       };
     });
     const animatedProps = useAnimatedProps(() => {
@@ -73,26 +65,26 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       };
     });
     const shadowProps = useAnimatedProps(() => {
-      const speed = dynamicScale.value.speed || 0;
-      const offsetX = shadowOffsetX.value;
-      const offsetY = shadowOffsetY.value;
+      const speed = ballProps.value.speed;
       const baseOpacity = 0.25;
       const speedContribution = Math.min(0.2, speed * 0.05);
       const opacity = baseOpacity + speedContribution;
       const sizeMultiplier = 1.02 + Math.min(0.08, speed * 0.01);
+      
       return {
-        cx: ballPositionX.value + offsetX,
-        cy: ballPositionY.value + offsetY + 1.5, 
+        cx: ballPositionX.value + ballProps.value.shadowOffsetX,
+        cy: ballPositionY.value + ballProps.value.shadowOffsetY + 1.5,
         r: radius * sizeMultiplier,
         opacity: opacity,
       };
     });
     const glowProps = useAnimatedProps(() => {
-      const speed = dynamicScale.value.speed || 0;
+      const speed = ballProps.value.speed;
       const speedGlow = Math.min(0.15, speed * 0.03);
       const pulseEffect = pulseAnim.value * 0.1;
       const opacity = 0.25 + pulseEffect + speedGlow;
       const sizeMultiplier = 1.1 + pulseAnim.value * 0.05 + Math.min(0.1, speed * 0.01);
+      
       return {
         cx: ballPositionX.value,
         cy: ballPositionY.value,
@@ -101,12 +93,11 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       };
     });
     const scaleXProps = useAnimatedProps(() => {
-      const angle = Math.atan2(velocityY.value, velocityX.value);
-      const speed = dynamicScale.value.speed || 0;
-      const rotationEffect = speed > 0.5 ? Math.sin(angle) * 0.1 : 0;
+      const speed = ballProps.value.speed;
       const sizeVariation = 1 - Math.min(0.05, speed * 0.005);
+      
       return {
-        r: radius * sizeVariation, 
+        r: radius * sizeVariation,
         cx: ballPositionX.value,
         cy: ballPositionY.value,
       };
@@ -149,14 +140,17 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
     });
     const renderFill = () => {
       if (!skin) return defaultColor;
-      if (skin.animated && skin.type === 'gradient'){
-        return `url(#${gradientId})`;
-      }
+      
       switch (skin.type) {
-        case 'gradient': return `url(#${gradientId})`;
-        case 'pattern': return `url(#${patternId})`;
+        case 'gradient':
+        case 'special':
+        case 'legendary':
+          return `url(#${gradientId})`;
+        case 'pattern':
+          return `url(#${patternId})`;
         case 'solid':
-        default: return skin.colors[0];
+        default: 
+          return skin.colors[0];
       }
     };
     const gradientId = React.useMemo(() => `ball-grad-${skin?.id || 'default'}`, [skin?.id]);
@@ -164,8 +158,8 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
     const trailPositions = useSharedValue<{x: number, y: number, time: number}[]>([]);
     useDerivedValue(() => {
       const now = Date.now();
-      const speed = dynamicScale.value.speed || 0;
-      if (speed > 0.05) { 
+      const speed = ballProps.value.speed;
+      if (speed > 0.02) { // More sensitive to movement
         trailPositions.value = [
           {
             x: ballPositionX.value,
@@ -173,10 +167,10 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
             time: now
           },
           ...trailPositions.value
-        ].slice(0, 10); 
+        ].slice(0, 15); // More trail particles
       }
       trailPositions.value = trailPositions.value.filter(
-        point => now - point.time < 500
+        point => now - point.time < 800 // Longer lasting trail
       );
     });
     const generateTrailProps = (index: number) => {
@@ -192,17 +186,17 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
         const point = trailPositions.value[index];
         const now = Date.now();
         const age = now - point.time;
-        const speed = dynamicScale.value.speed || 0;
-        const baseTrailOpacity = 0.15; 
-        const speedContribution = Math.min(0.35, speed * 0.05); 
+        const speed = ballProps.value.speed;
+        const baseTrailOpacity = 0.4; // Much more visible
+        const speedContribution = Math.min(0.5, speed * 0.08); 
         const maxOpacity = baseTrailOpacity + speedContribution; 
-        const opacity = maxOpacity * (1 - (age / 500)); 
-        const size = radius * (0.8 - (index * 0.10)); 
+        const opacity = maxOpacity * (1 - (age / 800)); // Match new duration
+        const size = radius * (0.9 - (index * 0.06)); // More gradual size decrease
         return {
           cx: point.x,
           cy: point.y,
-          r: size,
-          opacity: opacity
+          r: Math.max(size, radius * 0.3), // Minimum size for visibility
+          opacity: Math.max(opacity, 0.1) // Minimum opacity
         };
       });
     };
@@ -211,10 +205,13 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
     const trailProps3 = generateTrailProps(2);
     const trailProps4 = generateTrailProps(3);
     const trailProps5 = generateTrailProps(4);
+    const trailProps6 = generateTrailProps(5);
+    const trailProps7 = generateTrailProps(6);
+    const trailProps8 = generateTrailProps(7);
     return (
       <>
         <Defs>
-          {skin?.type === 'gradient' && (
+          {skin && ['gradient', 'special', 'legendary'].includes(skin.type) && (
             skin.gradientDirection === 'radial' ? (
               <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
                 {skin.colors.map((c, index) => (
@@ -255,11 +252,99 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
               <Rect width="5" height="10" fill={skin.colors[1]} />
             </Pattern>
           )}
+          {skin?.type === 'pattern' && skin.patternType === 'scales' && (
+            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="12" height="12">
+              <Rect width="12" height="12" fill={skin.colors[0]} />
+              <Circle cx="6" cy="3" r="3" fill={skin.colors[1]} opacity="0.8" />
+              <Circle cx="0" cy="9" r="3" fill={skin.colors[1]} opacity="0.8" />
+              <Circle cx="12" cy="9" r="3" fill={skin.colors[1]} opacity="0.8" />
+            </Pattern>
+          )}
+          {skin?.type === 'pattern' && skin.patternType === 'chevron' && (
+            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="16" height="16" patternTransform="rotate(45)">
+              <Rect width="16" height="16" fill={skin.colors[0]} />
+              <Rect x="0" y="0" width="8" height="8" fill={skin.colors[1]} />
+              <Rect x="8" y="8" width="8" height="8" fill={skin.colors[1]} />
+            </Pattern>
+          )}
+          {skin?.type === 'pattern' && skin.patternType === 'hexagon' && (
+            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="14" height="12">
+              <Rect width="14" height="12" fill={skin.colors[0]} />
+              <Circle cx="7" cy="6" r="4" fill={skin.colors[1]} opacity="0.7" />
+            </Pattern>
+          )}
+          {skin?.type === 'pattern' && skin.patternType === 'marble' && (
+            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="20" height="20">
+              <Rect width="20" height="20" fill={skin.colors[0]} />
+              <Circle cx="5" cy="5" r="2" fill={skin.colors[1]} opacity="0.6" />
+              <Circle cx="15" cy="8" r="3" fill={skin.colors[1]} opacity="0.4" />
+              <Circle cx="8" cy="15" r="2.5" fill={skin.colors[1]} opacity="0.5" />
+            </Pattern>
+          )}
+          {skin?.type === 'pattern' && skin.patternType === 'hearts' && (
+            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="16" height="16">
+              <Rect width="16" height="16" fill={skin.colors[0]} />
+              {/* Heart shape using path - optimized for ball rendering with pulsing effect */}
+              <G transform="translate(8,5)">
+                <Path 
+                  d="M0,3 C-3,0 -6,2 -3,6 L0,9 L3,6 C6,2 3,0 0,3 Z" 
+                  fill={skin.colors[1]} 
+                  opacity="0.9"
+                  transform="scale(0.7)"
+                />
+              </G>
+              <G transform="translate(3,12)">
+                <Path 
+                  d="M0,3 C-3,0 -6,2 -3,6 L0,9 L3,6 C6,2 3,0 0,3 Z" 
+                  fill={skin.colors[2]} 
+                  opacity="0.7"
+                  transform="scale(0.45)"
+                />
+              </G>
+              <G transform="translate(13,9)">
+                <Path 
+                  d="M0,3 C-3,0 -6,2 -3,6 L0,9 L3,6 C6,2 3,0 0,3 Z" 
+                  fill={skin.colors[1]} 
+                  opacity="0.8"
+                  transform="scale(0.55)"
+                />
+              </G>
+              {/* Extra small floating hearts for magical effect */}
+              <G transform="translate(1,3)">
+                <Path 
+                  d="M0,3 C-3,0 -6,2 -3,6 L0,9 L3,6 C6,2 3,0 0,3 Z" 
+                  fill={skin.colors[1]} 
+                  opacity="0.6"
+                  transform="scale(0.3)"
+                />
+              </G>
+              <G transform="translate(15,14)">
+                <Path 
+                  d="M0,3 C-3,0 -6,2 -3,6 L0,9 L3,6 C6,2 3,0 0,3 Z" 
+                  fill={skin.colors[2]} 
+                  opacity="0.5"
+                  transform="scale(0.25)"
+                />
+              </G>
+            </Pattern>
+          )}
         </Defs>
-        {}
+        {/* Enhanced Trail System */}
+        <AnimatedCircle
+          animatedProps={trailProps8}
+          fill={trail && trail.colors.length > 0 ? trail.colors[trail.colors.length - 1] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
+        />
+        <AnimatedCircle
+          animatedProps={trailProps7}
+          fill={trail && trail.colors.length > 1 ? trail.colors[trail.colors.length - 1] : (trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent'))}
+        />
+        <AnimatedCircle
+          animatedProps={trailProps6}
+          fill={trail && trail.colors.length > 2 ? trail.colors[2] : (trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent'))}
+        />
         <AnimatedCircle
           animatedProps={trailProps5}
-          fill={trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
+          fill={trail && trail.colors.length > 1 ? trail.colors[1] : (trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent'))}
         />
         <AnimatedCircle
           animatedProps={trailProps4}
@@ -267,11 +352,11 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
         />
         <AnimatedCircle
           animatedProps={trailProps3}
-          fill={trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
+          fill={trail && trail.colors.length > 1 ? trail.colors[1] : (trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent'))}
         />
         <AnimatedCircle
           animatedProps={trailProps2}
-          fill={trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent')}
+          fill={trail && trail.colors.length > 2 ? trail.colors[2] : (trail && trail.colors.length > 0 ? trail.colors[0] : (skin?.type === 'solid' ? skin.colors[0] : 'transparent'))}
         />
         <AnimatedCircle
           animatedProps={trailProps1}
@@ -295,7 +380,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
         {}
         <AnimatedCircle
           animatedProps={useAnimatedProps(() => {
-            const speed = dynamicScale.value.speed || 0;
+            const speed = ballProps.value.speed;
             const offsetX = -radius * 0.3 + (velocityX.value * 0.02);
             const offsetY = -radius * 0.3 + (velocityY.value * 0.02);
             const highlightSize = radius * (0.3 - Math.min(0.1, speed * 0.01));

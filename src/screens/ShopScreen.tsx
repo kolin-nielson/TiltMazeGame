@@ -5,58 +5,82 @@ import { StatusBar } from 'expo-status-bar';
 import { useAppSelector, useAppDispatch } from '@store';
 import { RootState } from '@store';
 import { Skin, purchaseTrailAndSave, equipTrailAndSave, purchaseSkinAndSave, equipSkinAndSave } from '@store/slices/shopSlice';
-import { Text, Button, Card, Appbar, SegmentedButtons, Surface, useTheme } from 'react-native-paper';
+import { Text, Button, Card, Appbar, SegmentedButtons, Surface, useTheme, Chip, IconButton } from 'react-native-paper';
 import { ShopScreenNavigationProp } from '@navigation/types';
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
-import Svg, { Circle, Defs, LinearGradient, RadialGradient, Stop, Pattern, Rect } from 'react-native-svg';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Circle, Defs, LinearGradient, RadialGradient, Stop, Pattern, Rect, Path, G } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, } from 'react-native-reanimated';
 import { Trail } from '@store/slices/shopSlice';
+import BannerAd from '@components/common/BannerAd';
+
 type ItemType = 'skin' | 'trail';
 type Item = Skin | Trail;
+
+// Clean rarity styling with vibrant colors
+const RARITY_COLORS = {
+  common: '#64748B',
+  rare: '#3B82F6',
+  epic: '#8B5CF6',
+  legendary: '#F59E0B',
+  mythic: '#EC4899'
+};
+
 const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemType }) => {
   const rotation = useSharedValue(0);
+  const scale = useSharedValue(1);
+  
   React.useEffect(() => {
-    rotation.value = withRepeat(withTiming(1, { duration: 4000 }), -1);
+    rotation.value = withRepeat(withTiming(1, { duration: 8000 }), -1);
+    scale.value = withRepeat(withTiming(1.05, { duration: 2000 }), -1, true);
   }, []);
-  const style = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value * 360}deg` }],
+  
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotate: `${rotation.value * 360}deg` },
+      { scale: scale.value }
+    ],
   }));
+  
   const gradientId = `grad-${item.id}`;
   const patternId = `pattern-${item.id}`;
-    const renderFill = () => {
-      if (itemType === 'skin') {
-        const skin = item as Skin;
-        switch (skin.type) {
-          case 'gradient':
-            return `url(#${gradientId})`;
-          case 'pattern':
-            return `url(#${patternId})`;
-          case 'solid':
-          default:
-              return skin.colors[0];
-        }
-      } else if (itemType === 'trail') {
-          return `url(#${gradientId})`
+
+  const renderFill = () => {
+    if (itemType === 'skin') {
+      const skin = item as Skin;
+      switch (skin.type) {
+        case 'gradient':
+        case 'special':
+        case 'legendary':
+          return `url(#${gradientId})`;
+        case 'pattern':
+          return `url(#${patternId})`;
+        case 'solid':
+        default:
+          return skin.colors[0];
       }
-    };
+    } else {
+      return `url(#${gradientId})`
+    }
+  };
+
   return (
-    <Animated.View style={style}>
-      <Svg width="60" height="60" viewBox="0 0 40 40">
+    <Animated.View style={animatedStyle}>
+      <Svg width="70" height="70" viewBox="0 0 50 50">
         <Defs>
-          {itemType === 'skin' && (item as Skin).type === 'gradient' && (
-          (item as Skin).gradientDirection === 'radial' ? (
-            <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-              {item.colors.map((color, index) => (
-                <Stop key={index} offset={`${(index / (item.colors.length - 1)) * 100}%`} stopColor={color} />
-              ))}
-            </RadialGradient>
-          ) : (
-            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              {item.colors.map((color, index) => (
-                <Stop key={index} offset={`${(index / (item.colors.length - 1)) * 100}%`} stopColor={color} />
+          {itemType === 'skin' && ['gradient', 'special', 'legendary'].includes((item as Skin).type) && (
+            (item as Skin).gradientDirection === 'radial' ? (
+              <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
+                {item.colors.map((color, index) => (
+                  <Stop key={index} offset={`${(index / (item.colors.length - 1)) * 100}%`} stopColor={color} />
                 ))}
-            </LinearGradient>
+              </RadialGradient>
+            ) : (
+              <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                {item.colors.map((color, index) => (
+                  <Stop key={index} offset={`${(index / (item.colors.length - 1)) * 100}%`} stopColor={color} />
+                ))}
+              </LinearGradient>
             ))}
           {itemType === 'trail' && (
             <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -65,41 +89,96 @@ const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemT
               ))}
             </LinearGradient>
           )}
-          {itemType === 'skin' && (item as Skin).type === 'pattern' && (item as Skin).patternType === 'dots' && (
-            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="10" height="10">
-              <Rect width="10" height="10" fill={item.colors[0]} />
-              <Circle cx="5" cy="5" r="2" fill={item.colors[1]} />
-            </Pattern>
-          )}
-          {itemType === 'skin' && (item as Skin).type === 'pattern' && (item as Skin).patternType === 'stripes' && (
-            <Pattern id={patternId} patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-              <Rect width="10" height="10" fill={item.colors[0]} />
-              <Rect width="5" height="10" fill={item.colors[1]} />
-            </Pattern>
+          {itemType === 'skin' && (item as Skin).type === 'pattern' && (
+            <>
+              {(item as Skin).patternType === 'dots' && (
+                <Pattern id={patternId} patternUnits="userSpaceOnUse" width="12" height="12">
+                  <Rect width="12" height="12" fill={item.colors[0]} />
+                  <Circle cx="6" cy="6" r="3" fill={item.colors[1]} />
+                </Pattern>
+              )}
+              {(item as Skin).patternType === 'stripes' && (
+                <Pattern id={patternId} patternUnits="userSpaceOnUse" width="12" height="12" patternTransform="rotate(45)">
+                  <Rect width="12" height="12" fill={item.colors[0]} />
+                  <Rect width="6" height="12" fill={item.colors[1]} />
+                </Pattern>
+              )}
+              {(item as Skin).patternType === 'scales' && (
+                <Pattern id={patternId} patternUnits="userSpaceOnUse" width="15" height="15">
+                  <Rect width="15" height="15" fill={item.colors[0]} />
+                  <Circle cx="7.5" cy="4" r="4" fill={item.colors[1]} opacity="0.8" />
+                  <Circle cx="0" cy="11" r="4" fill={item.colors[1]} opacity="0.8" />
+                  <Circle cx="15" cy="11" r="4" fill={item.colors[1]} opacity="0.8" />
+                </Pattern>
+              )}
+              {(item as Skin).patternType === 'hearts' && (
+                <Pattern id={patternId} patternUnits="userSpaceOnUse" width="14" height="14">
+                  <Rect width="14" height="14" fill={item.colors[0]} />
+                  {/* Heart shape using Path */}
+                  <G transform="translate(7,4)">
+                    <Path 
+                      d="M0,3 C-3,0 -6,2 -3,6 L0,9 L3,6 C6,2 3,0 0,3 Z" 
+                      fill={item.colors[1]} 
+                      opacity="0.9"
+                      transform="scale(0.6)"
+                    />
+                  </G>
+                  <G transform="translate(2,10)">
+                    <Path 
+                      d="M0,3 C-3,0 -6,2 -3,6 L0,9 L3,6 C6,2 3,0 0,3 Z" 
+                      fill={item.colors[2]} 
+                      opacity="0.7"
+                      transform="scale(0.4)"
+                    />
+                  </G>
+                  <G transform="translate(12,8)">
+                    <Path 
+                      d="M0,3 C-3,0 -6,2 -3,6 L0,9 L3,6 C6,2 3,0 0,3 Z" 
+                      fill={item.colors[1]} 
+                      opacity="0.8"
+                      transform="scale(0.5)"
+                    />
+                  </G>
+                </Pattern>
+              )}
+            </>
           )}
         </Defs>
         {itemType === 'skin' ? (
-          <Circle cx="20" cy="20" r="16" fill={renderFill()} />
+          <Circle cx="25" cy="25" r="18" fill={renderFill()} stroke="#FFFFFF" strokeWidth="2" />
         ) : (
-          <Rect x="0" y="15" width="40" height="10" fill={renderFill()} />
+          <Rect x="5" y="20" width="40" height="10" rx="5" fill={renderFill()} />
         )}
       </Svg>
     </Animated.View>
   );
 };
+
 type TabValue = 'skins' | 'trails';
+
 const ShopScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
   const navigation = useNavigation<ShopScreenNavigationProp>();
   const paperTheme = useTheme();
   const [activeTab, setActiveTab] = useState<TabValue>('skins');
-  const { coins, skins, purchasedSkins, equippedSkin, trails, purchasedTrails, equippedTrail } = useAppSelector(
-    (state: RootState) => state.shop
-  );
+
+  const { 
+    coins, 
+    skins, 
+    purchasedSkins, 
+    equippedSkin, 
+    trails, 
+    purchasedTrails, 
+    equippedTrail,
+    playerLevel,
+    playerScore,
+    achievements 
+  } = useAppSelector((state: RootState) => state.shop);
+  
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const isDark = useAppSelector((state: RootState) => state.theme.isDark);
-  const windowWidth = Dimensions.get('window').width;
+
   const handleBuyItem = (item: Item, itemType: ItemType) => {
     if (itemType === 'skin') {
       dispatch(purchaseSkinAndSave(item.id));
@@ -107,6 +186,7 @@ const ShopScreen: React.FC = () => {
       dispatch(purchaseTrailAndSave(item.id));
     }
   };
+
   const handleEquipItem = (item: Item, itemType: ItemType) => {
     if (itemType === 'skin') {
       dispatch(equipSkinAndSave(item.id));
@@ -114,6 +194,7 @@ const ShopScreen: React.FC = () => {
       dispatch(equipTrailAndSave(item.id));
     }
   };
+
   const renderShopItem = (item: Item, itemType: ItemType) => {
     const isPurchased = itemType === 'skin'
       ? purchasedSkins.includes(item.id)
@@ -121,97 +202,127 @@ const ShopScreen: React.FC = () => {
     const isEquipped = itemType === 'skin'
       ? equippedSkin === item.id
       : equippedTrail === item.id;
+
+    const skin = itemType === 'skin' ? item as Skin : null;
+    const rarity = skin?.rarity || 'common';
+    const rarityColor = RARITY_COLORS[rarity];
+
     return (
-      <View style={[
-        styles.cardContainer,
-        {
-          borderColor: item.colors[0],
-          borderWidth: isEquipped ? 2 : 0
-        }
-      ]}>
-        <Card
-          style={[
-            styles.card,
-            {
-              backgroundColor: `${item.colors[0]}20`,
-            }
-          ]}
-          elevation={3}
-        >
-          <Card.Content style={styles.cardContent}>
-            <View style={[styles.swatchWrapper, { borderColor: item.colors[0] }]}>
-              <ItemPreview itemType={itemType} item={item} />
-            </View>
-            <View style={styles.itemInfo}>
+      <Card
+        style={[
+          styles.itemCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: isEquipped ? rarityColor : colors.outline,
+            borderWidth: isEquipped ? 2 : 1,
+          }
+        ]}
+        elevation={isEquipped ? 6 : 3}
+      >
+        <Card.Content style={styles.cardContent}>
+
+          {/* Item preview */}
+          <View style={[styles.previewContainer, { 
+            backgroundColor: colors.surfaceVariant,
+            borderColor: rarityColor,
+          }]}>
+            <ItemPreview itemType={itemType} item={item} />
+          </View>
+
+          {/* Item details */}
+          <View style={styles.itemDetails}>
+            <Text
+              style={[
+                styles.itemName,
+                { color: colors.onSurface }
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {item.name}
+            </Text>
+
+            {/* Description */}
+            {(skin?.description || (itemType === 'trail' && (item as Trail).description)) && (
               <Text
-                style={[
-                  styles.itemName,
-                  {
-                    color: itemType === 'skin' && (item as Skin).type === 'solid'
-                      ? item.colors[0]
-                      : colors.onSurface
-                  }
-                ]}
-                numberOfLines={1}
+                style={[styles.itemDescription, { color: colors.onSurfaceVariant }]}
+                numberOfLines={2}
                 ellipsizeMode="tail"
               >
-                {item.name}
+                {skin?.description || (item as Trail).description}
               </Text>
-              <View style={styles.costContainer}>
-                <FontAwesome5 name="coins" size={14} color="#FFD700" solid />
-                <Text
-                  style={[
-                    styles.itemCost,
-                    {
-                      color: colors.onSurfaceVariant,
-                      marginLeft: 4
-                    }
-                  ]}
-                >
-                  {item.cost}
-                </Text>
-              </View>
-            </View>
-            {isEquipped ? (
-              <Button
-                mode="contained"
-                buttonColor={item.colors[0]}
-                textColor="#fff"
-                disabled
-                style={styles.actionButton}
-                compact
-              >
-                Equipped
-              </Button>
-            ) : isPurchased ? (
-              <Button
-                mode="contained"
-                buttonColor={item.colors[0]}
-                textColor="#fff"
-                onPress={() => handleEquipItem(item, itemType)}
-                style={styles.actionButton}
-                compact
-              >
-                Equip
-              </Button>
-            ) : (
-              <Button
-                mode="contained"
-                buttonColor={item.colors[0]}
-                textColor="#fff"
-                disabled={coins < item.cost}
-                onPress={() => handleBuyItem(item, itemType)}
-                style={styles.actionButton}
-                compact
-              >
-                {coins >= item.cost ? 'Buy' : 'Not enough'}
-              </Button>
             )}
-          </Card.Content>
-        </Card>
-      </View>
+
+            {/* Cost */}
+            <View style={styles.costContainer}>
+              <MaterialCommunityIcons name="currency-usd" size={18} color="#F59E0B" />
+              <Text
+                style={[
+                  styles.itemCost,
+                  { color: colors.primary }
+                ]}
+              >
+                {item.cost.toLocaleString()}
+              </Text>
+            </View>
+          </View>
+
+          {/* Action button */}
+          {isEquipped ? (
+            <Button
+              mode="contained"
+              buttonColor={rarityColor}
+              textColor="#FFFFFF"
+              disabled
+              style={styles.actionButton}
+              icon="check-circle"
+              compact
+            >
+              Equipped
+            </Button>
+          ) : isPurchased ? (
+            <Button
+              mode="contained"
+              buttonColor={rarityColor}
+              textColor="#FFFFFF"
+              onPress={() => handleEquipItem(item, itemType)}
+              style={styles.actionButton}
+              icon="download"
+              compact
+            >
+              Equip
+            </Button>
+          ) : (
+            <Button
+              mode="contained"
+              buttonColor={coins >= item.cost ? rarityColor : colors.surfaceVariant}
+              textColor={coins >= item.cost ? "#FFFFFF" : colors.onSurfaceVariant}
+              disabled={coins < item.cost}
+              onPress={() => handleBuyItem(item, itemType)}
+              style={styles.actionButton}
+              icon={coins >= item.cost ? "cart" : "currency-usd"}
+              compact
+            >
+              {coins >= item.cost ? 'Buy' : 'Need more'}
+            </Button>
+          )}
+        </Card.Content>
+      </Card>
     );
   };
+
+  // Sort skins by rarity and cost
+  const sortedSkins = [...skins].sort((a, b) => {
+    const rarityOrder = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
+    const aRarity = rarityOrder[a.rarity || 'common'];
+    const bRarity = rarityOrder[b.rarity || 'common'];
+    
+    if (aRarity !== bRarity) {
+      return aRarity - bRarity;
+    }
+    return a.cost - b.cost;
+  });
+
   return (
     <SafeAreaView
       style={[
@@ -220,39 +331,48 @@ const ShopScreen: React.FC = () => {
       ]}
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      {}
+      <BannerAd />
+      
+      {/* Header */}
       <Appbar.Header style={{ backgroundColor: colors.surface, elevation: 4 }}>
-        <Appbar.Content title="Shop" />
-        <View style={[styles.coinsContainer, { backgroundColor: colors.surfaceVariant }]}>
-          <FontAwesome5 name="coins" size={20} color="#FFD700" solid />
-          <Text style={[styles.coinsText, { color: colors.primary }]}>{coins}</Text>
+        <Appbar.Content 
+          title="Shop" 
+          titleStyle={[styles.headerTitle, { color: colors.onSurface }]}
+        />
+        <View style={[styles.coinsContainer, { backgroundColor: colors.primaryContainer }]}>
+          <MaterialCommunityIcons name="currency-usd" size={20} color="#F59E0B" />
+          <Text style={[styles.coinsText, { color: colors.onPrimaryContainer }]}>
+            {coins.toLocaleString()}
+          </Text>
         </View>
       </Appbar.Header>
-      {}
-      <View style={[styles.tabContainer, { backgroundColor: colors.surface }]}>
+
+      {/* Tab selector */}
+      <Surface style={[styles.tabContainer, { backgroundColor: colors.surface }]} elevation={1}>
         <SegmentedButtons
           value={activeTab}
           onValueChange={setActiveTab as (value: string) => void}
           buttons={[
             {
               value: 'skins',
-              label: 'Skins',
+              label: 'Ball Skins',
               icon: 'palette',
             },
             {
               value: 'trails',
-              label: 'Trails',
+              label: 'Ball Trails',
               icon: 'motion',
             },
           ]}
           style={styles.segmentedButtons}
         />
-      </View>
-      {}
-      <View style={styles.tabContent}>
+      </Surface>
+      
+      {/* Content */}
+      <View style={styles.content}>
         {activeTab === 'skins' && (
           <FlatList
-            data={[...skins].sort((a, b) => a.cost - b.cost)}
+            data={sortedSkins}
             keyExtractor={item => item.id}
             numColumns={2}
             columnWrapperStyle={styles.row}
@@ -276,68 +396,67 @@ const ShopScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
   coinsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
     marginRight: 8,
   },
   coinsText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
+    fontWeight: '600',
+    marginLeft: 6,
   },
+
   tabContainer: {
-    padding: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-    elevation: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   segmentedButtons: {
     width: '100%',
   },
-  tabContent: {
+  content: {
     flex: 1,
     paddingTop: 8,
   },
   listContainer: {
-    paddingBottom: 20,
+    paddingBottom: 24,
     paddingHorizontal: 16,
   },
   row: {
     justifyContent: 'space-between',
   },
-  cardContainer: {
+  itemCard: {
     width: '48%',
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
   },
-  card: {
-    width: '100%',
-    borderRadius: 12,
-  },
   cardContent: {
+    padding: 12,
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
   },
-  swatchWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#fff',
-    elevation: 4,
+  previewContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 16,
     marginBottom: 12,
     borderWidth: 2,
   },
-  itemInfo: {
+  itemDetails: {
     alignItems: 'center',
     marginBottom: 12,
     width: '100%',
@@ -348,17 +467,26 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: 'center',
   },
+  itemDescription: {
+    fontSize: 11,
+    textAlign: 'center',
+    marginBottom: 6,
+    lineHeight: 14,
+  },
+  costContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
   itemCost: {
     fontSize: 14,
+    marginLeft: 4,
+    fontWeight: '600',
   },
   actionButton: {
     width: '100%',
     borderRadius: 8,
   },
-  costContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
 });
+
 export default ShopScreen;

@@ -1,19 +1,21 @@
 import React from 'react';
-import { View, StyleSheet, StyleProp, TextStyle, ViewStyle, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, StyleProp, TextStyle, ViewStyle, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Button, Card, Text } from 'react-native-paper';
 import { gameScreenStyles } from '@styles/GameScreenStyles';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppSelector, RootState } from '@store';
 import { ThemeColors } from '@types';
+import BannerAd from '@components/common/BannerAd';
+
 interface GameOverOverlayProps {
   score: number;
   bestScore: number;
   onPlayAgain: () => void;
   onExit: () => void;
   onWatchAd: () => void;
-  onContinuePlaying: () => void;
   isLoadingAd?: boolean;
 }
+
 interface ScoreRowProps {
   label: string;
   value: number;
@@ -22,6 +24,7 @@ interface ScoreRowProps {
   valueStyle: StyleProp<TextStyle>;
   showBadge: boolean;
 }
+
 const ScoreRow: React.FC<ScoreRowProps> = ({
   label,
   value,
@@ -40,53 +43,65 @@ const ScoreRow: React.FC<ScoreRowProps> = ({
     )}
   </View>
 );
+
 type IconName = 'refresh' | 'exit-to-app' | string;
+
 interface ActionButtonProps {
   mode: 'contained' | 'outlined';
   onPress: () => void;
   style: StyleProp<ViewStyle>;
   icon: IconName;
-  label: string;
   colors: ThemeColors;
-  labelColor: string;
+  iconColor: string;
+  size?: number;
 }
+
 const ActionButton: React.FC<ActionButtonProps> = ({
   mode,
   onPress,
   style,
   icon,
-  label,
   colors,
-  labelColor,
-}) => (
-  <Button
-    mode={mode}
-    icon={icon as any}
-    onPress={onPress}
-    buttonColor={mode === 'contained' ? colors.primary : undefined}
-    textColor={labelColor}
-    style={style}
-    contentStyle={styles.buttonContent}
-    labelStyle={styles.buttonLabel}
-  >
-    {label}
-  </Button>
-);
+  iconColor,
+  size = 28,
+}) => {
+  const backgroundColor = mode === 'contained' ? colors.primary : 'transparent';
+  
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.iconButton,
+        style,
+        { backgroundColor }
+      ]}
+      activeOpacity={0.7}
+    >
+      <MaterialCommunityIcons 
+        name={icon as any} 
+        size={size} 
+        color={iconColor} 
+      />
+    </TouchableOpacity>
+  );
+};
+
 const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
   score,
   bestScore,
   onPlayAgain,
   onExit,
   onWatchAd,
-  onContinuePlaying,
   isLoadingAd = false
 }) => {
   const handleWatchAd = () => {
     onWatchAd();
   };
+
   const colors = useAppSelector((state: RootState) => state.theme.colors);
   const hasUsedContinue = useAppSelector((state: RootState) => state.game.hasUsedContinue);
   const isNewHighScore = score > bestScore;
+
   return (
     <View style={styles.container}>
       <View style={styles.cardWrapper}>
@@ -95,6 +110,7 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
             <View style={[styles.cardHeader, { backgroundColor: colors.error }]}>
               <Text style={[styles.gameOverText, { color: colors.onError }]}>Game Over</Text>
             </View>
+            
             <View style={[styles.cardContent, { backgroundColor: colors.surface }]}>
               <View style={styles.scoreContainer}>
                 <ScoreRow
@@ -114,6 +130,14 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   showBadge={isNewHighScore}
                 />
               </View>
+
+              {/* Banner Ad for additional revenue - optimal placement */}
+              <View style={styles.adContainer}>
+                <BannerAd 
+                  style={styles.bannerAd}
+                />
+              </View>
+
               {!hasUsedContinue && (
                 <View style={styles.adButtonContainer}>
                   <Button
@@ -138,24 +162,23 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
                   </Button>
                 </View>
               )}
+
               <View style={styles.buttonContainer}>
                 <ActionButton
                   mode="contained"
                   onPress={onPlayAgain}
                   style={styles.playAgainButton}
                   icon="refresh"
-                  label="Restart"
                   colors={colors}
-                  labelColor={colors.onPrimary}
+                  iconColor={colors.onPrimary}
                 />
                 <ActionButton
                   mode="outlined"
                   onPress={onExit}
                   style={[styles.exitButton, { borderColor: colors.outline }]}
                   icon="exit-to-app"
-                  label="Exit"
                   colors={colors}
-                  labelColor={colors.error}
+                  iconColor={colors.error}
                 />
               </View>
             </View>
@@ -165,6 +188,7 @@ const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     ...gameScreenStyles.overlayBase,
@@ -246,25 +270,38 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
+  adContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingVertical: 8,
+  },
+  bannerAd: {
+    marginBottom: 0,
+  },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    alignItems: 'center',
     width: '100%',
     paddingHorizontal: 24,
     marginTop: 16,
+    gap: 24,
   },
   playAgainButton: {
-    flex: 1,
-    marginRight: 8,
-    borderRadius: 24,
-    height: 48,
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   exitButton: {
-    flex: 1,
-    marginLeft: 8,
-    borderRadius: 24,
+    borderRadius: 30,
     borderWidth: 2,
-    height: 48,
+    width: 60,
+    height: 60,
   },
   buttonContent: {
     height: 48,
@@ -284,5 +321,13 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     height: 52,
   },
+  iconButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
+
 export const GameOverOverlay = React.memo(GameOverOverlayComponent);

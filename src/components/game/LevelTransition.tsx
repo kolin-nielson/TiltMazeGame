@@ -4,12 +4,15 @@ import { Text } from 'react-native-paper';
 import { ThemeColors } from '@types';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppSelector } from '@store';
+import BannerAd from '@components/common/BannerAd';
+
 interface LevelTransitionProps {
   level: number;
   visible: boolean;
   onTransitionComplete: () => void;
   colors: ThemeColors;
 }
+
 const LevelTransition: React.FC<LevelTransitionProps> = ({
   level,
   visible,
@@ -19,12 +22,14 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.5)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
-  const bonusCoins = Math.floor(level * 1.5);
+  const bonusCoins = Math.floor(level * 3);
+
   useEffect(() => {
     if (visible) {
       opacity.setValue(0);
       scale.setValue(0.5);
       textOpacity.setValue(0);
+
       Animated.sequence([
         Animated.parallel([
           Animated.timing(opacity, {
@@ -63,7 +68,9 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
       });
     }
   }, [visible, opacity, scale, textOpacity, onTransitionComplete]);
+
   if (!visible) return null;
+
   return (
     <Animated.View
       style={[
@@ -94,6 +101,7 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
         >
           {level}
         </Animated.Text>
+        
         <View style={styles.contentContainer}>
           <Text style={[styles.levelCompleted, { color: colors?.onSurface }]}>
             Level {level} Completed!
@@ -101,7 +109,14 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
           <Text style={[styles.nextLevel, { color: colors?.onSurfaceVariant }]}>
             Get ready for level {level + 1}
           </Text>
-          {}
+          
+          {/* Banner Ad for additional revenue during transitions */}
+          <View style={styles.adContainer}>
+            <BannerAd 
+              style={styles.bannerAd}
+            />
+          </View>
+          
           <View style={styles.bonusContainer}>
             <Text style={[styles.bonusText, { color: colors?.onSurfaceVariant }]}>
               Bonus
@@ -118,6 +133,7 @@ const LevelTransition: React.FC<LevelTransitionProps> = ({
     </Animated.View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
@@ -151,6 +167,14 @@ const styles = StyleSheet.create({
   nextLevel: {
     fontSize: 16,
   },
+  adContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+    paddingVertical: 8,
+  },
+  bannerAd: {
+    marginBottom: 0,
+  },
   bonusContainer: {
     marginTop: 20,
     alignItems: 'center',
@@ -169,4 +193,5 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
+
 export default React.memo(LevelTransition);

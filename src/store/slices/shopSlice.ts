@@ -2,26 +2,34 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { GAME } from '@config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-export type GradientAnimationType = 'cycle' | 'pulse' | 'flow';
+
+export type GradientAnimationType = 'cycle' | 'pulse' | 'flow' | 'spin' | 'shimmer' | 'wave';
+
+export interface Skin {
+  id: string;
+  name: string;
+  cost: number;
+  type: 'solid' | 'gradient' | 'pattern' | 'special' | 'legendary';
+  colors: string[];
+  gradientDirection?: 'linear' | 'radial';
+  patternType?: 'stripes' | 'dots' | 'chevron' | 'hexagon' | 'scales' | 'marble' | 'hearts';
+  animated?: boolean;
+  gradientAnimationType?: GradientAnimationType;
+  gradientSpeed?: number;
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+  description?: string;
+  special?: boolean;
+}
+
 export interface Trail {
   id: string;
   name: string;
   cost: number;
   type: 'trail';
   colors: string[];
+  description?: string;
 }
-export interface Skin {
-  id: string;
-  name: string;
-  cost: number;
-  type: 'solid' | 'gradient' | 'pattern';
-  colors: string[];
-  gradientDirection?: 'linear' | 'radial';
-  patternType?: 'stripes' | 'dots';
-  animated?: boolean;
-  gradientAnimationType?: GradientAnimationType;
-  gradientSpeed?: number;
-}
+
 export interface ShopState {
   coins: number;
   skins: Skin[];
@@ -30,66 +38,490 @@ export interface ShopState {
   trails: Trail[];
   purchasedTrails: string[];
   equippedTrail: string;
+  playerLevel: number;
+  playerScore: number;
+  achievements: string[];
 }
+
 const initialSkins: Skin[] = [
-  { id: 'default', name: 'Classic Red', cost: 0, type: 'solid', colors: ['#E53935'] },
-  { id: 'blue-steel', name: 'Blue Steel', cost: 100, type: 'solid', colors: ['#1976D2'] },
-  { id: 'emerald', name: 'Emerald', cost: 100, type: 'solid', colors: ['#2E7D32'] },
-  { id: 'royal-purple', name: 'Royal Purple', cost: 100, type: 'solid', colors: ['#7B1FA2'] },
-  { id: 'sunset-orange', name: 'Sunset Orange', cost: 150, type: 'solid', colors: ['#F57C00'] },
-  { id: 'bubblegum', name: 'Bubblegum', cost: 150, type: 'solid', colors: ['#EC407A'] },
-  { id: 'lemon-drop', name: 'Lemon Drop', cost: 150, type: 'solid', colors: ['#FDD835'] },
-  { id: 'mint', name: 'Mint', cost: 200, type: 'solid', colors: ['#26A69A'] },
-  { id: 'lavender', name: 'Lavender', cost: 200, type: 'solid', colors: ['#9575CD'] },
-  { id: 'charcoal', name: 'Charcoal', cost: 250, type: 'solid', colors: ['#37474F'] },
-  { id: 'rose-gold', name: 'Rose Gold', cost: 300, type: 'solid', colors: ['#D1A3A4'] },
-  { id: 'ocean-wave', name: 'Ocean Wave', cost: 350, type: 'gradient', colors: ['#00C9FF', '#92FE9D'], gradientDirection: 'linear' },
-  { id: 'sunset-gradient', name: 'Sunset Horizon', cost: 400, type: 'gradient', colors: ['#FF7E5F', '#FEB47B'], gradientDirection: 'linear' },
-  { id: 'blueberry-blast', name: 'Blueberry Blast', cost: 450, type: 'gradient', colors: ['#4A00E0', '#8E2DE2'], gradientDirection: 'linear' },
-  { id: 'cotton-candy', name: 'Cotton Candy', cost: 500, type: 'gradient', colors: ['#FF9A9E', '#FECFEF'], gradientDirection: 'radial' },
-  { id: 'forest-depths', name: 'Forest Depths', cost: 550, type: 'gradient', colors: ['#004D40', '#1DE9B6'], gradientDirection: 'radial' },
-  { id: 'amber-glow', name: 'Amber Glow', cost: 600, type: 'gradient', colors: ['#FF6F00', '#FFCA28'], gradientDirection: 'radial' },
-  { id: 'twilight', name: 'Twilight', cost: 650, type: 'gradient', colors: ['#141E30', '#243B55'], gradientDirection: 'linear' },
-  { id: 'cherry-blossom', name: 'Cherry Blossom', cost: 700, type: 'gradient', colors: ['#F78CA0', '#F9748F', '#FD868C'], gradientDirection: 'radial' },
-  { id: 'cyber-dots', name: 'Cyber Dots', cost: 750, type: 'pattern', colors: ['#0A0A0A', '#00E5FF'], patternType: 'dots' },
-  { id: 'zebra', name: 'Zebra', cost: 800, type: 'pattern', colors: ['#FFFFFF', '#333333'], patternType: 'stripes' },
-  { id: 'leopard', name: 'Leopard', cost: 850, type: 'pattern', colors: ['#F9A825', '#3E2723'], patternType: 'dots' },
-  { id: 'checkerboard', name: 'Checkerboard', cost: 900, type: 'pattern', colors: ['#FFFFFF', '#000000'], patternType: 'stripes' },
-  { id: 'polka-party', name: 'Polka Party', cost: 950, type: 'pattern', colors: ['#E91E63', '#FFFFFF'], patternType: 'dots' },
-  { id: 'racing-stripes', name: 'Racing Stripes', cost: 1000, type: 'pattern', colors: ['#F44336', '#212121'], patternType: 'stripes' },
-  { id: 'camo', name: 'Camo', cost: 1100, type: 'pattern', colors: ['#4CAF50', '#1B5E20', '#8BC34A'], patternType: 'dots' },
-  { id: 'confetti', name: 'Confetti', cost: 1200, type: 'pattern', colors: ['#FFFFFF', '#FF4081', '#2196F3', '#FFEB3B', '#4CAF50'], patternType: 'dots' },
-  { id: 'lava-flow', name: 'Lava Flow', cost: 1300, type: 'gradient', colors: ['#FF3D00', '#FF7E5F', '#FEB47B'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
-  { id: 'ocean-pulse', name: 'Ocean Pulse', cost: 1400, type: 'gradient', colors: ['#00B4DB', '#0083B0', '#00B4DB'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'pulse', gradientSpeed: 0.8 },
-  { id: 'toxic-slime', name: 'Toxic Slime', cost: 1500, type: 'gradient', colors: ['#76FF03', '#64DD17', '#33691E'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 0.7 },
-  { id: 'electric-surge', name: 'Electric Surge', cost: 1600, type: 'gradient', colors: ['#64B5F6', '#0D47A1', '#00BCD4', '#006064'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'flow', gradientSpeed: 0.75 },
-  { id: 'mystic-aura', name: 'Mystic Aura', cost: 1700, type: 'gradient', colors: ['#9C27B0', '#311B92', '#7B1FA2', '#6A1B9A'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'pulse', gradientSpeed: 0.5 },
-  { id: 'neon-glow', name: 'Neon Glow', cost: 1800, type: 'gradient', colors: ['#FF00FF', '#00FFFF'], gradientDirection: 'linear', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
-  { id: 'galaxy-swirl', name: 'Galaxy Swirl', cost: 1900, type: 'gradient', colors: ['#0D1B2A', '#1B263B', '#415A77', '#778DA9', '#E0E1DD'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'flow', gradientSpeed: 0.5 },
-  { id: 'rainbow-swirl', name: 'Rainbow Swirl', cost: 2000, type: 'gradient', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1 },
-  { id: 'molten-gold', name: 'Molten Gold', cost: 2500, type: 'gradient', colors: ['#FFD700', '#FFA000', '#FF6F00'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'pulse', gradientSpeed: 0.6 },
-  { id: 'diamond-frost', name: 'Diamond Frost', cost: 3000, type: 'gradient', colors: ['#E0F7FA', '#B2EBF2', '#80DEEA', '#4DD0E1', '#26C6DA'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'pulse', gradientSpeed: 0.4 },
-  { id: 'plasma-core', name: 'Plasma Core', cost: 3500, type: 'gradient', colors: ['#FF1744', '#F50057', '#D500F9', '#651FFF', '#3D5AFE'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1.2 },
-  { id: 'hypnotic', name: 'Hypnotic', cost: 4000, type: 'gradient', colors: ['#000000', '#FFFFFF'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'cycle', gradientSpeed: 1.5 },
-  { id: 'nebula', name: 'Nebula', cost: 5000, type: 'gradient', colors: ['#FF00CC', '#333399', '#FF00CC', '#333399'], gradientDirection: 'radial', animated: true, gradientAnimationType: 'flow', gradientSpeed: 0.8 },
+  // Free/Basic Tier
+  { 
+    id: 'default', 
+    name: 'Classic Red', 
+    cost: 0, 
+    type: 'solid', 
+    colors: ['#EF4444'], 
+    rarity: 'common',
+    description: 'The classic maze ball - reliable and timeless.'
+  },
+  
+  // Common Skins (25-75 coins) - Much more affordable!
+  { 
+    id: 'ocean-blue', 
+    name: 'Ocean Blue', 
+    cost: 25, 
+    type: 'solid', 
+    colors: ['#0EA5E9'], 
+    rarity: 'common',
+    description: 'Deep as the ocean depths.'
+  },
+  { 
+    id: 'forest-green', 
+    name: 'Forest Green', 
+    cost: 30, 
+    type: 'solid', 
+    colors: ['#10B981'], 
+    rarity: 'common',
+    description: 'Fresh as morning forest air.'
+  },
+  { 
+    id: 'royal-purple', 
+    name: 'Royal Purple', 
+    cost: 35, 
+    type: 'solid', 
+    colors: ['#8B5CF6'], 
+    rarity: 'common',
+    description: 'Fit for digital royalty.'
+  },
+  { 
+    id: 'sunset-orange', 
+    name: 'Sunset Orange', 
+    cost: 40, 
+    type: 'solid', 
+    colors: ['#FB923C'], 
+    rarity: 'common',
+    description: 'Warm as a summer sunset.'
+  },
+  { 
+    id: 'bubblegum-pink', 
+    name: 'Bubblegum Pink', 
+    cost: 45, 
+    type: 'solid', 
+    colors: ['#F472B6'], 
+    rarity: 'common',
+    description: 'Sweet and playful.'
+  },
+  { 
+    id: 'cyber-yellow', 
+    name: 'Cyber Yellow', 
+    cost: 50, 
+    type: 'solid', 
+    colors: ['#FACC15'], 
+    rarity: 'common',
+    description: 'Electric energy incarnate.'
+  },
+  { 
+    id: 'midnight-black', 
+    name: 'Midnight Black', 
+    cost: 60, 
+    type: 'solid', 
+    colors: ['#1F2937'], 
+    rarity: 'common',
+    description: 'Dark as the void itself.'
+  },
+  { 
+    id: 'snow-white', 
+    name: 'Snow White', 
+    cost: 75, 
+    type: 'solid', 
+    colors: ['#F8FAFC'], 
+    rarity: 'common',
+    description: 'Pure as fresh snow.'
+  },
+
+  // Rare Gradients (100-300 coins) - Beautiful and achievable
+  { 
+    id: 'fire-storm', 
+    name: 'Fire Storm', 
+    cost: 100, 
+    type: 'gradient', 
+    colors: ['#FF4500', '#FF6B35', '#FF8E3C'], 
+    gradientDirection: 'linear',
+    rarity: 'rare',
+    description: 'Blazing hot with fiery intensity.'
+  },
+  { 
+    id: 'ocean-wave', 
+    name: 'Ocean Wave', 
+    cost: 120, 
+    type: 'gradient', 
+    colors: ['#0891B2', '#06B6D4', '#22D3EE'], 
+    gradientDirection: 'linear',
+    rarity: 'rare',
+    description: 'Ride the waves of the digital ocean.'
+  },
+  { 
+    id: 'aurora-dream', 
+    name: 'Aurora Dream', 
+    cost: 150, 
+    type: 'gradient', 
+    colors: ['#8B5CF6', '#A78BFA', '#C4B5FD'], 
+    gradientDirection: 'radial',
+    rarity: 'rare',
+    description: 'Dancing lights of the aurora borealis.'
+  },
+  { 
+    id: 'golden-hour', 
+    name: 'Golden Hour', 
+    cost: 180, 
+    type: 'gradient', 
+    colors: ['#F59E0B', '#FBBF24', '#FDE047'], 
+    gradientDirection: 'linear',
+    rarity: 'rare',
+    description: 'Captured beauty of sunset\'s magic hour.'
+  },
+  { 
+    id: 'emerald-valley', 
+    name: 'Emerald Valley', 
+    cost: 200, 
+    type: 'gradient', 
+    colors: ['#059669', '#10B981', '#34D399'], 
+    gradientDirection: 'radial',
+    rarity: 'rare',
+    description: 'Lush greens of an untouched valley.'
+  },
+  { 
+    id: 'cherry-blossom', 
+    name: 'Cherry Blossom', 
+    cost: 220, 
+    type: 'gradient', 
+    colors: ['#EC4899', '#F472B6', '#FBCFE8'], 
+    gradientDirection: 'linear',
+    rarity: 'rare',
+    description: 'Delicate beauty of spring blossoms.'
+  },
+  { 
+    id: 'livie-pink', 
+    name: 'Livie Pink', 
+    cost: 275, 
+    type: 'pattern', 
+    colors: ['#FFE4E1', '#FF69B4', '#FFC0CB'], 
+    patternType: 'hearts',
+    animated: true,
+    gradientAnimationType: 'pulse',
+    gradientSpeed: 1.2,
+    rarity: 'rare',
+    description: '💖 A magical pink with floating animated hearts - absolutely unique and amazing!'
+  },
+  { 
+    id: 'neon-nights', 
+    name: 'Neon Nights', 
+    cost: 250, 
+    type: 'gradient', 
+    colors: ['#7C3AED', '#A855F7', '#C084FC'], 
+    gradientDirection: 'linear',
+    animated: true,
+    gradientAnimationType: 'cycle',
+    gradientSpeed: 1.0,
+    rarity: 'rare',
+    description: 'Pulsing with electric nightlife energy.'
+  },
+  { 
+    id: 'frost-bite', 
+    name: 'Frost Bite', 
+    cost: 300, 
+    type: 'gradient', 
+    colors: ['#0EA5E9', '#38BDF8', '#E0F2FE'], 
+    gradientDirection: 'radial',
+    animated: true,
+    gradientAnimationType: 'pulse',
+    gradientSpeed: 0.8,
+    rarity: 'rare',
+    description: 'Crystalline cold with icy sparkles.'
+  },
+
+  // Epic Skins (400-800 coins) - Special effects and patterns
+  { 
+    id: 'dragon-scales', 
+    name: 'Dragon Scales', 
+    cost: 400, 
+    type: 'pattern', 
+    colors: ['#DC2626', '#F59E0B', '#FF6B35'], 
+    patternType: 'scales',
+    rarity: 'epic',
+    description: 'Forged from the scales of an ancient fire dragon.'
+  },
+  { 
+    id: 'cosmic-void', 
+    name: 'Cosmic Void', 
+    cost: 500, 
+    type: 'gradient', 
+    colors: ['#1E1B4B', '#3730A3', '#6366F1', '#8B5CF6'], 
+    gradientDirection: 'radial',
+    animated: true,
+    gradientAnimationType: 'pulse',
+    gradientSpeed: 0.6,
+    rarity: 'epic',
+    description: 'Harness the infinite power of deep space.'
+  },
+  { 
+    id: 'rainbow-prism', 
+    name: 'Rainbow Prism', 
+    cost: 600, 
+    type: 'gradient', 
+    colors: ['#EF4444', '#F97316', '#FACC15', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899'], 
+    gradientDirection: 'linear',
+    animated: true,
+    gradientAnimationType: 'cycle',
+    gradientSpeed: 1.2,
+    rarity: 'epic',
+    description: 'All colors of light dancing in harmony.'
+  },
+  { 
+    id: 'molten-core', 
+    name: 'Molten Core', 
+    cost: 700, 
+    type: 'gradient', 
+    colors: ['#7F1D1D', '#DC2626', '#F97316', '#FACC15'], 
+    gradientDirection: 'radial',
+    animated: true,
+    gradientAnimationType: 'shimmer',
+    gradientSpeed: 1.5,
+    rarity: 'epic',
+    description: 'Burning with the heat of a planet\'s core.'
+  },
+  { 
+    id: 'ethereal-mist', 
+    name: 'Ethereal Mist', 
+    cost: 800, 
+    type: 'gradient', 
+    colors: ['#F8FAFC', '#E2E8F0', '#CBD5E1', '#94A3B8'], 
+    gradientDirection: 'linear',
+    animated: true,
+    gradientAnimationType: 'wave',
+    gradientSpeed: 0.5,
+    rarity: 'epic',
+    description: 'Ghostly mist from another dimension.'
+  },
+
+  // Legendary Skins (1000-2000 coins) - Ultimate prestige
+  { 
+    id: 'phoenix-reborn', 
+    name: 'Phoenix Reborn', 
+    cost: 1000, 
+    type: 'special', 
+    colors: ['#FFFFFF', '#FACC15', '#F97316', '#DC2626'], 
+    gradientDirection: 'radial',
+    animated: true,
+    gradientAnimationType: 'shimmer',
+    gradientSpeed: 2.0,
+    rarity: 'legendary',
+    description: 'Rise from the ashes with blazing magnificence.',
+    special: true
+  },
+  { 
+    id: 'galaxy-core', 
+    name: 'Galaxy Core', 
+    cost: 1200, 
+    type: 'special', 
+    colors: ['#0F172A', '#1E293B', '#475569', '#E2E8F0', '#FFFFFF'], 
+    gradientDirection: 'radial',
+    animated: true,
+    gradientAnimationType: 'spin',
+    gradientSpeed: 0.7,
+    rarity: 'legendary',
+    description: 'Contains the swirling essence of a galactic center.',
+    special: true
+  },
+  { 
+    id: 'time-fracture', 
+    name: 'Time Fracture', 
+    cost: 1500, 
+    type: 'special', 
+    colors: ['#EC4899', '#06B6D4', '#FACC15', '#8B5CF6'], 
+    gradientDirection: 'linear',
+    animated: true,
+    gradientAnimationType: 'cycle',
+    gradientSpeed: 2.5,
+    rarity: 'legendary',
+    description: 'Bend space and time with reality-warping power.',
+    special: true
+  },
+
+  // Mythic Skins (2500-5000 coins) - Ultimate achievement
+  { 
+    id: 'eternal-flame', 
+    name: 'Eternal Flame', 
+    cost: 2500, 
+    type: 'legendary', 
+    colors: ['#FFFFFF', '#FACC15', '#F97316', '#DC2626', '#7C2D12', '#451A03'], 
+    gradientDirection: 'radial',
+    animated: true,
+    gradientAnimationType: 'shimmer',
+    gradientSpeed: 1.8,
+    rarity: 'mythic',
+    description: 'The undying flame that burns at the heart of all creation.',
+    special: true
+  },
+  { 
+    id: 'void-walker', 
+    name: 'Void Walker', 
+    cost: 3000, 
+    type: 'legendary', 
+    colors: ['#000000', '#1F2937', '#374151', '#6B7280', '#D1D5DB', '#FFFFFF'], 
+    gradientDirection: 'radial',
+    animated: true,
+    gradientAnimationType: 'pulse',
+    gradientSpeed: 1.0,
+    rarity: 'mythic',
+    description: 'Master of shadows, walker between dimensions.',
+    special: true
+  },
+  { 
+    id: 'rainbow-infinity', 
+    name: 'Rainbow Infinity', 
+    cost: 4000, 
+    type: 'legendary', 
+    colors: ['#EF4444', '#F97316', '#FACC15', '#22C55E', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'], 
+    gradientDirection: 'linear',
+    animated: true,
+    gradientAnimationType: 'cycle',
+    gradientSpeed: 1.5,
+    rarity: 'mythic',
+    description: 'All colors of existence flowing in perfect harmony.',
+    special: true
+  },
+
+  // Secret/Ultimate Skin
+  { 
+    id: 'developers-choice', 
+    name: "Developer's Secret", 
+    cost: 5000, 
+    type: 'legendary', 
+    colors: ['#F472B6', '#22C55E', '#EC4899', '#06B6D4', '#FACC15'], 
+    gradientDirection: 'radial',
+    animated: true,
+    gradientAnimationType: 'spin',
+    gradientSpeed: 2.5,
+    rarity: 'mythic',
+    description: 'A hidden treasure from the game creators themselves.',
+    special: true
+  },
 ];
+
 const initialTrails: Trail[] = [
-  { id: 'shadow-fade', name: 'Shadow Fade', cost: 500, type: 'trail', colors: ['#000000', '#808080']},
-  { id: 'ruby-trail', name: 'Ruby Trail', cost: 600, type: 'trail', colors: ['#D32F2F', '#B71C1C']},
-  { id: 'sapphire-stream', name: 'Sapphire Stream', cost: 700, type: 'trail', colors: ['#1976D2', '#0D47A1']},
-  { id: 'emerald-path', name: 'Emerald Path', cost: 800, type: 'trail', colors: ['#2E7D32', '#1B5E20']},
-  { id: 'golden-wake', name: 'Golden Wake', cost: 900, type: 'trail', colors: ['#FFC107', '#FF6F00']},
-  { id: 'magma', name: 'Magma Flow', cost: 1000, type: 'trail', colors: ['#FF5722', '#FF9800', '#DD2C00', '#BF360C']},
-  { id: 'neon-stream', name: 'Neon Stream', cost: 1100, type: 'trail', colors: ['#00FFFF', '#FF00FF']},
-  { id: 'comet-tail', name: 'Comet Tail', cost: 1200, type: 'trail', colors: ['#FFFFFF', '#FFCC00']},
-  { id: 'aurora-borealis', name: 'Aurora Borealis', cost: 1500, type: 'trail', colors: ['#004D40', '#00796B', '#009688', '#00BFA5']},
-  { id: 'rainbow-burst', name: 'Rainbow Burst', cost: 1800, type: 'trail', colors: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF']},
-  { id: 'cosmic-dust', name: 'Cosmic Dust', cost: 2000, type: 'trail', colors: ['#311B92', '#6A1B9A', '#8E24AA', '#D500F9']},
-  { id: 'phoenix-flame', name: 'Phoenix Flame', cost: 2500, type: 'trail', colors: ['#FF6D00', '#FFAB00', '#FF3D00', '#DD2C00']},
-  { id: 'diamond-dust', name: 'Diamond Dust', cost: 3000, type: 'trail', colors: ['#E0F7FA', '#B2EBF2', '#80DEEA', '#4DD0E1', '#26C6DA']},
-  { id: 'void-rift', name: 'Void Rift', cost: 4000, type: 'trail', colors: ['#000000', '#212121', '#000000', '#424242']},
-  { id: 'prismatic-wake', name: 'Prismatic Wake', cost: 5000, type: 'trail', colors: ['#F44336', '#2196F3', '#FFEB3B', '#4CAF50', '#9C27B0', '#FF9800']}
+  // Basic Trails (50-150 coins)
+  { 
+    id: 'shadow-fade', 
+    name: 'Shadow Fade', 
+    cost: 50, 
+    type: 'trail', 
+    colors: ['#374151', '#6B7280', '#9CA3AF']
+  },
+  { 
+    id: 'ruby-trail', 
+    name: 'Ruby Trail', 
+    cost: 75, 
+    type: 'trail', 
+    colors: ['#DC2626', '#EF4444', '#F87171']
+  },
+  { 
+    id: 'sapphire-stream', 
+    name: 'Sapphire Stream', 
+    cost: 100, 
+    type: 'trail', 
+    colors: ['#1D4ED8', '#3B82F6', '#60A5FA']
+  },
+  { 
+    id: 'emerald-path', 
+    name: 'Emerald Path', 
+    cost: 125, 
+    type: 'trail', 
+    colors: ['#059669', '#10B981', '#34D399']
+  },
+  { 
+    id: 'golden-wake', 
+    name: 'Golden Wake', 
+    cost: 150, 
+    type: 'trail', 
+    colors: ['#D97706', '#F59E0B', '#FBBF24']
+  },
+
+  // Premium Trails (200-400 coins)
+  { 
+    id: 'magma-flow', 
+    name: 'Magma Flow', 
+    cost: 200, 
+    type: 'trail', 
+    colors: ['#7F1D1D', '#DC2626', '#F97316', '#FACC15']
+  },
+  { 
+    id: 'neon-stream', 
+    name: 'Neon Stream', 
+    cost: 250, 
+    type: 'trail', 
+    colors: ['#7C3AED', '#A855F7', '#C084FC']
+  },
+  { 
+    id: 'comet-tail', 
+    name: 'Comet Tail', 
+    cost: 300, 
+    type: 'trail', 
+    colors: ['#F8FAFC', '#E2E8F0', '#FACC15', '#F97316']
+  },
+  { 
+    id: 'livvie-love', 
+    name: 'Livvie Love', 
+    cost: 275, 
+    type: 'trail', 
+    colors: ['#FF69B4', '#FFB6C1', '#FFC0CB', '#FFE4E1', '#FFFFFF'],
+    description: '💖 Hearts floating in the air - spreading love and magic wherever you go! Perfectly matches Livie Pink!'
+  },
+  { 
+    id: 'aurora-borealis', 
+    name: 'Aurora Borealis', 
+    cost: 350, 
+    type: 'trail', 
+    colors: ['#059669', '#06B6D4', '#8B5CF6', '#EC4899']
+  },
+  { 
+    id: 'rainbow-burst', 
+    name: 'Rainbow Burst', 
+    cost: 400, 
+    type: 'trail', 
+    colors: ['#EF4444', '#F97316', '#FACC15', '#22C55E', '#3B82F6', '#8B5CF6'],
+    description: '🌈 A spectacular burst of all colors following your every move!'
+  },
+
+  // Elite Trails (500-800 coins)
+  { 
+    id: 'cosmic-dust', 
+    name: 'Cosmic Dust', 
+    cost: 500, 
+    type: 'trail', 
+    colors: ['#1E1B4B', '#3730A3', '#6366F1', '#A855F7']
+  },
+  { 
+    id: 'phoenix-flame', 
+    name: 'Phoenix Flame', 
+    cost: 600, 
+    type: 'trail', 
+    colors: ['#FFFFFF', '#FACC15', '#F97316', '#DC2626'],
+    description: '🔥 Rising from the ashes with magnificent fiery wings!'
+  },
+  { 
+    id: 'diamond-dust', 
+    name: 'Diamond Dust', 
+    cost: 700, 
+    type: 'trail', 
+    colors: ['#F8FAFC', '#E2E8F0', '#06B6D4', '#0EA5E9']
+  },
+  { 
+    id: 'void-rift', 
+    name: 'Void Rift', 
+    cost: 750, 
+    type: 'trail', 
+    colors: ['#000000', '#1F2937', '#374151', '#6B7280']
+  },
+  { 
+    id: 'prismatic-wake', 
+    name: 'Prismatic Wake', 
+    cost: 800, 
+    type: 'trail', 
+    colors: ['#EF4444', '#3B82F6', '#FACC15', '#22C55E', '#8B5CF6', '#F97316']
+  }
 ];
+
 const initialState: ShopState = {
   coins: 0,
   skins: initialSkins,
@@ -98,7 +530,11 @@ const initialState: ShopState = {
   trails: initialTrails,
   purchasedTrails: [],
   equippedTrail: '',
+  playerLevel: 1,
+  playerScore: 0,
+  achievements: [],
 };
+
 export const resetShopData = createAsyncThunk(
   'shop/resetShopData',
   async (_, { rejectWithValue }) => {
@@ -109,6 +545,7 @@ export const resetShopData = createAsyncThunk(
     }
   }
 );
+
 export const loadShopData = createAsyncThunk(
   'shop/loadShopData',
   async (_, { rejectWithValue }) => {
@@ -123,6 +560,7 @@ export const loadShopData = createAsyncThunk(
     }
   }
 );
+
 export const saveShopData = createAsyncThunk(
   'shop/saveShopData',
   async (_, { getState, rejectWithValue }) => {
@@ -136,6 +574,7 @@ export const saveShopData = createAsyncThunk(
     }
   }
 );
+
 const shopSlice = createSlice({
   name: 'shop',
   initialState,
@@ -196,27 +635,34 @@ const shopSlice = createSlice({
       });
   },
 });
+
 export const { collectCoin, purchaseSkin, equipSkin, purchaseTrail, equipTrail } = shopSlice.actions;
+
 export const collectCoinAndSave = () => (dispatch: any) => {
   dispatch(collectCoin());
   setTimeout(() => {
     dispatch(saveShopData());
   }, 0);
 };
+
 export const purchaseSkinAndSave = (skinId: string) => (dispatch: any) => {
   dispatch(purchaseSkin(skinId));
   dispatch(saveShopData());
 };
+
 export const equipSkinAndSave = (skinId: string) => (dispatch: any) => {
   dispatch(equipSkin(skinId));
   dispatch(saveShopData());
 };
+
 export const purchaseTrailAndSave = (trailId: string) => (dispatch: any) => {
   dispatch(purchaseTrail(trailId));
   dispatch(saveShopData());
 };
+
 export const equipTrailAndSave = (trailId: string) => (dispatch: any) => {
   dispatch(equipTrail(trailId));
   dispatch(saveShopData());
 };
+
 export default shopSlice.reducer;

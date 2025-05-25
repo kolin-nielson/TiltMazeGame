@@ -7,25 +7,47 @@ import { Maze, LaserGate, Wall, Coin } from '../types';
 import { useAppDispatch } from '@store';
 import { collectCoinAndSave } from '@store/slices/shopSlice';
 import { collectCoin as mazeCollectCoin } from '@store/slices/mazeSlice';
+import { PHYSICS_CONFIG } from '@config/performance';
 
-const BALL_RADIUS = 7;
-const BALL_DENSITY = 0.12; 
+// Anti-tunneling utility functions
+const calculateDynamicMaxSpeed = (sensitivity: number): number => {
+  return Math.max(
+    PHYSICS_CONFIG.MIN_MAX_SPEED,
+    Math.min(
+      PHYSICS_CONFIG.MAX_MAX_SPEED,
+      PHYSICS_CONFIG.BASE_MAX_SPEED - (sensitivity - 1.0) * PHYSICS_CONFIG.SENSITIVITY_SPEED_FACTOR * PHYSICS_CONFIG.BASE_MAX_SPEED
+    )
+  );
+};
+
+// Use performance-optimized constants
+const BALL_RADIUS = PHYSICS_CONFIG.BALL_RADIUS;
+const BALL_DENSITY = PHYSICS_CONFIG.BALL_DENSITY; 
 const BALL_FRICTION_AIR = 0.025; 
-const BALL_RESTITUTION = 0.25; 
-const BALL_FRICTION = 0.015; 
+const BALL_RESTITUTION = PHYSICS_CONFIG.BALL_RESTITUTION; 
+const BALL_FRICTION = PHYSICS_CONFIG.BALL_FRICTION; 
 const BALL_FRICTION_STATIC = 0.12; 
 const WALL_FRICTION = 0.12; 
 const WALL_RESTITUTION = 0.08; 
-const GRAVITY_SCALE_MULTIPLIER = 0.018; 
-const PHYSICS_TIME_STEP = 1000 / 60;
+const GRAVITY_SCALE_MULTIPLIER = PHYSICS_CONFIG.GRAVITY_SCALE_MULTIPLIER; 
+const PHYSICS_TIME_STEP = 1000 / PHYSICS_CONFIG.PHYSICS_FPS;
 
-// Physics constants with better balance between collision handling and responsiveness
-const MAX_BALL_SPEED = 15; // Higher speed cap for more responsive movement
-const COLLISION_ITERATIONS = 6; // Balanced collision resolution iterations
-const POSITION_ITERATIONS = 4; // Optimized position solving iterations
-const VELOCITY_ITERATIONS = 6; // Optimized velocity solving iterations
-const WALL_BUFFER = 0.5; // Reduced buffer for better movement while still preventing tunneling
-const CORRECTION_FACTOR = 0.6; // Increased position correction factor 
+// Anti-tunneling physics constants
+const BASE_MAX_SPEED = PHYSICS_CONFIG.BASE_MAX_SPEED;
+const MIN_MAX_SPEED = PHYSICS_CONFIG.MIN_MAX_SPEED;
+const MAX_MAX_SPEED = PHYSICS_CONFIG.MAX_MAX_SPEED;
+const SENSITIVITY_SPEED_FACTOR = PHYSICS_CONFIG.SENSITIVITY_SPEED_FACTOR;
+const COLLISION_ITERATIONS = PHYSICS_CONFIG.CONSTRAINT_ITERATIONS;
+const POSITION_ITERATIONS = PHYSICS_CONFIG.POSITION_ITERATIONS;
+const VELOCITY_ITERATIONS = PHYSICS_CONFIG.VELOCITY_ITERATIONS;
+const WALL_BUFFER = PHYSICS_CONFIG.WALL_BUFFER;
+const ADDITIONAL_WALL_BUFFER = PHYSICS_CONFIG.ADDITIONAL_WALL_BUFFER;
+const MIN_WALL_THICKNESS = PHYSICS_CONFIG.MIN_WALL_THICKNESS;
+const HIGH_SPEED_PHYSICS_STEPS = PHYSICS_CONFIG.HIGH_SPEED_PHYSICS_STEPS;
+const SPEED_THRESHOLD_FOR_EXTRA_STEPS = PHYSICS_CONFIG.SPEED_THRESHOLD_FOR_EXTRA_STEPS;
+const MAX_DELTA_TIME = PHYSICS_CONFIG.MAX_DELTA_TIME;
+const COLLISION_SLOP = PHYSICS_CONFIG.COLLISION_SLOP;
+const CORRECTION_FACTOR = 0.6;
 
 export interface PhysicsOptions {
   width: number;
@@ -78,6 +100,114 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
   const ballPositionX = useSharedValue(maze?.startPosition.x ?? 0);
   const ballPositionY = useSharedValue(maze?.startPosition.y ?? 0);
 
+  // Optimized physics update loop with better performance - OUTSIDE useEffect
+  const tick = useCallback(() => {
+    if (!engineRef.current || !ballRef.current) return;
+
+    const currentTime = Date.now();
+    const deltaTime = currentTime - lastTimeRef.current;
+    
+    // Use much smaller fixed timestep for consistent physics
+    const clampedDelta = Math.min(deltaTime, MAX_DELTA_TIME);
+    
+    // Calculate dynamic max speed based on sensitivity using utility function
+    const dynamicMaxSpeed = calculateDynamicMaxSpeed(sensitivity);
+    
+    // Check current ball speed for anti-tunneling measures
+    const velocity = ballRef.current.velocity;
+    const currentSpeed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+    
+    // Much more aggressive physics stepping - always use multiple steps for any movement
+    const basePhysicsSteps = 2; // Always use at least 2 steps
+    const extraSteps = currentSpeed > SPEED_THRESHOLD_FOR_EXTRA_STEPS ? HIGH_SPEED_PHYSICS_STEPS : 0;
+    const physicsSteps = basePhysicsSteps + extraSteps;
+    const stepDelta = clampedDelta / physicsSteps;
+    
+    // Store previous position for continuous collision detection
+    const prevPosition = { x: ballRef.current.position.x, y: ballRef.current.position.y };
+    
+    // Run multiple physics updates with aggressive collision checking
+    for (let i = 0; i < physicsSteps; i++) {
+      if (!ballRef.current) break;
+      
+      // Store position before physics step
+      const beforeStep = { x: ballRef.current.position.x, y: ballRef.current.position.y };
+      
+      // Run single physics step
+      Matter.Engine.update(engineRef.current, stepDelta);
+      
+      if (!ballRef.current) break;
+      
+      // Check for large position jumps that might indicate tunneling
+      const afterStep = { x: ballRef.current.position.x, y: ballRef.current.position.y };
+      const stepDistance = Math.sqrt(
+        Math.pow(afterStep.x - beforeStep.x, 2) + 
+        Math.pow(afterStep.y - beforeStep.y, 2)
+      );
+      
+      // If ball moved too far in one step, it might have tunneled
+      const maxStepDistance = ballRadius * 0.8; // Ball shouldn't move more than 80% of its radius per step
+      if (stepDistance > maxStepDistance) {
+        // Revert to safer intermediate position
+        const safeX = beforeStep.x + (afterStep.x - beforeStep.x) * 0.5;
+        const safeY = beforeStep.y + (afterStep.y - beforeStep.y) * 0.5;
+        Matter.Body.setPosition(ballRef.current, { x: safeX, y: safeY });
+        
+        // Reduce velocity significantly to prevent further tunneling
+        Matter.Body.setVelocity(ballRef.current, {
+          x: velocity.x * 0.3,
+          y: velocity.y * 0.3
+        });
+      }
+      
+      // Aggressive speed limiting after each micro-step
+      const stepVelocity = ballRef.current.velocity;
+      const stepSpeed = Math.sqrt(stepVelocity.x * stepVelocity.x + stepVelocity.y * stepVelocity.y);
+      
+      if (stepSpeed > dynamicMaxSpeed) {
+        const scale = dynamicMaxSpeed / stepSpeed;
+        Matter.Body.setVelocity(ballRef.current, {
+          x: stepVelocity.x * scale,
+          y: stepVelocity.y * scale
+        });
+      }
+    }
+
+    // Update shared values efficiently
+    ballPositionX.value = ballRef.current.position.x;
+    ballPositionY.value = ballRef.current.position.y;
+    
+    lastTimeRef.current = currentTime;
+  }, [ballPositionX, ballPositionY, sensitivity]);
+
+  const update = useCallback((tiltX: number, tiltY: number, resetVelocity = false) => {
+    if (!engineRef.current || !ballRef.current) return;
+
+    // Enhanced response scaling for better control feel
+    const responseScale = (value: number, power: number = 1.2): number => {
+      const sign = Math.sign(value);
+      const magnitude = Math.abs(value);
+      return sign * Math.pow(magnitude, power);
+    };
+
+    // Optimized gravity calculation
+    const effectiveGravityScale = GRAVITY_SCALE_MULTIPLIER * gravityScale * sensitivity;
+    const gravityX = responseScale(tiltX) * effectiveGravityScale;
+    const gravityY = responseScale(tiltY) * effectiveGravityScale;
+
+    // Apply gravity more efficiently
+    engineRef.current.world.gravity.x = gravityX;
+    engineRef.current.world.gravity.y = gravityY;
+
+    if (resetVelocity && ballRef.current) {
+      Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
+      Matter.Body.setAngularVelocity(ballRef.current, 0);
+    }
+
+    // Single physics tick per update for consistent performance
+    tick();
+  }, [gravityScale, sensitivity, tick]);
+
   useEffect(() => {
     if (!maze) return;
 
@@ -86,16 +216,15 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
     gameOverTriggeredRef.current = false;
     collectedCoinsRef.current.clear();
 
-    // Create engine with improved collision handling settings
+    // Create engine with performance-optimized collision handling settings
     const engine = Matter.Engine.create({
       gravity: { x: 0, y: 0, scale: 1 },
-      enableSleeping: false,
+      enableSleeping: PHYSICS_CONFIG.ENABLE_SLEEPING,
       positionIterations: POSITION_ITERATIONS,  
       velocityIterations: VELOCITY_ITERATIONS,  
       constraintIterations: COLLISION_ITERATIONS,
-      // Use improved physics settings
       timing: {
-        timeScale: 1
+        timeScale: PHYSICS_CONFIG.TIME_SCALE
       }
     });
 
@@ -117,27 +246,32 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       },
     });
 
-    // Create walls with optimized collision bounds for better movement
-    const walls = maze.walls.map((wall: Wall) =>
-      Matter.Bodies.rectangle(
+    // Create walls with exact visual collision bounds
+    const walls = maze.walls.map((wall: Wall) => {
+      // Only add buffer to extremely thin walls (< 4px) to prevent tunneling
+      const isVeryThinWall = wall.width < MIN_WALL_THICKNESS || wall.height < MIN_WALL_THICKNESS;
+      const widthBuffer = isVeryThinWall ? ADDITIONAL_WALL_BUFFER : 0; // Exact visual match for normal walls
+      const heightBuffer = isVeryThinWall ? ADDITIONAL_WALL_BUFFER : 0; // Exact visual match for normal walls
+      
+      return Matter.Bodies.rectangle(
         wall.x + wall.width / 2,
         wall.y + wall.height / 2,
-        // Only add buffer to very thin walls to prevent tunneling without affecting gameplay
-        wall.width + (wall.width < 8 ? WALL_BUFFER * 2 : 0),
-        wall.height + (wall.height < 8 ? WALL_BUFFER * 2 : 0),
+        wall.width + widthBuffer,
+        wall.height + heightBuffer,
         {
           label: 'wall',
           isStatic: true,
-          friction: WALL_FRICTION * 0.8, // Slightly reduced friction for better movement
-          restitution: WALL_RESTITUTION,
-          slop: 0.02, // Slightly increased slop for smoother movement
+          friction: WALL_FRICTION, // Normal friction for natural feel
+          restitution: WALL_RESTITUTION, // Normal restitution for natural bouncing
+          slop: COLLISION_SLOP, // More forgiving collision slop
+          isSensor: false,
           collisionFilter: {
             category: 0x0001,
             mask: 0x0002,
           },
         }
-      )
-    );
+      );
+    });
 
     const boundaryThickness = 20;
     const boundaryProps = {
@@ -280,6 +414,23 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
             }
           }
         }
+        else if (otherBody.label?.startsWith('laser-')) {
+          // Check if laser gate is currently active (visible)
+          const laserGate = otherBody.plugin?.laserGate as LaserGate;
+          if (laserGate) {
+            const now = Date.now();
+            const cyclePos = ((now % laserGate.interval) / laserGate.interval + laserGate.phase) % 1;
+            const isLaserVisible = cyclePos < laserGate.onDuration;
+            
+            if (isLaserVisible && !gameOverTriggeredRef.current) {
+              gameOverTriggeredRef.current = true;
+              setGameOver(true);
+              if (vibrationEnabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              }
+            }
+          }
+        }
         else if (otherBody.label?.startsWith('coin-')) {
           const coinId = otherBody.label.replace(/^coin-/, '');
           if (collectedCoinsRef.current.has(coinId)) continue;
@@ -312,64 +463,12 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
 
     lastTimeRef.current = performance.now();
 
-    const tick = () => {
-      if (!engineRef.current || !ballRef.current) {
-        tickerRef.current = null;
-        return; 
-      }
-
-      const currentTime = performance.now();
-      const delta = currentTime - lastTimeRef.current;
-
-      // Optimized velocity capping and physics updates for better responsiveness
-      if (ballRef.current) {
-        const velocity = ballRef.current.velocity;
-        const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
-
-        // Only cap velocity at higher threshold to allow more responsive movement
-        if (speed > MAX_BALL_SPEED) {
-          const ratio = MAX_BALL_SPEED / speed;
-          Matter.Body.setVelocity(ballRef.current, {
-            x: velocity.x * ratio,
-            y: velocity.y * ratio
-          });
-        }
-
-        // Only use sub-stepping for very high speeds to improve performance
-        const substeps = speed > MAX_BALL_SPEED * 0.85 ? 2 : 1;
-        const substepDelta = delta / substeps;
-
-        for (let i = 0; i < substeps; i++) {
-          Matter.Engine.update(engineRef.current, substepDelta);
-
-          // Only do extra collision checks for very high speeds
-          if (speed > MAX_BALL_SPEED * 0.8) {
-            for (const wall of wallsRef.current) {
-              const collision = Matter.Collision.collides(ballRef.current, wall, undefined);
-              if (collision && collision.depth > 0) {
-                // Smaller correction to prevent slowing down the ball too much
-                Matter.Body.translate(ballRef.current, {
-                  x: collision.normal.x * collision.depth * 0.3,
-                  y: collision.normal.y * collision.depth * 0.3
-                });
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      // Update ball position for rendering
-      if (ballRef.current) {
-        ballPositionX.value = ballRef.current.position.x;
-        ballPositionY.value = ballRef.current.position.y;
-      }
-
-      lastTimeRef.current = currentTime;
-      tickerRef.current = requestAnimationFrame(tick);
+    // Start the physics loop manually to avoid dependency issues with sensitivity
+    const startPhysicsLoop = () => {
+      tick();
+      tickerRef.current = requestAnimationFrame(startPhysicsLoop);
     };
-
-    tickerRef.current = requestAnimationFrame(tick);
+    tickerRef.current = requestAnimationFrame(startPhysicsLoop);
 
     return () => {
       if (tickerRef.current) {
@@ -440,79 +539,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
       }, 16); 
     }
   }, [maze, ballPositionX, ballPositionY]); 
-  const update = useCallback(
-    (tiltX: number, tiltY: number, resetVelocity: boolean = false) => {
-      if (!engineRef.current || !ballRef.current) return;
-      
-      if (resetVelocity) {
-        // Completely stop the ball when requested
-        Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
-        Matter.Body.setAngularVelocity(ballRef.current, 0);
-        engineRef.current.gravity.x = 0;
-        engineRef.current.gravity.y = 0;
-        
-        // Apply just enough counter-force to stop movement without being sluggish
-        const currentVelX = ballRef.current.velocity.x;
-        const currentVelY = ballRef.current.velocity.y;
-        if (Math.abs(currentVelX) > 0.001 || Math.abs(currentVelY) > 0.001) {
-          Matter.Body.applyForce(
-            ballRef.current,
-            ballRef.current.position,
-            {
-              x: -currentVelX * 0.15,
-              y: -currentVelY * 0.15
-            }
-          );
-        }
-        
-        lastTimeRef.current = performance.now();
-        return;
-      }
-      
-      // Apply minimal deadzone for better responsiveness
-      const deadzone = 0.0005;
-      
-      // Use more responsive curve (lower power) for better movement
-      const responseScale = (value: number, power: number = 1.3): number => {
-        if (Math.abs(value) < deadzone) return 0;
-        const sign = Math.sign(value);
-        return sign * Math.pow(Math.min(1.0, Math.abs(value)), power);
-      };
-      
-      const effectiveX = responseScale(tiltX);
-      const effectiveY = responseScale(tiltY);
-      
-      // Apply sensitivity with stronger effect (quadratic scaling)
-      // This makes higher sensitivity settings much more pronounced
-      const sensitivityFactor = Math.pow(sensitivity, 2.0);
-      
-      // Calculate final gravity scale with amplified sensitivity
-      const finalGravityScale = GRAVITY_SCALE_MULTIPLIER * 1.5 * gravityScale * sensitivityFactor;
-      
-      // Apply gravity forces with sensitivity amplification
-      engineRef.current.gravity.x = effectiveX * finalGravityScale;
-      engineRef.current.gravity.y = effectiveY * finalGravityScale;
-      
-      // Scale force based on amplified sensitivity
-      const gravityForceX = effectiveX * finalGravityScale * ballRef.current.mass * 0.15;
-      const gravityForceY = effectiveY * finalGravityScale * ballRef.current.mass * 0.15;
-      
-      // Use direct forces for more stable physics than using engine gravity
-      Matter.Body.applyForce(
-        ballRef.current,
-        ballRef.current.position,
-        {
-          x: gravityForceX,
-          y: gravityForceY
-        }
-      );
-      
-      // Keep engine gravity at zero to avoid additive effects
-      engineRef.current.gravity.x = 0;
-      engineRef.current.gravity.y = 0;
-    },
-    [gravityScale, sensitivity] 
-  );
+
   const physicsWorld: PhysicsWorld = useMemo( 
     () => ({
       engine: engineRef.current ?? undefined,

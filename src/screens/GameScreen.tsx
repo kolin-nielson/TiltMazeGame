@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, BackHandler, Alert, AppState, AppStateStatus } from 'react-native';
 import { Text, Snackbar, Portal } from 'react-native-paper';
@@ -43,8 +42,6 @@ import SimpleDeathScreen from '@components/game/SimpleDeathScreen';
 import GameHeader from '@components/game/GameHeader';
 import QuitConfirmDialog from '@components/game/QuitConfirmDialog';
 import MazeView from '@components/game/MazeView';
-import { Maze } from '@types';
-import type { PhysicsOptions } from '@hooks/usePhysics';
 type GameState = 'loading' | 'playing' | 'game_over';
 type PhysicsMazeProps = {
   maze: Maze;
@@ -230,7 +227,7 @@ const GameScreen: React.FC = () => {
         dispatch(updateSettings({ highestScore: newLevelCount }));
         dispatch(saveSettings({ highestScore: newLevelCount }));
       }
-      const bonusCoins = Math.floor(difficulty * 1.5);
+      const bonusCoins = Math.floor(difficulty * 3);
       if (bonusCoins > 0) {
         for (let i = 0; i < bonusCoins; i++) {
           dispatch(collectCoinAndSave());
@@ -353,120 +350,51 @@ const GameScreen: React.FC = () => {
   const [isForcePreloading, setIsForcePreloading] = useState(false);
   
   // Function to handle watching ads with improved TestFlight support
-  const handleWatchAd = useCallback(async () => {
-    // Prevent multiple simultaneous attempts
+  const tryShowRewardedAd = useCallback(async () => {
     if (isLoadingAd) return;
     
+    setIsLoadingAd(true);
+    setAdRetryAttempt(prev => prev + 1);
+    
+    // Force preload ad before attempting to show it
+    setIsForcePreloading(true);
+
     try {
-      // Reset retry counter if it's too high
-      if (adRetryAttempt > 3) {
-        setAdRetryAttempt(0);
-      }
-      
-      // Set loading state
-      setIsLoadingAd(true);
-      
-      // Attempt to force preload an ad first if we've had failures
-      if (adRetryAttempt > 0 && !isForcePreloading) {
-        setIsForcePreloading(true);
-        console.log('🔄 Force preloading ad before showing...');
-        
-        // Show a brief loading indication
-        Alert.alert(
-          'Loading Ad',
-          'Please wait while we prepare the ad...',
-          [],
-          { cancelable: false }
-        );
-        
-        // Try to preload the ad with extra time
-        try {
-          // Import the loadRewardedAd function to force a fresh preload
-          const { loadRewardedAd } = await import('../services/adsService');
-          await loadRewardedAd();
-          
-          // Give extra time for the ad to be available
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        } catch (preloadError) {
-          console.warn('Preload attempt failed:', preloadError);
-          // Continue anyway, the show function will handle failures
+      const adShown = await showRewardedAd(
+        () => {
+          // Only continue if user actually watched the ad and earned the reward
+          onContinuePlaying();
+        },
+        () => {
+          // Ad was closed - check if user watched it or skipped it
+          // onContinuePlaying() will only be called if reward was earned in the reward callback above
         }
-        
-        setIsForcePreloading(false);
-      }
-      
-      console.log(`📺 Attempting to show rewarded ad (attempt ${adRetryAttempt + 1})`);
-      const adShown = await showRewardedAd(onContinuePlaying);
-      
-      // Reset loading state
-      setIsLoadingAd(false);
-      
+      );
+
       if (!adShown) {
-        // Increment retry counter
-        const newRetryCount = adRetryAttempt + 1;
-        setAdRetryAttempt(newRetryCount);
-        
-        // After several attempts, offer a free continue
-        if (newRetryCount >= 2) {
-          Alert.alert(
-            'Ad Not Available',
-            'We\'re having trouble loading ads right now. Would you like to continue anyway?',
-            [
-              { text: 'Try Again', onPress: () => {
-                // One more attempt with longer wait
-                setTimeout(() => handleWatchAd(), 2000);
-              }},
-              { 
-                text: 'Continue Anyway', 
-                onPress: () => {
-                  console.log('User continued without ad');
-                  onContinuePlaying();
-                  // Reset counter
-                  setAdRetryAttempt(0);
-                } 
-              }
-            ]
-          );
-        } else {
-          // First failure, offer retry
-          Alert.alert(
-            'Ad Not Ready',
-            'We\'re preparing the ad. Would you like to try again in a moment?',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { 
-                text: 'Try Again', 
-                onPress: () => {
-                  // Wait a bit longer between retries
-                  setTimeout(() => handleWatchAd(), 2000);
-                } 
-              }
-            ]
-          );
-        }
-      } else {
-        // Ad was shown successfully, reset counter
-        setAdRetryAttempt(0);
+        // Ad failed to show - show error message and don't allow continue
+        Alert.alert(
+          'Ad Unavailable',
+          'Sorry, no ads are available right now. Try again later to continue playing.',
+          [{ text: 'OK' }]
+        );
       }
     } catch (error) {
-      console.error('❌ Error in handleWatchAd:', error);
-      setIsLoadingAd(false);
-      
-      // Generic error handler
+      // Error showing ad - show error message and don't allow continue
       Alert.alert(
-        'Error',
-        'Sorry, we encountered an error. Please try again or continue without an ad.',
-        [
-          { text: 'Try Again', onPress: () => {
-            setTimeout(() => handleWatchAd(), 1000);
-          }},
-          { text: 'Continue Anyway', onPress: () => {
-            onContinuePlaying();
-          }}
-        ]
+        'Ad Error',
+        'There was an error loading the ad. Please try again later to continue playing.',
+        [{ text: 'OK' }]
       );
+    } finally {
+      setIsLoadingAd(false);
+      setIsForcePreloading(false);
+      setAdRetryAttempt(0);
     }
-  }, [onContinuePlaying, isLoadingAd, adRetryAttempt]);
+  }, [isLoadingAd, onContinuePlaying]);
+
+
+
   const showQuitConfirm = () => setIsQuitConfirmVisible(true);
   const hideQuitConfirm = () => setIsQuitConfirmVisible(false);
   const handleQuitConfirm = () => {
@@ -503,84 +431,41 @@ const GameScreen: React.FC = () => {
   // Handle app state changes (background/foreground)
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      console.log(`App state changed from ${prevAppStateRef.current} to ${nextAppState}`);
-      
       // App going to background
       if (
         (prevAppStateRef.current === 'active' || prevAppStateRef.current.match(/inactive/)) &&
         (nextAppState === 'background' || nextAppState.match(/inactive/))
       ) {
-        console.log('App is going to background');
         // Save current game state if we're playing
         wasPlayingBeforeBackgroundRef.current = (gameState === 'playing');
         
         // If we're in the middle of a game, pause physics and animations
         if (gameState === 'playing') {
-          console.log('Pausing game as app goes to background');
           // We don't want to create a pause state, just remember we were playing
         }
       }
       
       // App coming back to foreground
       if (
-        (prevAppStateRef.current === 'background' || prevAppStateRef.current.match(/inactive/)) &&
+        prevAppStateRef.current.match(/background|inactive/) &&
         nextAppState === 'active'
       ) {
-        console.log('App is coming back to foreground');
-        
-        // If we were playing before going to background, restore the game
-        if (wasPlayingBeforeBackgroundRef.current && gameState === 'playing') {
-          console.log('Resuming game after background');
-          
-          // Reset physics (this ensures the ball position is reset properly)
-          resetPhysics();
-          
-          // Show a brief calibration overlay to reset tilt orientation
-          dispatch(setShowCalibrationOverlay(true));
-          
-          // Reset the gyroscope
-          if (gyroscopeAvailable) {
-            forceGyroscopeCalibration(200);
-            
-            const checkCalibration = () => {
-              if (!gyroIsCalibrating) {
-                dispatch(setGyroscopeCalibrated(true));
-                dispatch(setShowCalibrationOverlay(false));
-                if (settings.vibrationEnabled) {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-              } else {
-                setTimeout(checkCalibration, 16);
-              }
-            };
-            
-            checkCalibration();
-          } else {
-            // No gyroscope available, just hide the overlay
-            setTimeout(() => {
-              dispatch(setShowCalibrationOverlay(false));
-            }, 300);
-          }
+        // If user was playing before backgrounding, continue the game
+        if (wasPlayingBeforeBackgroundRef.current) {
+          // Resume the game state
+          wasPlayingBeforeBackgroundRef.current = false;
         }
       }
       
       prevAppStateRef.current = nextAppState;
-      setAppState(nextAppState);
     };
 
-    // Subscribe to AppState change events
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
+    
     return () => {
-      // Unsubscribe from AppState events
-      subscription.remove();
-      
-      // Also clear any timeouts
-      if (recalibrationTimeoutRef.current) {
-        clearTimeout(recalibrationTimeoutRef.current);
-      }
+      subscription?.remove();
     };
-  }, [gameState, dispatch, resetPhysics, gyroscopeAvailable, forceGyroscopeCalibration, gyroIsCalibrating, settings.vibrationEnabled]);
+  }, [gameState]);
   const isFirstLevelRef = useRef(true);
   useEffect(() => {
     if (gameState === 'loading') {
@@ -722,8 +607,8 @@ const GameScreen: React.FC = () => {
             bestScore={settings.highestScore ?? 0}
             onPlayAgain={handlePlayAgain}
             onExit={handleExit}
-            onWatchAd={handleWatchAd}
-            onContinuePlaying={onContinuePlaying}
+            onWatchAd={tryShowRewardedAd}
+
             isLoadingAd={isLoadingAd}
           />
         </Portal>

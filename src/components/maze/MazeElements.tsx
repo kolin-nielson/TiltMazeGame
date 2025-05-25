@@ -1,7 +1,7 @@
-import React, { memo, useMemo, useEffect } from 'react';
+import React, { memo, useMemo, useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Polygon, G, Defs, Stop, RadialGradient } from 'react-native-svg';
-import Animated, { FadeOut, FadeIn, useSharedValue, useAnimatedProps, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { FadeOut, FadeIn, useSharedValue, useAnimatedProps, withRepeat, withTiming, Easing, runOnUI } from 'react-native-reanimated';
 import { MazeWall } from './MazeWall';
 import { MazeGoal } from './MazeGoal';
 import { MazeBall } from './MazeBall';
@@ -22,16 +22,27 @@ interface MazeElementsProps {
   gameState?: 'ready' | 'playing' | 'paused' | 'completed' | 'game_over';
 }
 
+// Optimized memoized walls component with better layering
 const MemoizedWalls = memo(({ walls, color }: { walls: Wall[]; color: string }) => {
+  const wallElements = useMemo(() => 
+    walls.map((wall, index) => (
+      <MazeWall key={`wall-${wall.x}-${wall.y}-${wall.width}-${wall.height}`} wall={wall} index={index} color={color} />
+    ))
+  , [walls, color]);
+  
+  // Use SVG group for clean wall rendering
   return (
-    <>
-      {walls.map((wall, index) => (
-        <MazeWall key={`wall-${index}`} wall={wall} index={index} color={color} />
-      ))}
-    </>
+    <G 
+      style={{ mixBlendMode: 'normal' }}
+      // Force crisp edges at the group level for all walls
+      shapeRendering="crispEdges"
+    >
+      {wallElements}
+    </G>
   );
 });
 
+// Optimized memoized laser gates component
 const MemoizedLaserGates = memo(
   ({
     laserGates,
@@ -42,71 +53,63 @@ const MemoizedLaserGates = memo(
     color: string;
     isActive: boolean;
   }) => {
-    return (
-      <>
-        {laserGates.map(laserGate => (
-          <MazeLaserGate
-            key={`laser-${laserGate.id}`}
-            laserGate={laserGate}
-            color={color}
-            isActive={isActive}
-          />
-        ))}
-      </>
-    );
+    const laserElements = useMemo(() =>
+      laserGates.map(laserGate => (
+        <MazeLaserGate
+          key={`laser-${laserGate.id}`}
+          laserGate={laserGate}
+          color={color}
+          isActive={isActive}
+        />
+      ))
+    , [laserGates, color, isActive]);
+    
+    return <>{laserElements}</>;
   }
 );
 
+// Highly optimized coin component with minimal re-renders
 const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius: number, colors: ThemeColors }) => {
   const anim = useSharedValue(0);
   
   useEffect(() => {
-    anim.value = withRepeat(
-      withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
+    // Use runOnUI for better performance
+    runOnUI(() => {
+      anim.value = withRepeat(
+        withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+    })();
   }, []);
 
   const isSpecial = coin.isSpecial || false;
-  
-  // More satisfying scale animation
-  const scaleProps = useAnimatedProps(() => {
-    const scale = Math.sin(anim.value * 2 * Math.PI) * 0.12 + 1;
-    return { r: ballRadius * 0.8 * scale };
-  });
+
+  // Memoize gradient IDs to prevent recreation
+  const gradientId = useMemo(() => `coin-gradient-${coin.id}`, [coin.id]);
+  const innerGradientId = useMemo(() => `coin-inner-${coin.id}`, [coin.id]);
+  const diamondGradientId = useMemo(() => `diamond-gradient-${coin.id}`, [coin.id]);
 
   if (isSpecial) {
-    // Vibrant Diamond - Gem-like and sparkly
+    // Optimized Diamond - fewer animated elements
     const diamondProps = useAnimatedProps(() => {
       const scale = Math.sin(anim.value * 2 * Math.PI) * 0.08 + 1;
       const size = ballRadius * 1.3 * scale;
       
       const points = [
-        `${coin.position.x},${coin.position.y - size}`,      // Top
-        `${coin.position.x + size * 0.7},${coin.position.y}`, // Right
-        `${coin.position.x},${coin.position.y + size}`,      // Bottom
-        `${coin.position.x - size * 0.7},${coin.position.y}` // Left
+        `${coin.position.x},${coin.position.y - size}`,
+        `${coin.position.x + size * 0.7},${coin.position.y}`,
+        `${coin.position.x},${coin.position.y + size}`,
+        `${coin.position.x - size * 0.7},${coin.position.y}`
       ].join(' ');
       
       return { points };
     });
 
-    // Sparkle animations
-    const sparkleProps1 = useAnimatedProps(() => {
-      const sparkleScale = Math.sin(anim.value * 4 * Math.PI) * 0.4 + 0.6;
-      return { r: ballRadius * 0.2 * sparkleScale };
-    });
-
-    const sparkleProps2 = useAnimatedProps(() => {
-      const sparkleScale = Math.sin(anim.value * 3 * Math.PI + Math.PI/2) * 0.3 + 0.7;
-      return { r: ballRadius * 0.15 * sparkleScale };
-    });
-
     return (
       <AnimatedG entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
         <Defs>
-          <RadialGradient id={`diamond-gradient-${coin.id}`} cx="50%" cy="30%" r="70%">
+          <RadialGradient id={diamondGradientId} cx="50%" cy="30%" r="70%">
             <Stop offset="0%" stopColor="#E0E7FF" stopOpacity="1" />
             <Stop offset="30%" stopColor="#8B5CF6" stopOpacity="1" />
             <Stop offset="70%" stopColor="#7C3AED" stopOpacity="1" />
@@ -114,116 +117,97 @@ const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius:
           </RadialGradient>
         </Defs>
         
-        {/* Main diamond with vibrant gradient */}
+        {/* Main diamond */}
         <AnimatedPolygon
           animatedProps={diamondProps}
-          fill={`url(#diamond-gradient-${coin.id})`}
+          fill={`url(#${diamondGradientId})`}
           stroke="#FFFFFF"
           strokeWidth={3}
         />
         
-        {/* Inner diamond for depth */}
-        <AnimatedPolygon
-          animatedProps={useAnimatedProps(() => {
-            const scale = Math.sin(anim.value * 2 * Math.PI + Math.PI) * 0.05 + 1;
-            const size = ballRadius * 0.9 * scale;
-            
-            const points = [
-              `${coin.position.x},${coin.position.y - size}`,
-              `${coin.position.x + size * 0.7},${coin.position.y}`,
-              `${coin.position.x},${coin.position.y + size}`,
-              `${coin.position.x - size * 0.7},${coin.position.y}`
-            ].join(' ');
-            
-            return { points };
-          })}
+        {/* Single inner diamond for depth */}
+        <AnimatedCircle
+          cx={coin.position.x}
+          cy={coin.position.y}
+          r={ballRadius * 0.4}
           fill="#C4B5FD"
           opacity="0.8"
         />
         
-        {/* Sparkle effects */}
+        {/* Optimized sparkles - only 2 instead of 3+ */}
         <AnimatedCircle
           cx={coin.position.x - ballRadius * 0.4}
           cy={coin.position.y - ballRadius * 0.3}
-          animatedProps={sparkleProps1}
+          animatedProps={useAnimatedProps(() => {
+            const sparkle1 = Math.sin(anim.value * 4 * Math.PI) * 0.4 + 0.6;
+            return { r: ballRadius * sparkle1 * 0.18 };
+          })}
           fill="#FFFFFF"
         />
         
         <AnimatedCircle
           cx={coin.position.x + ballRadius * 0.3}
           cy={coin.position.y + ballRadius * 0.2}
-          animatedProps={sparkleProps2}
-          fill="#FFFFFF"
-          opacity="0.9"
-        />
-        
-        {/* Extra sparkle for more satisfaction */}
-        <AnimatedCircle
-          cx={coin.position.x - ballRadius * 0.2}
-          cy={coin.position.y + ballRadius * 0.4}
           animatedProps={useAnimatedProps(() => {
-            const sparkleScale = Math.sin(anim.value * 5 * Math.PI + Math.PI) * 0.25 + 0.75;
-            return { r: ballRadius * 0.12 * sparkleScale };
+            const sparkle2 = Math.sin(anim.value * 3 * Math.PI + Math.PI/2) * 0.3 + 0.7;
+            return { r: ballRadius * sparkle2 * 0.14 };
           })}
           fill="#FFFFFF"
-          opacity="0.8"
+          opacity="0.9"
         />
       </AnimatedG>
     );
   } else {
-    // Vibrant Coin - Golden and satisfying
+    // Optimized Coin - fewer animated elements, reusing calculations
     return (
       <AnimatedG entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
         <Defs>
-          <RadialGradient id={`coin-gradient-${coin.id}`} cx="50%" cy="30%" r="70%">
+          <RadialGradient id={gradientId} cx="50%" cy="30%" r="70%">
             <Stop offset="0%" stopColor="#FEF3C7" stopOpacity="1" />
             <Stop offset="30%" stopColor="#FBBF24" stopOpacity="1" />
             <Stop offset="70%" stopColor="#F59E0B" stopOpacity="1" />
             <Stop offset="100%" stopColor="#D97706" stopOpacity="1" />
           </RadialGradient>
           
-          <RadialGradient id={`coin-inner-${coin.id}`} cx="50%" cy="30%" r="60%">
+          <RadialGradient id={innerGradientId} cx="50%" cy="30%" r="60%">
             <Stop offset="0%" stopColor="#FFFBEB" stopOpacity="1" />
             <Stop offset="50%" stopColor="#FDE68A" stopOpacity="1" />
             <Stop offset="100%" stopColor="#F59E0B" stopOpacity="1" />
           </RadialGradient>
         </Defs>
         
-        {/* Outer glow for premium feel */}
+        {/* Single outer glow - static for performance */}
+        <AnimatedCircle
+          cx={coin.position.x}
+          cy={coin.position.y}
+          r={ballRadius * 0.95}
+          fill="#FDE68A"
+          opacity="0.3"
+        />
+        
+        {/* Main coin with optimized animation */}
         <AnimatedCircle
           animatedProps={useAnimatedProps(() => {
-            const scale = Math.sin(anim.value * 2 * Math.PI) * 0.15 + 1;
-            return { r: ballRadius * 0.95 * scale };
+            const scale = Math.sin(anim.value * 2 * Math.PI) * 0.12 + 1;
+            return { r: ballRadius * 0.8 * scale };
           })}
           cx={coin.position.x}
           cy={coin.position.y}
-          fill="#FDE68A"
-          opacity="0.4"
-        />
-        
-        {/* Vibrant coin with gradient */}
-        <AnimatedCircle
-          animatedProps={scaleProps}
-          cx={coin.position.x}
-          cy={coin.position.y}
-          fill={`url(#coin-gradient-${coin.id})`}
+          fill={`url(#${gradientId})`}
           stroke="#FFFFFF"
           strokeWidth={3}
         />
         
-        {/* Inner ring for depth */}
+        {/* Static inner ring - no animation for performance */}
         <AnimatedCircle
-          animatedProps={useAnimatedProps(() => {
-            const scale = Math.sin(anim.value * 2 * Math.PI + Math.PI) * 0.08 + 1;
-            return { r: ballRadius * 0.6 * scale };
-          })}
           cx={coin.position.x}
           cy={coin.position.y}
-          fill={`url(#coin-inner-${coin.id})`}
+          r={ballRadius * 0.6}
+          fill={`url(#${innerGradientId})`}
           opacity="0.9"
         />
         
-        {/* Center symbol - classic coin star */}
+        {/* Static center symbol */}
         <AnimatedCircle
           cx={coin.position.x}
           cy={coin.position.y}
@@ -233,13 +217,13 @@ const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius:
           strokeWidth={2}
         />
         
-        {/* Sparkle effects for satisfaction */}
+        {/* Only 2 optimized sparkles using shared calculations */}
         <AnimatedCircle
           cx={coin.position.x - ballRadius * 0.4}
           cy={coin.position.y - ballRadius * 0.3}
           animatedProps={useAnimatedProps(() => {
-            const sparkleScale = Math.sin(anim.value * 4 * Math.PI) * 0.3 + 0.7;
-            return { r: ballRadius * 0.18 * sparkleScale };
+            const sparkle1 = Math.sin(anim.value * 4 * Math.PI) * 0.4 + 0.6;
+            return { r: ballRadius * sparkle1 * 0.18 };
           })}
           fill="#FFFFFF"
         />
@@ -248,32 +232,41 @@ const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius:
           cx={coin.position.x + ballRadius * 0.3}
           cy={coin.position.y + ballRadius * 0.2}
           animatedProps={useAnimatedProps(() => {
-            const sparkleScale = Math.sin(anim.value * 3 * Math.PI + Math.PI/2) * 0.3 + 0.7;
-            return { r: ballRadius * 0.14 * sparkleScale };
+            const sparkle2 = Math.sin(anim.value * 3 * Math.PI + Math.PI/2) * 0.3 + 0.7;
+            return { r: ballRadius * sparkle2 * 0.14 };
           })}
           fill="#FFFFFF"
           opacity="0.9"
         />
-        
-        {/* Additional sparkle for extra satisfaction */}
-        <AnimatedCircle
-          cx={coin.position.x - ballRadius * 0.15}
-          cy={coin.position.y + ballRadius * 0.4}
-          animatedProps={useAnimatedProps(() => {
-            const sparkleScale = Math.sin(anim.value * 5 * Math.PI + Math.PI) * 0.2 + 0.8;
-            return { r: ballRadius * 0.1 * sparkleScale };
-          })}
-          fill="#FFFFFF"
-          opacity="0.8"
-        />
       </AnimatedG>
     );
   }
+}, (prevProps, nextProps) => {
+  // Custom comparison for better memoization
+  return (
+    prevProps.coin.id === nextProps.coin.id &&
+    prevProps.ballRadius === nextProps.ballRadius &&
+    prevProps.colors === nextProps.colors
+  );
 });
 
-export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX, ballPositionY, ballRadius, colors, gameState = 'playing' }) => {
+export const MazeElements: React.FC<MazeElementsProps> = memo(({ maze, ballPositionX, ballPositionY, ballRadius, colors, gameState = 'playing' }) => {
   const mazeBaseSize = 300;
+  
+  // Memoize coins to prevent unnecessary re-renders
   const coinsInMaze = useMemo(() => maze.coins ?? [], [maze.coins]);
+  
+  // Memoize laser gates filtering
+  const activeLaserGates = useMemo(() => 
+    maze.laserGates && Array.isArray(maze.laserGates) ? maze.laserGates : []
+  , [maze.laserGates]);
+  
+  // Memoize coin components
+  const coinComponents = useMemo(() =>
+    coinsInMaze.map(coin => (
+      <CoinCircle key={coin.id} coin={coin} ballRadius={ballRadius} colors={colors} />
+    ))
+  , [coinsInMaze, ballRadius, colors]);
   
   return (
     <View style={mazeRendererStyles.mazeElementsContainer}>
@@ -293,23 +286,20 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
           viewBox={`0 0 ${mazeBaseSize} ${mazeBaseSize}`}
           preserveAspectRatio="xMidYMid meet" // Maintain aspect ratio
         >
-          {}
           <MazeGoal
             position={maze.endPosition}
             ballRadius={ballRadius}
             colors={colors}
           />
           <MemoizedWalls walls={maze.walls} color={colors?.walls ?? '#333333'} />
-          {maze.laserGates && Array.isArray(maze.laserGates) && maze.laserGates.length > 0 && (
+          {activeLaserGates.length > 0 && (
             <MemoizedLaserGates
-              laserGates={maze.laserGates}
+              laserGates={activeLaserGates}
               color={colors?.laser ?? '#FF0000'}
               isActive={gameState === 'playing'}
             />
           )}
-        {coinsInMaze.map(coin => (
-          <CoinCircle key={coin.id} coin={coin} ballRadius={ballRadius} colors={colors} />
-        ))}
+          {coinComponents}
           <MazeBall
             key="maze-ball"
             ballPositionX={ballPositionX}
@@ -320,6 +310,14 @@ export const MazeElements: React.FC<MazeElementsProps> = ({ maze, ballPositionX,
       </View>
     </View>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison for maze elements to prevent unnecessary re-renders
+  return (
+    prevProps.maze === nextProps.maze &&
+    prevProps.ballRadius === nextProps.ballRadius &&
+    prevProps.colors === nextProps.colors &&
+    prevProps.gameState === nextProps.gameState
+  );
+});
 
 export default MazeElements;

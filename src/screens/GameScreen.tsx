@@ -353,11 +353,11 @@ const GameScreen: React.FC = () => {
   const tryShowRewardedAd = useCallback(async () => {
     if (isLoadingAd) return;
     
-    setIsLoadingAd(true);
+      setIsLoadingAd(true);
     setAdRetryAttempt(prev => prev + 1);
-    
+      
     // Force preload ad before attempting to show it
-    setIsForcePreloading(true);
+        setIsForcePreloading(true);
 
     try {
       const adShown = await showRewardedAd(
@@ -370,14 +370,14 @@ const GameScreen: React.FC = () => {
           // onContinuePlaying() will only be called if reward was earned in the reward callback above
         }
       );
-
+      
       if (!adShown) {
         // Ad failed to show - show error message and don't allow continue
-        Alert.alert(
+          Alert.alert(
           'Ad Unavailable',
           'Sorry, no ads are available right now. Try again later to continue playing.',
           [{ text: 'OK' }]
-        );
+          );
       }
     } catch (error) {
       // Error showing ad - show error message and don't allow continue
@@ -461,7 +461,7 @@ const GameScreen: React.FC = () => {
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-    
+
     return () => {
       subscription?.remove();
     };

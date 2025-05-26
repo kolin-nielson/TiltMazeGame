@@ -270,7 +270,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
             mask: 0x0002,
           },
         }
-      );
+    );
     });
 
     const boundaryThickness = 20;
@@ -360,12 +360,12 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
           {
             label: `laser-${laserGate.id}`,
             isStatic: true,
-            isSensor: true, 
+            isSensor: true,
             collisionFilter: {
               category: 0x0004, 
               mask: 0x0002, 
             },
-            plugin: { 
+            plugin: {
               laserGate: laserGate,
             },
           }
@@ -423,7 +423,7 @@ export const usePhysics = (maze: Maze | null, options: PhysicsOptions): PhysicsW
             const isLaserVisible = cyclePos < laserGate.onDuration;
             
             if (isLaserVisible && !gameOverTriggeredRef.current) {
-              gameOverTriggeredRef.current = true;
+              gameOverTriggeredRef.current = true; 
               setGameOver(true);
               if (vibrationEnabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);

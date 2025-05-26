@@ -518,7 +518,7 @@ export const generateMaze = (difficulty: number): Maze => {
     const j = Math.floor(Math.random() * (i + 1));
     [flatCells[i], flatCells[j]] = [flatCells[j], flatCells[i]];
   }
-
+  
   const regularCoins = Math.min(maxCoins - 1, flatCells.length - 1);
   const coinPositions = flatCells.slice(0, regularCoins);
   const coins: Coin[] = coinPositions.map((pos, idx) => ({ 

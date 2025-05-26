@@ -55,12 +55,12 @@ const MemoizedLaserGates = memo(
   }) => {
     const laserElements = useMemo(() =>
       laserGates.map(laserGate => (
-        <MazeLaserGate
-          key={`laser-${laserGate.id}`}
-          laserGate={laserGate}
-          color={color}
-          isActive={isActive}
-        />
+          <MazeLaserGate
+            key={`laser-${laserGate.id}`}
+            laserGate={laserGate}
+            color={color}
+            isActive={isActive}
+          />
       ))
     , [laserGates, color, isActive]);
     
@@ -75,16 +75,16 @@ const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius:
   useEffect(() => {
     // Use runOnUI for better performance
     runOnUI(() => {
-      anim.value = withRepeat(
+    anim.value = withRepeat(
         withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true
-      );
+      -1,
+      true
+    );
     })();
   }, []);
 
   const isSpecial = coin.isSpecial || false;
-
+  
   // Memoize gradient IDs to prevent recreation
   const gradientId = useMemo(() => `coin-gradient-${coin.id}`, [coin.id]);
   const innerGradientId = useMemo(() => `coin-inner-${coin.id}`, [coin.id]);
@@ -95,17 +95,17 @@ const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius:
     const diamondProps = useAnimatedProps(() => {
       const scale = Math.sin(anim.value * 2 * Math.PI) * 0.08 + 1;
       const size = ballRadius * 1.3 * scale;
-      
-      const points = [
+    
+    const points = [
         `${coin.position.x},${coin.position.y - size}`,
         `${coin.position.x + size * 0.7},${coin.position.y}`,
         `${coin.position.x},${coin.position.y + size}`,
         `${coin.position.x - size * 0.7},${coin.position.y}`
-      ].join(' ');
-      
-      return { points };
-    });
-
+    ].join(' ');
+    
+    return { points };
+  });
+  
     return (
       <AnimatedG entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
         <Defs>
@@ -199,24 +199,24 @@ const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius:
         />
         
         {/* Static inner ring - no animation for performance */}
-        <AnimatedCircle
+      <AnimatedCircle
           cx={coin.position.x}
           cy={coin.position.y}
           r={ballRadius * 0.6}
           fill={`url(#${innerGradientId})`}
           opacity="0.9"
-        />
-        
+      />
+      
         {/* Static center symbol */}
-        <AnimatedCircle
+      <AnimatedCircle
           cx={coin.position.x}
           cy={coin.position.y}
           r={ballRadius * 0.25}
           fill="#FFFBEB"
           stroke="#D97706"
           strokeWidth={2}
-        />
-        
+      />
+      
         {/* Only 2 optimized sparkles using shared calculations */}
         <AnimatedCircle
           cx={coin.position.x - ballRadius * 0.4}
@@ -228,7 +228,7 @@ const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius:
           fill="#FFFFFF"
         />
         
-        <AnimatedCircle
+          <AnimatedCircle
           cx={coin.position.x + ballRadius * 0.3}
           cy={coin.position.y + ballRadius * 0.2}
           animatedProps={useAnimatedProps(() => {
@@ -237,7 +237,7 @@ const CoinCircle = memo(({ coin, ballRadius, colors }: { coin: Coin, ballRadius:
           })}
           fill="#FFFFFF"
           opacity="0.9"
-        />
+          />
       </AnimatedG>
     );
   }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tilt Maze",
     "slug": "the-tilt-maze",
-    "version": "1.1.0",
+    "version": "1.1.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -26,7 +26,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kolinnielson.tiltmaze",
-      "buildNumber": "6",
       "infoPlist": {
         "NSMotionUsageDescription": "This app uses motion sensors to control the game through device tilting.",
         "UIRequiresFullScreen": true,
@@ -46,7 +45,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.kolinnielson.tiltmaze",
-      "versionCode": 3,
+      "versionCode": 5,
       "permissions": [
         "android.permission.VIBRATE"
       ],

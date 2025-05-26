@@ -30,7 +30,7 @@ export class StorageService {
     } catch (error) {
       throw error;
     }
-  }
+      }
 
   static async clear(): Promise<void> {
     try {

@@ -69,7 +69,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   
   return (
     <TouchableOpacity
-      onPress={onPress}
+    onPress={onPress}
       style={[
         styles.iconButton,
         style,
@@ -83,7 +83,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
         color={iconColor} 
       />
     </TouchableOpacity>
-  );
+);
 };
 
 const GameOverOverlayComponent: React.FC<GameOverOverlayProps> = ({

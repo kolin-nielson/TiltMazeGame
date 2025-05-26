@@ -10,9 +10,13 @@ const isDevEnvironment = __DEV__;
 // Determine device type (simulator vs real device)
 const isSimulator = Platform.OS === 'ios' && !NativeModules.DeviceInfo?.isDevice;
 
-// Simplified production detection - any non-dev, non-Expo Go build is considered production
-// This means TestFlight and App Store will both get production ads
-const isProduction = !isExpoGo && !isDevEnvironment;
+// More robust production detection
+const isProduction = !isExpoGo && !isDevEnvironment && Constants.appOwnership === 'standalone';
+
+// Additional checks for production environment
+const isTestFlight = !isExpoGo && !isDevEnvironment && Platform.OS === 'ios';
+const isPlayStore = !isExpoGo && !isDevEnvironment && Platform.OS === 'android';
+const shouldUseProductionAds = isProduction || isTestFlight || isPlayStore;
 
 // App ID for AdMob
 export const ADMOB_APP_ID = 'ca-app-pub-4299404428269280~3566150382';
@@ -44,15 +48,20 @@ if (!isExpoGo) {
 
 // Log detection results for debugging
 console.log(`📱 App environment detection:`); 
-console.log(`- Is Expo Go: ${isExpoGo}`); 
-console.log(`- Is Development: ${isDevEnvironment}`); 
-console.log(`- Is Simulator: ${isSimulator}`); 
-console.log(`- Is Production Build: ${isProduction}`); 
-console.log(`- Release Channel: ${Constants.manifest?.releaseChannel || 'default'}`); 
+console.log(`- Is Expo Go: ${isExpoGo}`);
+console.log(`- Is Development: ${isDevEnvironment}`);
+console.log(`- Is Simulator: ${isSimulator}`);
+console.log(`- Is Production Build: ${isProduction}`);
+console.log(`- Is TestFlight: ${isTestFlight}`);
+console.log(`- Is Play Store: ${isPlayStore}`);
+console.log(`- Should Use Production Ads: ${shouldUseProductionAds}`);
+console.log(`- App Ownership: ${Constants.appOwnership}`);
+console.log(`- Release Channel: ${Constants.manifest?.releaseChannel || 'default'}`);
 console.log(`- Bundle ID: ${Application.applicationId || 'unknown'}`);
 
 // Log the environment for debugging (enhanced)
-console.log(`📱 Detected environment: ${isExpoGo ? 'Expo Go' : isDevEnvironment ? 'Development' : 'Production'}`);
+const environmentType = isExpoGo ? 'Expo Go' : isDevEnvironment ? 'Development' : shouldUseProductionAds ? 'Production' : 'Unknown';
+console.log(`📱 Detected environment: ${environmentType}`);
 console.log(`📱 Platform: ${Platform.OS}, Release Channel: ${Constants.manifest?.releaseChannel || 'default'}, Bundle ID: ${Application.applicationId || 'unknown'}`);
 
 // Track mock ad state for Expo Go testing
@@ -69,30 +78,41 @@ let adLoadRetryCount = 0;
 let adModulesInitialized = false;
 let mobileAdsInstance: any = null;
 
-// Ad configuration with updated IDs
+// Ad configuration with correct AdMob console IDs
 const AD_UNIT_IDS = {
   ios: {
-    rewarded: 'ca-app-pub-4299404428269280/3471700738', // Keep existing rewarded
-    banner: 'ca-app-pub-4299404428269280/2212871388'     // New banner ad unit
+    rewarded: 'ca-app-pub-4299404428269280/4775290270', // Rewarded ad (from AdMob console)
+    banner: 'ca-app-pub-4299404428269280/2212871388'     // Banner ad (from AdMob console)
   },
   android: {
-    rewarded: 'ca-app-pub-4299404428269280/1798700388', // Keep existing rewarded  
-    banner: 'ca-app-pub-4299404428269280/2212871388'     // New banner ad unit
+    rewarded: 'ca-app-pub-4299404428269280/4775290270', // Rewarded ad (from AdMob console)
+    banner: 'ca-app-pub-4299404428269280/2212871388'     // Banner ad (from AdMob console)
   }
 };
 
 // Test devices for better ad testing
 const TEST_DEVICES = ['EMULATOR', 'SIMULATOR'];
 
+// Exponential backoff for ad retry attempts
+const getBackoffTime = (retryCount: number): number => {
+  return Math.min(30000, 1000 * Math.pow(2, retryCount)); // Cap at 30 seconds
+};
+
 // Get the correct ad unit ID based on platform and environment
 const getAdUnitId = (adType: 'rewarded' | 'banner', platform: 'ios' | 'android' = Platform.OS as 'ios' | 'android') => {
+  console.log(`🎯 Getting ad unit ID for: ${adType} on ${platform}, shouldUseProductionAds: ${shouldUseProductionAds}`);
+  
   // Use test ad unit IDs for development and Expo Go
-  if (isDevEnvironment || isExpoGo) {
-    return adType === 'rewarded' ? TestIds?.REWARDED : TestIds?.BANNER;
+  if (isDevEnvironment || isExpoGo || !shouldUseProductionAds) {
+    const testId = adType === 'rewarded' ? TestIds?.REWARDED : TestIds?.BANNER;
+    console.log(`🧪 Using test ad unit ID: ${testId}`);
+    return testId;
   }
   
   // Use production ad unit IDs for all production builds (including TestFlight)
-  return AD_UNIT_IDS[platform][adType];
+  const prodId = AD_UNIT_IDS[platform][adType];
+  console.log(`🏭 Using production ad unit ID: ${prodId}`);
+  return prodId;
 };
 
 /**
@@ -109,8 +129,11 @@ export const initializeAds = async () => {
   
   // Real implementation for production/TestFlight builds
   try {
+    console.log(`🚀 Initializing AdMob SDK...`);
+    
     // Check if already initialized
     if (adModulesInitialized) {
+      console.log(`✅ AdMob SDK already initialized`);
       return true;
     }
     
@@ -119,10 +142,19 @@ export const initializeAds = async () => {
     mobileAdsInstance = MobileAds();
     
     // Initialize the SDK
+    console.log(`🔧 Starting AdMob SDK initialization...`);
     await mobileAdsInstance.initialize();
+    console.log(`✅ AdMob SDK initialized successfully`);
     
-    // Configure test devices for development only
-    if (isDevEnvironment) {
+    // Configure request settings based on environment
+    const requestConfig: any = {
+      maxAdContentRating: 'T',
+      tagForChildDirectedTreatment: false,
+      tagForUnderAgeOfConsent: false
+    };
+    
+    // Add test devices for development only
+    if (isDevEnvironment || !shouldUseProductionAds) {
       const testDevices = [];
       
       // Add appropriate test device IDs based on platform
@@ -132,15 +164,17 @@ export const initializeAds = async () => {
         testDevices.push('SIMULATOR');
       }
       
-      // Apply test device configuration
-      await mobileAdsInstance.setRequestConfiguration({
-        testDeviceIdentifiers: testDevices,
-        maxAdContentRating: 'T'
-      });
+      requestConfig.testDeviceIdentifiers = testDevices;
+      console.log(`🧪 Using test device configuration for development`);
+    } else {
+      console.log(`🏭 Using production ad configuration`);
     }
     
+    // Apply configuration
+    await mobileAdsInstance.setRequestConfiguration(requestConfig);
+    
     adModulesInitialized = true;
-
+    
     // Pre-load initial ad for better user experience
     const maxPreloadAttempts = 3;
     for (let i = 0; i < maxPreloadAttempts; i++) {
@@ -154,32 +188,29 @@ export const initializeAds = async () => {
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
-
+    
     return true;
   } catch (error) {
+    console.error(`❌ AdMob SDK initialization failed:`, error);
+    adModulesInitialized = false;
+    
     // If initialization fails, try once more after a delay
     try {
+      console.log(`🔄 Retrying AdMob SDK initialization in 2 seconds...`);
       await new Promise(resolve => setTimeout(resolve, 2000));
-      await initializeAds();
-      return true;
+      
+      // Reset state and try again
+      mobileAdsInstance = null;
+      const result = await initializeAds();
+      return result;
     } catch (retryError) {
+      console.error(`❌ AdMob SDK retry initialization failed:`, retryError);
       return false;
     }
   }
 };
 
-/**
- * Calculate backoff time for retries with exponential backoff and jitter
- */
-const getBackoffTime = (retryCount: number): number => {
-  const baseDelay = 2000; // 2 seconds base delay
-  const maxDelay = 60000; // Cap at 1 minute
-  // Exponential backoff: 2^retry * baseDelay (capped at maxDelay)
-  const exponentialDelay = Math.min(maxDelay, Math.pow(2, retryCount) * baseDelay);
-  // Add jitter of ±20% to prevent synchronized retries
-  const jitter = exponentialDelay * 0.2 * (Math.random() * 2 - 1);
-  return Math.floor(exponentialDelay + jitter);
-};
+
 
 /**
  * Load a rewarded ad
@@ -193,12 +224,12 @@ export const loadRewardedAd = async (): Promise<() => void> => {
     }, 1000);
     return () => {};
   }
-
+  
   // Check if an ad is already being loaded
   if (adLoadInProgress) {
     return () => {};
   }
-
+  
   // Throttle requests to prevent spam
   const now = Date.now();
   const timeSinceLastLoad = now - lastAdLoadAttempt;
@@ -230,11 +261,12 @@ export const loadRewardedAd = async (): Promise<() => void> => {
     };
     
     // For production builds, add additional targeting parameters
-    if (isProduction) {
+    if (shouldUseProductionAds) {
       Object.assign(adRequestOptions, {
         requestAgent: 'TiltMazeGame-Production',
-        contentUrl: 'https://example.com/games/tiltmaze',
+        contentUrl: 'https://tiltmazegame.com',
       });
+      console.log(`🎯 Using production ad targeting parameters`);
     }
     
     // Create the ad request with proper options
@@ -271,8 +303,8 @@ export const loadRewardedAd = async (): Promise<() => void> => {
       
       // Implementation of retry with backoff
       adLoadRetryCount++;
-      const backoffTime = isProduction ? 
-        Math.min(5000, getBackoffTime(adLoadRetryCount) / 2) : 
+      const backoffTime = shouldUseProductionAds ? 
+        Math.min(10000, getBackoffTime(adLoadRetryCount)) : 
         getBackoffTime(adLoadRetryCount);
       
       setTimeout(() => {
@@ -295,8 +327,8 @@ export const loadRewardedAd = async (): Promise<() => void> => {
     
     // Implementation of retry with backoff
     adLoadRetryCount++;
-    const backoffTime = isProduction ? 
-      Math.min(5000, getBackoffTime(adLoadRetryCount) / 2) : 
+    const backoffTime = shouldUseProductionAds ? 
+      Math.min(10000, getBackoffTime(adLoadRetryCount)) : 
       getBackoffTime(adLoadRetryCount);
     
     setTimeout(() => {
@@ -338,10 +370,14 @@ export const showRewardedAd = async (onReward: () => void, onClose?: () => void)
     
     // Real ad implementation for production builds
     try {
+      console.log(`🎬 Attempting to show rewarded ad in ${shouldUseProductionAds ? 'production' : 'development'} mode`);
+      
       // Step 1: Ensure AdMob is initialized
       if (!adModulesInitialized) {
+        console.log(`🔧 AdMob not initialized, initializing now...`);
         const success = await initializeAds();
         if (!success) {
+          console.error(`❌ Failed to initialize AdMob for rewarded ad`);
           resolve(false);
           return;
         }
@@ -349,13 +385,16 @@ export const showRewardedAd = async (onReward: () => void, onClose?: () => void)
       
       // Step 2: Check if we have a preloaded ad ready to show
       if (rewardedAd && isRewardedAdLoaded) {
+        console.log(`✅ Using preloaded rewarded ad`);
         onRewardCallback = onReward;
         
         try {
           await rewardedAd.show();
+          console.log(`🎬 Preloaded rewarded ad shown successfully`);
           // Will resolve through event handlers
           return;
         } catch (showError) {
+          console.error(`❌ Failed to show preloaded rewarded ad:`, showError);
           onRewardCallback = null;
           isRewardedAdLoaded = false;
           rewardedAd = null;
@@ -364,13 +403,25 @@ export const showRewardedAd = async (onReward: () => void, onClose?: () => void)
       }
 
       // Step 3: Load and show a new ad on-the-fly
+      console.log(`🔄 Loading new rewarded ad on-demand`);
       const adUnitId = getAdUnitId('rewarded');
+      console.log(`🎯 Using ad unit ID: ${adUnitId}`);
       
       // Create a dedicated ad instance for this request
-      const dedicatedAd = RewardedAd.createForAdRequest(adUnitId, {
+      const adRequestOptions = {
         requestNonPersonalizedAdsOnly: false,
         keywords: ['game', 'arcade', 'puzzle', 'maze', 'tilting'],
-      });
+      };
+      
+      // Add production targeting if applicable
+      if (shouldUseProductionAds) {
+        Object.assign(adRequestOptions, {
+          requestAgent: 'TiltMazeGame-Production',
+          contentUrl: 'https://tiltmazegame.com',
+        });
+      }
+      
+      const dedicatedAd = RewardedAd.createForAdRequest(adUnitId, adRequestOptions);
       
       // Set maximum wait time for ad loading
       const MAX_WAIT_TIME = 15000; // 15 seconds
@@ -393,6 +444,7 @@ export const showRewardedAd = async (onReward: () => void, onClose?: () => void)
         const loadedUnsubscribe = dedicatedAd.addAdEventListener(
           RewardedAdEventType.LOADED,
           () => {
+            console.log(`✅ Rewarded ad loaded successfully`);
             hasLoaded = true;
             
             // Update shared state
@@ -401,8 +453,10 @@ export const showRewardedAd = async (onReward: () => void, onClose?: () => void)
             
             try {
               onRewardCallback = onReward;
+              console.log(`🎬 Attempting to show newly loaded rewarded ad`);
               dedicatedAd.show();
             } catch (showError) {
+              console.error(`❌ Failed to show newly loaded rewarded ad:`, showError);
               // Reset state on error
               onRewardCallback = null;
               isRewardedAdLoaded = false;
@@ -416,11 +470,15 @@ export const showRewardedAd = async (onReward: () => void, onClose?: () => void)
         const errorUnsubscribe = dedicatedAd.addAdEventListener(
           AdEventType.ERROR,
           (error: any) => {
+            console.error(`❌ Rewarded ad error:`, error);
             // Only resolve if not already loaded
             if (!hasLoaded) {
+              console.log(`💥 Ad failed to load, resolving with false`);
               isRewardedAdLoaded = false;
               rewardedAd = null;
               adResolve(false);
+            } else {
+              console.log(`💥 Ad error after loading, but ad was already shown`);
             }
           }
         );
@@ -429,6 +487,7 @@ export const showRewardedAd = async (onReward: () => void, onClose?: () => void)
         const rewardUnsubscribe = dedicatedAd.addAdEventListener(
           RewardedAdEventType.EARNED_REWARD,
           () => {
+            console.log(`🎉 User earned reward from rewarded ad!`);
             // Call reward callback if set
             if (onRewardCallback) {
               onRewardCallback();
@@ -525,10 +584,10 @@ export const createBannerAd = (
   };
 
   // For production builds, add additional targeting parameters
-  if (isProduction) {
+  if (shouldUseProductionAds) {
     Object.assign(defaultRequestOptions, {
       requestAgent: 'TiltMazeGame-Production',
-      contentUrl: 'https://example.com/games/tiltmaze',
+      contentUrl: 'https://tiltmazegame.com',
     });
   }
 

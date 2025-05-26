@@ -44,13 +44,11 @@ const BannerAdComponent: React.FC<BannerAdComponentProps> = ({
     return null;
   }
 
-  // Use provided unit ID or get from service
+  // Use provided unit ID or get banner ad ID from AdMob console
   const adUnitId = unitId || (
     __DEV__ 
       ? TestIds?.BANNER 
-      : Platform.OS === 'ios' 
-        ? 'ca-app-pub-4299404428269280/2212871388'
-        : 'ca-app-pub-4299404428269280/2212871388'
+      : 'ca-app-pub-4299404428269280/2212871388'  // Banner ad (from AdMob console)
   );
 
   const bannerSize = size || BannerAdSize?.BANNER;

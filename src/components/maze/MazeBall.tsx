@@ -47,7 +47,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       const speed = Math.sqrt(velocityX.value * velocityX.value + velocityY.value * velocityY.value);
       const baseScale = 1.0;
       const directionFactor = speed > 0.1 ? 0.15 : 0;
-      const xContribution = Math.abs(velocityX.value) / (speed + 0.01);
+      const xContribution = Math.abs(velocityX.value) / (speed + 0.01); 
       const yContribution = Math.abs(velocityY.value) / (speed + 0.01);
       
       return {
@@ -97,7 +97,7 @@ export const MazeBall: React.FC<MazeBallProps> = memo(
       const sizeVariation = 1 - Math.min(0.05, speed * 0.005);
       
       return {
-        r: radius * sizeVariation,
+        r: radius * sizeVariation, 
         cx: ballPositionX.value,
         cy: ballPositionY.value,
       };

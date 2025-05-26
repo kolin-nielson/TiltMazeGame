@@ -45,42 +45,42 @@ const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemT
   const gradientId = `grad-${item.id}`;
   const patternId = `pattern-${item.id}`;
 
-  const renderFill = () => {
-    if (itemType === 'skin') {
-      const skin = item as Skin;
-      switch (skin.type) {
-        case 'gradient':
+    const renderFill = () => {
+      if (itemType === 'skin') {
+        const skin = item as Skin;
+        switch (skin.type) {
+          case 'gradient':
         case 'special':
         case 'legendary':
-          return `url(#${gradientId})`;
-        case 'pattern':
-          return `url(#${patternId})`;
-        case 'solid':
-        default:
-          return skin.colors[0];
-      }
+            return `url(#${gradientId})`;
+          case 'pattern':
+            return `url(#${patternId})`;
+          case 'solid':
+          default:
+              return skin.colors[0];
+        }
     } else {
-      return `url(#${gradientId})`
-    }
-  };
+          return `url(#${gradientId})`
+      }
+    };
 
   return (
     <Animated.View style={animatedStyle}>
       <Svg width="70" height="70" viewBox="0 0 50 50">
         <Defs>
           {itemType === 'skin' && ['gradient', 'special', 'legendary'].includes((item as Skin).type) && (
-            (item as Skin).gradientDirection === 'radial' ? (
-              <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-                {item.colors.map((color, index) => (
-                  <Stop key={index} offset={`${(index / (item.colors.length - 1)) * 100}%`} stopColor={color} />
+          (item as Skin).gradientDirection === 'radial' ? (
+            <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
+              {item.colors.map((color, index) => (
+                <Stop key={index} offset={`${(index / (item.colors.length - 1)) * 100}%`} stopColor={color} />
+              ))}
+            </RadialGradient>
+          ) : (
+            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              {item.colors.map((color, index) => (
+                <Stop key={index} offset={`${(index / (item.colors.length - 1)) * 100}%`} stopColor={color} />
                 ))}
-              </RadialGradient>
-            ) : (
-              <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                {item.colors.map((color, index) => (
-                  <Stop key={index} offset={`${(index / (item.colors.length - 1)) * 100}%`} stopColor={color} />
-                ))}
-              </LinearGradient>
+            </LinearGradient>
             ))}
           {itemType === 'trail' && (
             <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -109,8 +109,8 @@ const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemT
                   <Circle cx="7.5" cy="4" r="4" fill={item.colors[1]} opacity="0.8" />
                   <Circle cx="0" cy="11" r="4" fill={item.colors[1]} opacity="0.8" />
                   <Circle cx="15" cy="11" r="4" fill={item.colors[1]} opacity="0.8" />
-                </Pattern>
-              )}
+            </Pattern>
+          )}
               {(item as Skin).patternType === 'hearts' && (
                 <Pattern id={patternId} patternUnits="userSpaceOnUse" width="14" height="14">
                   <Rect width="14" height="14" fill={item.colors[0]} />
@@ -139,7 +139,7 @@ const ItemPreview: React.FC<{ item: Item, itemType: ItemType }> = ({ item, itemT
                       transform="scale(0.5)"
                     />
                   </G>
-                </Pattern>
+            </Pattern>
               )}
             </>
           )}
@@ -208,39 +208,39 @@ const ShopScreen: React.FC = () => {
     const rarityColor = RARITY_COLORS[rarity];
 
     return (
-      <Card
-        style={[
+        <Card
+          style={[
           styles.itemCard,
-          {
+            {
             backgroundColor: colors.surface,
             borderColor: isEquipped ? rarityColor : colors.outline,
             borderWidth: isEquipped ? 2 : 1,
-          }
-        ]}
+            }
+          ]}
         elevation={isEquipped ? 6 : 3}
-      >
-        <Card.Content style={styles.cardContent}>
+        >
+          <Card.Content style={styles.cardContent}>
 
           {/* Item preview */}
           <View style={[styles.previewContainer, { 
             backgroundColor: colors.surfaceVariant,
             borderColor: rarityColor,
           }]}>
-            <ItemPreview itemType={itemType} item={item} />
-          </View>
+              <ItemPreview itemType={itemType} item={item} />
+            </View>
 
           {/* Item details */}
           <View style={styles.itemDetails}>
-            <Text
-              style={[
-                styles.itemName,
+              <Text
+                style={[
+                  styles.itemName,
                 { color: colors.onSurface }
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {item.name}
-            </Text>
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {item.name}
+              </Text>
 
             {/* Description */}
             {(skin?.description || (itemType === 'trail' && (item as Trail).description)) && (
@@ -254,60 +254,60 @@ const ShopScreen: React.FC = () => {
             )}
 
             {/* Cost */}
-            <View style={styles.costContainer}>
+              <View style={styles.costContainer}>
               <MaterialCommunityIcons name="currency-usd" size={18} color="#F59E0B" />
-              <Text
-                style={[
-                  styles.itemCost,
+                <Text
+                  style={[
+                    styles.itemCost,
                   { color: colors.primary }
-                ]}
-              >
+                  ]}
+                >
                 {item.cost.toLocaleString()}
-              </Text>
+                </Text>
+              </View>
             </View>
-          </View>
 
           {/* Action button */}
-          {isEquipped ? (
-            <Button
-              mode="contained"
+            {isEquipped ? (
+              <Button
+                mode="contained"
               buttonColor={rarityColor}
               textColor="#FFFFFF"
-              disabled
-              style={styles.actionButton}
+                disabled
+                style={styles.actionButton}
               icon="check-circle"
-              compact
-            >
-              Equipped
-            </Button>
-          ) : isPurchased ? (
-            <Button
-              mode="contained"
+                compact
+              >
+                Equipped
+              </Button>
+            ) : isPurchased ? (
+              <Button
+                mode="contained"
               buttonColor={rarityColor}
               textColor="#FFFFFF"
-              onPress={() => handleEquipItem(item, itemType)}
-              style={styles.actionButton}
+                onPress={() => handleEquipItem(item, itemType)}
+                style={styles.actionButton}
               icon="download"
-              compact
-            >
-              Equip
-            </Button>
-          ) : (
-            <Button
-              mode="contained"
+                compact
+              >
+                Equip
+              </Button>
+            ) : (
+              <Button
+                mode="contained"
               buttonColor={coins >= item.cost ? rarityColor : colors.surfaceVariant}
               textColor={coins >= item.cost ? "#FFFFFF" : colors.onSurfaceVariant}
-              disabled={coins < item.cost}
-              onPress={() => handleBuyItem(item, itemType)}
-              style={styles.actionButton}
+                disabled={coins < item.cost}
+                onPress={() => handleBuyItem(item, itemType)}
+                style={styles.actionButton}
               icon={coins >= item.cost ? "cart" : "currency-usd"}
-              compact
-            >
+                compact
+              >
               {coins >= item.cost ? 'Buy' : 'Need more'}
-            </Button>
-          )}
-        </Card.Content>
-      </Card>
+              </Button>
+            )}
+          </Card.Content>
+        </Card>
     );
   };
 
